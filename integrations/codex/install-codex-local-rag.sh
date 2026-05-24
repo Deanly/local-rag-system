@@ -7,7 +7,7 @@ CODEX_HOME="${CODEX_HOME:-${HOME}/.codex}"
 CONFIG_FILE="${CODEX_CONFIG_FILE:-${CODEX_HOME}/config.toml}"
 SKILL_DIR="${CODEX_HOME}/skills/local-rag"
 SERVER_FILE="${REPO_ROOT}/integrations/codex/local-rag-mcp-server.mjs"
-SKILL_FILE="${REPO_ROOT}/integrations/codex/skill/SKILL.md"
+SKILL_FILE="${LOCAL_RAG_SKILL_FILE:-${REPO_ROOT}/integrations/codex/skill/SKILL.md}"
 BASE_URL="${LOCAL_RAG_BASE_URL:-http://127.0.0.1:42120}"
 DEFAULT_PROJECT_ID="${LOCAL_RAG_DEFAULT_PROJECT_ID:-}"
 
@@ -22,6 +22,7 @@ Environment:
   LOCAL_RAG_BASE_URL         Default: http://127.0.0.1:42120
   LOCAL_RAG_DEFAULT_PROJECT_ID optional default project id
   LOCAL_RAG_NODE_BIN         optional absolute node path
+  LOCAL_RAG_SKILL_FILE       optional path to a machine-local SKILL.md
 USAGE
 }
 

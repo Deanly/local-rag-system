@@ -206,7 +206,11 @@ case "${command}" in
       init_config
     fi
     compose up -d --build
-    LOCAL_RAG_BASE_URL="${BASE_URL}" "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
+    skill_env=()
+    if [[ -f "${CONFIG_DIR}/codex-skill.local.md" ]]; then
+      skill_env=(LOCAL_RAG_SKILL_FILE="${CONFIG_DIR}/codex-skill.local.md")
+    fi
+    env LOCAL_RAG_BASE_URL="${BASE_URL}" "${skill_env[@]}" "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
     ;;
   status)
     compose ps
@@ -237,7 +241,11 @@ case "${command}" in
     ;;
   install-codex)
     require_code
-    LOCAL_RAG_BASE_URL="${BASE_URL}" "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
+    skill_env=()
+    if [[ -f "${CONFIG_DIR}/codex-skill.local.md" ]]; then
+      skill_env=(LOCAL_RAG_SKILL_FILE="${CONFIG_DIR}/codex-skill.local.md")
+    fi
+    env LOCAL_RAG_BASE_URL="${BASE_URL}" "${skill_env[@]}" "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
     ;;
   *)
     echo "Unknown command: ${command}" >&2
