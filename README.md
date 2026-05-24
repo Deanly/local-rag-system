@@ -36,6 +36,7 @@ Authoritative design:
 
 - `docs/design/control-plane.md`
 - `docs/guide/sdlc-automation.md`
+- `docs/guide/installing-on-a-new-machine.md`
 - `docs/design/local-rag-system-development-direction.md`
 - `docs/design/source-registry-and-project-ssot.md`
 - `docs/design/msa-runtime-and-storage.md`
@@ -73,7 +74,22 @@ docker-compose.yml
 
 ## Docker Compose
 
-Create a local `.env` and point each source variable at the folders to index. The local example registers:
+Prerequisites:
+
+- Docker with Docker Compose
+- Ollama running on the host or on a reachable LAN host
+- `qwen3-embedding:4b` installed in Ollama, or another embedding model configured with `LOCAL_RAG_EMBEDDING_MODEL`
+
+For a host-local Ollama on Docker Desktop or a recent Linux Docker engine, containers should use `http://host.docker.internal:11434`, not `http://localhost:11434`. Inside a container, `localhost` means the container itself.
+
+Prepare Ollama:
+
+```bash
+ollama pull qwen3-embedding:4b
+curl -fsS http://127.0.0.1:11434/api/tags
+```
+
+Create a local `.env` and point `LOCAL_RAG_SOURCE_ROOT` at the host folder that should be mounted read-only as `/source` in the containers. The sample registry uses paths under `/source` and registers:
 
 - `personal-notes`
 - `project-alpha.docs`
@@ -81,8 +97,7 @@ Create a local `.env` and point each source variable at the folders to index. Th
 
 ```bash
 cp .env.example .env
-# edit LOCAL_RAG_PERSONAL_NOTES_DIR, LOCAL_RAG_PROJECT_ALPHA_DOCS_DIR,
-# LOCAL_RAG_PROJECT_BETA_DOCS_DIR, and LOCAL_RAG_DATA_DIR when needed
+# edit LOCAL_RAG_SOURCE_ROOT and LOCAL_RAG_DATA_DIR when needed
 # optionally copy config/source-registry.local.example.yaml to
 # config/source-registry.local.yaml and set LOCAL_RAG_SOURCE_REGISTRY
 docker compose --env-file .env config
@@ -90,6 +105,18 @@ docker compose --env-file .env up -d --build
 ```
 
 The default gateway URL is `http://127.0.0.1:42120`.
+
+Smoke commands:
+
+```bash
+curl -fsS http://127.0.0.1:42120/api/health
+curl -fsS -X POST http://127.0.0.1:42120/api/index/scan
+curl -fsS -X POST http://127.0.0.1:42120/api/search \
+  -H 'Content-Type: application/json' \
+  -d '{"projectId":"project-alpha","query":"source registry","limit":3,"mode":"hybrid"}'
+```
+
+For real documents, copy `config/source-registry.local.example.yaml` to `config/source-registry.local.yaml`, set `LOCAL_RAG_SOURCE_REGISTRY=/config/source-registry.local.yaml`, and edit source `path` values to container paths under `/source`. If the folders are not under one common host parent, add additional read-only mounts in a local compose override.
 
 ## Development
 
@@ -112,7 +139,7 @@ When a search request includes `projectId`, retrieval uses the project's active 
 
 ## Ollama Prerequisite
 
-The portable default expects Ollama on `http://localhost:11434` with `LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED=false`.
+The Docker Compose default expects host Ollama to be reachable from containers on `http://host.docker.internal:11434` with `LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED=false`. If Ollama runs on another machine, set `LOCAL_RAG_OLLAMA_BASE_URL` to that reachable endpoint in the local env file.
 
 `qwen3-embedding:4b` is the current embedding baseline because it is materially faster and lighter than `qwen3-embedding:8b` for large indexing runs while remaining multilingual and compatible with the current Ollama `/api/embeddings` endpoint. Device-specific endpoints, such as a directly connected LAN Ollama host, belong in the local env file and should not be committed.
 
@@ -126,6 +153,8 @@ Install the service command:
 
 ```bash
 install -m 0755 ops/service/local-rag ~/Service/bin/local-rag
+local-rag init-config
+local-rag doctor
 ```
 
 Common operations:
@@ -140,7 +169,7 @@ local-rag down
 
 ## Codex Integration
 
-Install the global Codex integration from this repo:
+Codex needs Node.js for the MCP stdio adapter and a running Local RAG gateway. Install the global Codex integration from this repo:
 
 ```bash
 ./integrations/codex/install-codex-local-rag.sh

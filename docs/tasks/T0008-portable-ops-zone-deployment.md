@@ -65,7 +65,7 @@ tags:
 
 ## Committed Outcome
 
-- Docker and Java defaults use `http://localhost:11434`.
+- Docker defaults use `http://host.docker.internal:11434`; direct-network endpoints remain untracked local overrides.
 - Compose accepts an external config mount via `LOCAL_RAG_CONFIG_DIR`.
 - `ops/service/local-rag` provides the operator command.
 - This device can run the stack from `~/Service/code/local-rag-system` using `~/Service/config/local-rag-system/local.env`.
@@ -125,7 +125,7 @@ tags:
 - `docker compose --env-file .env.example config` passed and rendered no `local-llm-host` endpoint.
 - `bash -n ops/service/local-rag` passed.
 - `~/Service/bin/local-rag` installed and reports operation paths under `~/Service`.
-- `~/Service/code/local-rag-system` cloned from `https://github.com/your-org/local-rag-system.git`.
+- `~/Service/code/local-rag-system` cloned from the configured private GitHub remote.
 - `~/Service/code/project-beta` cloned from the project's GitHub remote for operation-zone source indexing.
 - `~/Service/config/local-rag-system/local.env` stores this device's `local-llm-host` Ollama/oMLX overrides and operation source paths.
 - `~/Service/config/local-rag-system/source-registry.local.yaml` registers operation-zone source roots.

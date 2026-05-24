@@ -10,6 +10,7 @@
 - `docs/design/msa-runtime-and-storage.md` is the current MSA, Docker Compose, PostgreSQL, and Weaviate storage truth.
 - `docs/design/ubiquitous-language.md` holds canonical Local RAG terms.
 - `docs/guide/sdlc-automation.md` defines the SDLC automation goal, critical path, gates, and verification ladder.
+- `docs/guide/installing-on-a-new-machine.md` is the repo-only bootstrap path for a new machine and Codex integration.
 - `docs/projects/P0001-local-rag-system.md` is the completed umbrella project for the functional baseline.
 - `docs/tasks/README.md` is the active task roster. If no task is active, issue a new `T####` task under `P0001` before broad implementation work unless the user explicitly asks for a quick fix.
 - `docs/tasks/T0002-msa-runtime-baseline.md` is done and records the runtime/compose/storage contract baseline.

@@ -108,7 +108,7 @@ services/<service>/target/<service>-0.1.0.jar
 | `postgres` | `42130` | source registry, document state, jobs, failures, audit |
 | `weaviate` | `42131`, `42132` | BM25/vector hybrid retrieval index |
 
-Ollama is configured through `LOCAL_RAG_OLLAMA_BASE_URL`. The portable default is `http://localhost:11434`; device-specific direct-network endpoints belong only in an untracked local env file.
+Ollama is configured through `LOCAL_RAG_OLLAMA_BASE_URL`. The Compose default is `http://host.docker.internal:11434` because application services run inside containers. Device-specific direct-network endpoints belong only in an untracked local env file.
 
 ## Storage Contracts
 
@@ -151,19 +151,21 @@ Minimum local startup flow after service implementation:
 
 ```bash
 cp .env.example .env
-# edit LOCAL_RAG_PERSONAL_NOTES_DIR, LOCAL_RAG_PROJECT_ALPHA_DOCS_DIR,
-# LOCAL_RAG_PROJECT_BETA_DOCS_DIR, and LOCAL_RAG_DATA_DIR
+# edit LOCAL_RAG_SOURCE_ROOT and LOCAL_RAG_DATA_DIR
 # optionally set LOCAL_RAG_SOURCE_REGISTRY to /config/source-registry.yaml
 docker compose --env-file .env up -d --build
 ```
 
-The current Compose baseline supports three read-only source mounts:
+The current Compose baseline mounts one read-only source root and lets the registry refer to paths under `/source`:
 
 | Container Path | Host Env Var | Intended Source |
 | --- | --- | --- |
-| `/source/personal-notes` | `LOCAL_RAG_PERSONAL_NOTES_DIR` | compiled Personal Notes wiki layer |
-| `/source/project-alpha-docs` | `LOCAL_RAG_PROJECT_ALPHA_DOCS_DIR` | Project Alpha docs |
-| `/source/project-beta-docs` | `LOCAL_RAG_PROJECT_BETA_DOCS_DIR` | Project Beta docs |
+| `/source` | `LOCAL_RAG_SOURCE_ROOT` | parent folder for registered source paths |
+| `/source/personal-notes` | `LOCAL_RAG_SOURCE_PERSONAL_NOTES` | sample Personal Notes source |
+| `/source/project-alpha-docs` | `LOCAL_RAG_SOURCE_PROJECT_ALPHA_DOCS` | sample Project Alpha docs |
+| `/source/project-beta-docs` | `LOCAL_RAG_SOURCE_PROJECT_BETA_DOCS` | sample Project Beta docs |
+
+If real source folders do not share a single parent, the operator should add a local Compose override with additional read-only mounts and point registry paths at those container paths.
 
 Expected public endpoints:
 
