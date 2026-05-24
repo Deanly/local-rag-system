@@ -36,6 +36,10 @@ Environment:
   LOCAL_RAG_ENV_FILE     default: ~/Service/config/local-rag-system/local.env
   LOCAL_RAG_REPO_URL     default: https://github.com/Deanly/local-rag-system.git
   LOCAL_RAG_BASE_URL     default: http://127.0.0.1:42120
+
+Optional operation-zone files:
+  ~/Service/config/local-rag-system/docker-compose.override.yaml
+                         read automatically when present
 USAGE
 }
 
@@ -140,6 +144,9 @@ doctor() {
 
   if [[ "${failed}" == "0" ]]; then
     echo "local-rag prerequisites look ready."
+    if [[ -f "${CONFIG_DIR}/docker-compose.override.yaml" ]]; then
+      echo "compose override: ${CONFIG_DIR}/docker-compose.override.yaml"
+    fi
   fi
   return "${failed}"
 }
@@ -147,7 +154,11 @@ doctor() {
 compose() {
   require_code
   require_env
-  (cd "${CODE_DIR}" && docker compose --env-file "${ENV_FILE}" "$@")
+  local compose_args=(-f docker-compose.yml)
+  if [[ -f "${CONFIG_DIR}/docker-compose.override.yaml" ]]; then
+    compose_args+=(-f "${CONFIG_DIR}/docker-compose.override.yaml")
+  fi
+  (cd "${CODE_DIR}" && docker compose --env-file "${ENV_FILE}" "${compose_args[@]}" "$@")
 }
 
 curl_json() {

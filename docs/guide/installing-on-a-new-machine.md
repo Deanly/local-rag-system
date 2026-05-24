@@ -91,6 +91,12 @@ sources:
 
 If real source folders are not under a common parent, create a local compose override with additional read-only mounts and point registry paths at those container mount paths.
 
+The operation command automatically reads this untracked override when it exists:
+
+```text
+~/Service/config/local-rag-system/docker-compose.override.yaml
+```
+
 ## Codex Integration
 
 Install manually:
