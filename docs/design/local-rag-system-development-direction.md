@@ -373,6 +373,7 @@ Phase 5, attachment expansion:
 | Python BM25 scaffold는 active runtime surface에서 제거하고 target은 Spring Boot MSA로 단일화한다. | 유지보수 언어와 구현 경로를 줄여 다음 Codex 세션이 잘못된 baseline을 확장하지 않게 한다. |
 | MVP 검색 엔진은 Weaviate로 둔다. | BM25/vector hybrid와 metadata filter를 한 구성요소에서 제공하고 Docker Compose 운영이 단순하다. |
 | watcher와 scanner를 함께 사용한다. | macOS watcher event는 누락/중복 가능성이 있으므로 scanner가 freshness authority가 되어야 한다. |
+| watcher event는 debounce 후 scan한다. | indexing이 embedding model을 호출하므로 editor autosave burst가 여러 번의 LLM 호출로 증폭되지 않아야 한다. 기본값은 마지막 이벤트 후 10초다. |
 | source folder는 read-only mount로 둔다. | 원본 노트를 검색 시스템이 변형하지 않는다는 운영 invariant를 보존한다. |
 | embedding/chat은 Ollama local endpoint만 사용한다. | private source content가 외부 API로 나가지 않아야 한다. |
 | retrieval은 `Retriever` interface 뒤에 둔다. | Weaviate에서 Qdrant/OpenSearch로 교체할 가능성을 보존한다. |

@@ -152,6 +152,7 @@ Minimum local startup flow after service implementation:
 ```bash
 cp .env.example .env
 # edit LOCAL_RAG_SOURCE_ROOT and LOCAL_RAG_DATA_DIR
+# optionally tune LOCAL_RAG_WATCH_DEBOUNCE_SECONDS for editor autosave behavior
 # optionally set LOCAL_RAG_SOURCE_REGISTRY to /config/source-registry.yaml
 docker compose --env-file .env up -d --build
 ```

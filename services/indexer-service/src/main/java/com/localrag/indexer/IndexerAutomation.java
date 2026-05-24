@@ -20,6 +20,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
@@ -64,9 +65,8 @@ public class IndexerAutomation {
             }
             while (true) {
                 WatchKey key = watchService.take();
-                key.pollEvents();
-                key.reset();
-                Thread.sleep(1000L);
+                drain(key);
+                waitForQuietPeriod(watchService);
                 indexerService.scan(null);
             }
         } catch (InterruptedException exception) {
@@ -74,6 +74,27 @@ public class IndexerAutomation {
         } catch (RuntimeException | IOException exception) {
             watchThreadStarted.set(false);
         }
+    }
+
+    private void waitForQuietPeriod(WatchService watchService) throws InterruptedException {
+        long debounceNanos = TimeUnit.MILLISECONDS.toNanos(settings.watchDebounceMillis());
+        long quietUntil = System.nanoTime() + debounceNanos;
+        while (true) {
+            long remainingNanos = quietUntil - System.nanoTime();
+            if (remainingNanos <= 0) {
+                return;
+            }
+            WatchKey nextKey = watchService.poll(remainingNanos, TimeUnit.NANOSECONDS);
+            if (nextKey != null) {
+                drain(nextKey);
+                quietUntil = System.nanoTime() + debounceNanos;
+            }
+        }
+    }
+
+    private void drain(WatchKey key) {
+        key.pollEvents();
+        key.reset();
     }
 
     private List<SourceRoot> activeSources() {
