@@ -132,6 +132,9 @@ Default:
 LOCAL_RAG_OLLAMA_BASE_URL=http://host.docker.internal:11434
 LOCAL_RAG_EMBEDDING_MODEL=qwen3-embedding:4b
 LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED=false
+LOCAL_RAG_WATCH_DEBOUNCE_SECONDS=10
 ```
 
 Fallback embeddings are deterministic placeholders for development smoke only. Do not use them for real indexing.
+
+Watcher debounce waits for the source folders to be quiet before scanning. A 10 second default avoids repeated embedding calls during editor autosave bursts while still keeping interactive edits reasonably fresh. Periodic scan remains the fallback freshness authority.

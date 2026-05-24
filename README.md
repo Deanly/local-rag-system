@@ -137,6 +137,14 @@ The registry is the only indexing boundary. Source folders are mounted read-only
 
 When a search request includes `projectId`, retrieval uses the project's active `primary_source_id`, ordered `default_context`, and other active project sources. This allows project docs to remain the primary truth while `personal-notes` can act as a lower-priority cross-project support source.
 
+File watcher events are debounced before indexing because indexing calls the configured embedding model. The default is 10 seconds after the last filesystem event:
+
+```env
+LOCAL_RAG_WATCH_DEBOUNCE_SECONDS=10
+```
+
+Periodic scan remains the final freshness authority and defaults to 300 seconds.
+
 ## Ollama Prerequisite
 
 The Docker Compose default expects host Ollama to be reachable from containers on `http://host.docker.internal:11434` with `LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED=false`. If Ollama runs on another machine, set `LOCAL_RAG_OLLAMA_BASE_URL` to that reachable endpoint in the local env file.

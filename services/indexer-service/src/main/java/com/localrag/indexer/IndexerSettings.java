@@ -11,7 +11,8 @@ public record IndexerSettings(
         String weaviateUrl,
         boolean embeddingFallbackEnabled,
         boolean watchEnabled,
-        long scanIntervalMillis
+        long scanIntervalMillis,
+        long watchDebounceMillis
 ) {
     public IndexerSettings {
         if (registryPath == null || registryPath.isBlank()) {
@@ -33,6 +34,15 @@ public record IndexerSettings(
         if (scanIntervalMillis <= 0) {
             String seconds = System.getenv().getOrDefault("RAG_SCAN_INTERVAL_SECONDS", "300");
             scanIntervalMillis = Long.parseLong(seconds) * 1000L;
+        }
+        if (watchDebounceMillis <= 0) {
+            String millis = System.getenv("RAG_WATCH_DEBOUNCE_MILLIS");
+            if (millis == null || millis.isBlank()) {
+                String seconds = System.getenv().getOrDefault("RAG_WATCH_DEBOUNCE_SECONDS", "10");
+                watchDebounceMillis = Long.parseLong(seconds) * 1000L;
+            } else {
+                watchDebounceMillis = Long.parseLong(millis);
+            }
         }
     }
 }
