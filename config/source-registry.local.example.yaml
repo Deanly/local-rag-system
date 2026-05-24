@@ -1,0 +1,90 @@
+version: 1
+device_id: local-dev-machine
+default_project_id: project-alpha
+
+projects:
+  - project_id: personal-notes
+    display_name: Personal Notes
+    primary_source_id: personal-notes
+    default_context:
+      - personal-notes
+
+  - project_id: project-alpha
+    display_name: Project Alpha
+    primary_source_id: project-alpha.docs
+    default_context:
+      - project-alpha.docs
+      - personal-notes
+
+  - project_id: project-beta
+    display_name: Project Beta
+    primary_source_id: project-beta.docs
+    default_context:
+      - project-beta.docs
+      - personal-notes
+
+sources:
+  - source_id: personal-notes
+    project_id: personal-notes
+    type: compiled-wiki
+    ssot_role: compiled-wiki
+    path: ${LOCAL_RAG_SOURCE_PERSONAL_NOTES}
+    priority: 80
+    active: true
+    sensitivity_default: private
+    include:
+      - "**/*.md"
+      - "**/*.markdown"
+      - "**/*.txt"
+    exclude:
+      - "**/.git/**"
+      - "**/.rag_index/**"
+      - "**/node_modules/**"
+      - "**/build/**"
+      - "**/dist/**"
+    read_policy: cross-project-support
+    write_policy: source-specific-rule-required
+
+  - source_id: project-alpha.docs
+    project_id: project-alpha
+    type: project-docs
+    ssot_role: project-current-truth
+    path: ${LOCAL_RAG_SOURCE_PROJECT_ALPHA_DOCS}
+    priority: 100
+    active: true
+    sensitivity_default: private
+    include:
+      - "**/*.md"
+      - "**/*.markdown"
+      - "**/*.txt"
+    exclude:
+      - "**/.git/**"
+      - "**/.rag_index/**"
+      - "**/node_modules/**"
+      - "**/build/**"
+      - "**/dist/**"
+      - "**/legacy/**"
+    read_policy: registered-default
+    write_policy: repo-docs
+
+  - source_id: project-beta.docs
+    project_id: project-beta
+    type: project-docs
+    ssot_role: project-current-truth
+    path: ${LOCAL_RAG_SOURCE_PROJECT_BETA_DOCS}
+    priority: 100
+    active: true
+    sensitivity_default: work
+    include:
+      - "**/*.md"
+      - "**/*.markdown"
+      - "**/*.txt"
+    exclude:
+      - "**/.git/**"
+      - "**/.rag_index/**"
+      - "**/node_modules/**"
+      - "**/build/**"
+      - "**/dist/**"
+      - "**/legacy/**"
+    read_policy: registered-default
+    write_policy: repo-docs
