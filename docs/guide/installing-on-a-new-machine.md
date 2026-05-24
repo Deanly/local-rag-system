@@ -116,6 +116,14 @@ Restart Codex after installation. The installer writes:
 - `mcp_servers.local_rag` in `~/.codex/config.toml`
 - `~/.codex/skills/local-rag/SKILL.md`
 
+For machine-specific project ids or source names, keep a local skill file outside the repository:
+
+```text
+~/Service/config/local-rag-system/codex-skill.local.md
+```
+
+`local-rag deploy` and `local-rag install-codex` use that file when it exists. For manual installation, pass `LOCAL_RAG_SKILL_FILE=/path/to/SKILL.md`.
+
 ## Expected Model Settings
 
 Default:
