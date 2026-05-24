@@ -3,7 +3,7 @@ set -euo pipefail
 
 SERVICE_ROOT="${LOCAL_RAG_SERVICE_ROOT:-${HOME}/Service}"
 CODE_DIR="${LOCAL_RAG_CODE_DIR:-${SERVICE_ROOT}/code/local-rag-system}"
-REPO_URL="${LOCAL_RAG_REPO_URL:-https://github.com/your-org/local-rag-system.git}"
+REPO_URL="${LOCAL_RAG_REPO_URL:-https://github.com/Deanly/local-rag-system.git}"
 CONFIG_DIR="${LOCAL_RAG_CONFIG_DIR:-${SERVICE_ROOT}/config/local-rag-system}"
 ENV_FILE="${LOCAL_RAG_ENV_FILE:-${CONFIG_DIR}/local.env}"
 BASE_URL="${LOCAL_RAG_BASE_URL:-http://127.0.0.1:42120}"
@@ -15,6 +15,8 @@ Usage: local-rag <command> [args]
 Commands:
   config              Print operational paths.
   init-dirs           Create Service directories.
+  init-config         Create an operational checkout and sample local config.
+  doctor              Check local prerequisites and operational files.
   pull                Clone or pull ~/Service/code/local-rag-system.
   deploy              Pull code, start stack, and install Codex integration.
   up                  Start/rebuild the Docker Compose stack.
@@ -32,7 +34,7 @@ Environment:
   LOCAL_RAG_CODE_DIR     default: ~/Service/code/local-rag-system
   LOCAL_RAG_CONFIG_DIR   default: ~/Service/config/local-rag-system
   LOCAL_RAG_ENV_FILE     default: ~/Service/config/local-rag-system/local.env
-  LOCAL_RAG_REPO_URL     default: https://github.com/your-org/local-rag-system.git
+  LOCAL_RAG_REPO_URL     default: https://github.com/Deanly/local-rag-system.git
   LOCAL_RAG_BASE_URL     default: http://127.0.0.1:42120
 USAGE
 }
@@ -63,9 +65,83 @@ require_code() {
 
 require_env() {
   if [[ ! -f "${ENV_FILE}" ]]; then
-    echo "Missing env file: ${ENV_FILE}" >&2
+    echo "Missing env file: ${ENV_FILE}. Run: local-rag init-config" >&2
     exit 1
   fi
+}
+
+init_config() {
+  ensure_code
+  mkdir -p "${CONFIG_DIR}" "${SERVICE_ROOT}/runtime/local-rag-system"
+
+  if [[ ! -f "${CONFIG_DIR}/source-registry.local.yaml" ]]; then
+    cp "${CODE_DIR}/config/source-registry.local.example.yaml" "${CONFIG_DIR}/source-registry.local.yaml"
+  fi
+
+  if [[ ! -f "${ENV_FILE}" ]]; then
+    cat > "${ENV_FILE}" <<EOF
+LOCAL_RAG_SOURCE_REGISTRY=/config/source-registry.local.yaml
+LOCAL_RAG_CONFIG_DIR=${CONFIG_DIR}
+LOCAL_RAG_DATA_DIR=${SERVICE_ROOT}/runtime/local-rag-system
+LOCAL_RAG_POSTGRES_PASSWORD=local-rag-dev
+LOCAL_RAG_OLLAMA_BASE_URL=http://host.docker.internal:11434
+LOCAL_RAG_EMBEDDING_MODEL=qwen3-embedding:4b
+LOCAL_RAG_CHAT_MODEL=
+LOCAL_RAG_OMLX_BASE_URL=
+LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED=false
+LOCAL_RAG_SCAN_INTERVAL_SECONDS=300
+LOCAL_RAG_WATCH_ENABLED=true
+LOCAL_RAG_SOURCE_ROOT=${CODE_DIR}/data/sample
+LOCAL_RAG_SOURCE_PERSONAL_NOTES=/source/personal-notes
+LOCAL_RAG_SOURCE_PROJECT_ALPHA_DOCS=/source/project-alpha-docs
+LOCAL_RAG_SOURCE_PROJECT_BETA_DOCS=/source/project-beta-docs
+EOF
+  fi
+
+  echo "Config file: ${ENV_FILE}"
+  echo "Registry file: ${CONFIG_DIR}/source-registry.local.yaml"
+  echo "Edit both files before indexing real source folders."
+}
+
+doctor() {
+  local failed=0
+
+  for executable in git docker curl; do
+    if ! command -v "${executable}" >/dev/null 2>&1; then
+      echo "missing command: ${executable}" >&2
+      failed=1
+    fi
+  done
+
+  if ! docker compose version >/dev/null 2>&1; then
+    echo "docker compose is not available" >&2
+    failed=1
+  fi
+
+  if ! command -v node >/dev/null 2>&1; then
+    echo "node is not available; Codex MCP install will require LOCAL_RAG_NODE_BIN" >&2
+    failed=1
+  fi
+
+  if [[ ! -d "${CODE_DIR}/.git" ]]; then
+    echo "missing checkout: ${CODE_DIR}" >&2
+    failed=1
+  fi
+
+  if [[ ! -f "${ENV_FILE}" ]]; then
+    echo "missing env file: ${ENV_FILE}" >&2
+    failed=1
+  fi
+
+  if [[ ! -f "${CONFIG_DIR}/source-registry.local.yaml" ]]; then
+    echo "missing registry file: ${CONFIG_DIR}/source-registry.local.yaml" >&2
+    failed=1
+  fi
+
+  if [[ "${failed}" == "0" ]]; then
+    echo "local-rag prerequisites look ready."
+  fi
+  return "${failed}"
 }
 
 compose() {
@@ -95,6 +171,12 @@ case "${command}" in
   init-dirs)
     init_dirs
     ;;
+  init-config)
+    init_config
+    ;;
+  doctor)
+    doctor
+    ;;
   pull)
     ensure_code
     ;;
@@ -109,6 +191,9 @@ case "${command}" in
     ;;
   deploy)
     ensure_code
+    if [[ ! -f "${ENV_FILE}" ]]; then
+      init_config
+    fi
     compose up -d --build
     LOCAL_RAG_BASE_URL="${BASE_URL}" "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
     ;;

@@ -382,7 +382,7 @@ Phase 5, attachment expansion:
 
 - Weaviate schema에서 document와 chunk를 단일 collection으로 둘지, 별도 collection/reference로 둘지 결정해야 한다.
 - source registry를 YAML-only로 둘지, PostgreSQL에 normalized registry snapshot도 저장할지 결정해야 한다.
-- Ollama endpoint 기본값은 portable default `http://localhost:11434`로 두고, 장비별 direct-network endpoint는 untracked env file로 분리한다.
+- Docker Compose의 Ollama endpoint 기본값은 container에서 host Ollama를 볼 수 있는 `http://host.docker.internal:11434`로 두고, 장비별 direct-network endpoint는 untracked env file로 분리한다.
 - Codex 연동은 REST bridge 위에 stdio MCP adapter를 붙이는 방식으로 시작한다.
 - Spring Boot service skeleton을 Gradle multi-project로 둘지 Maven multi-module로 둘지 결정해야 한다.
 
