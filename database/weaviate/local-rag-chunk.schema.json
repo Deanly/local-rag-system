@@ -1,0 +1,32 @@
+{
+  "class": "LocalRagChunk",
+  "description": "A searchable chunk derived from a registered local source document.",
+  "vectorizer": "none",
+  "properties": [
+    {"name": "chunkId", "dataType": ["text"], "description": "Stable chunk id from document id, chunk index, and content hash."},
+    {"name": "documentId", "dataType": ["text"], "description": "Document id from the state store."},
+    {"name": "projectId", "dataType": ["text"], "description": "Stable project id from the source registry."},
+    {"name": "sourceId", "dataType": ["text"], "description": "Stable source root id from the source registry."},
+    {"name": "sourceType", "dataType": ["text"], "description": "Registered source type."},
+    {"name": "ssotRole", "dataType": ["text"], "description": "Truth role used for search scoping."},
+    {"name": "relativePath", "dataType": ["text"], "description": "Path relative to the source root."},
+    {"name": "fileName", "dataType": ["text"], "description": "File name for exact and BM25 matching."},
+    {"name": "folder", "dataType": ["text"], "description": "Parent folder path relative to source root."},
+    {"name": "extension", "dataType": ["text"], "description": "Source file extension."},
+    {"name": "headingPath", "dataType": ["text"], "description": "Markdown heading hierarchy for citation."},
+    {"name": "chunkIndex", "dataType": ["int"], "description": "Chunk order in document."},
+    {"name": "content", "dataType": ["text"], "description": "Chunk text used for BM25 and context."},
+    {"name": "contentHash", "dataType": ["text"], "description": "SHA-256 hash of normalized chunk content."},
+    {"name": "sensitivity", "dataType": ["text"], "description": "Sensitivity classification from metadata or source default."},
+    {"name": "tags", "dataType": ["text[]"], "description": "Extracted tags."},
+    {"name": "links", "dataType": ["text[]"], "description": "Extracted markdown links or local references."},
+    {"name": "fileMtimeNs", "dataType": ["number"], "description": "Source file modification time in nanoseconds."},
+    {"name": "indexedAt", "dataType": ["date"], "description": "Indexing timestamp."}
+  ],
+  "invertedIndexConfig": {
+    "bm25": {
+      "k1": 1.2,
+      "b": 0.75
+    }
+  }
+}

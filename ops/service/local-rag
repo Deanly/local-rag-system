@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SERVICE_ROOT="${LOCAL_RAG_SERVICE_ROOT:-${HOME}/Service}"
+CODE_DIR="${LOCAL_RAG_CODE_DIR:-${SERVICE_ROOT}/code/local-rag-system}"
+REPO_URL="${LOCAL_RAG_REPO_URL:-https://github.com/your-org/local-rag-system.git}"
+CONFIG_DIR="${LOCAL_RAG_CONFIG_DIR:-${SERVICE_ROOT}/config/local-rag-system}"
+ENV_FILE="${LOCAL_RAG_ENV_FILE:-${CONFIG_DIR}/local.env}"
+BASE_URL="${LOCAL_RAG_BASE_URL:-http://127.0.0.1:42120}"
+
+usage() {
+  cat <<'USAGE'
+Usage: local-rag <command> [args]
+
+Commands:
+  config              Print operational paths.
+  init-dirs           Create Service directories.
+  pull                Clone or pull ~/Service/code/local-rag-system.
+  deploy              Pull code, start stack, and install Codex integration.
+  up                  Start/rebuild the Docker Compose stack.
+  down                Stop the Docker Compose stack without deleting data.
+  restart             Recreate the Docker Compose stack.
+  status              Show compose ps, health, and index status.
+  health              Show gateway health.
+  index-status        Show index status.
+  force-scan [project] Force scan all sources or one project id.
+  logs [service...]   Show recent compose logs.
+  install-codex       Install global Codex MCP/skill integration.
+
+Environment:
+  LOCAL_RAG_SERVICE_ROOT default: ~/Service
+  LOCAL_RAG_CODE_DIR     default: ~/Service/code/local-rag-system
+  LOCAL_RAG_CONFIG_DIR   default: ~/Service/config/local-rag-system
+  LOCAL_RAG_ENV_FILE     default: ~/Service/config/local-rag-system/local.env
+  LOCAL_RAG_REPO_URL     default: https://github.com/your-org/local-rag-system.git
+  LOCAL_RAG_BASE_URL     default: http://127.0.0.1:42120
+USAGE
+}
+
+init_dirs() {
+  mkdir -p "${SERVICE_ROOT}/code" "${CONFIG_DIR}" "${SERVICE_ROOT}/runtime/local-rag-system" "${SERVICE_ROOT}/logs/local-rag-system"
+}
+
+ensure_code() {
+  init_dirs
+  if [[ ! -d "${CODE_DIR}/.git" ]]; then
+    if [[ -e "${CODE_DIR}" && -n "$(find "${CODE_DIR}" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
+      echo "Code directory exists and is not a git checkout: ${CODE_DIR}" >&2
+      exit 1
+    fi
+    git clone "${REPO_URL}" "${CODE_DIR}"
+  else
+    git -C "${CODE_DIR}" pull --ff-only
+  fi
+}
+
+require_code() {
+  if [[ ! -d "${CODE_DIR}/.git" ]]; then
+    echo "Missing operational checkout: ${CODE_DIR}. Run: local-rag pull" >&2
+    exit 1
+  fi
+}
+
+require_env() {
+  if [[ ! -f "${ENV_FILE}" ]]; then
+    echo "Missing env file: ${ENV_FILE}" >&2
+    exit 1
+  fi
+}
+
+compose() {
+  require_code
+  require_env
+  (cd "${CODE_DIR}" && docker compose --env-file "${ENV_FILE}" "$@")
+}
+
+curl_json() {
+  curl -fsS "$@"
+}
+
+command="${1:-}"
+shift || true
+
+case "${command}" in
+  ""|help|--help|-h)
+    usage
+    ;;
+  config)
+    printf 'SERVICE_ROOT=%s\n' "${SERVICE_ROOT}"
+    printf 'CODE_DIR=%s\n' "${CODE_DIR}"
+    printf 'CONFIG_DIR=%s\n' "${CONFIG_DIR}"
+    printf 'ENV_FILE=%s\n' "${ENV_FILE}"
+    printf 'BASE_URL=%s\n' "${BASE_URL}"
+    ;;
+  init-dirs)
+    init_dirs
+    ;;
+  pull)
+    ensure_code
+    ;;
+  up)
+    compose up -d --build
+    ;;
+  down)
+    compose down
+    ;;
+  restart)
+    compose up -d --build --force-recreate
+    ;;
+  deploy)
+    ensure_code
+    compose up -d --build
+    LOCAL_RAG_BASE_URL="${BASE_URL}" "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
+    ;;
+  status)
+    compose ps
+    echo
+    curl_json "${BASE_URL}/api/health"
+    echo
+    curl_json "${BASE_URL}/api/index/status"
+    echo
+    ;;
+  health)
+    curl_json "${BASE_URL}/api/health"
+    echo
+    ;;
+  index-status)
+    curl_json "${BASE_URL}/api/index/status"
+    echo
+    ;;
+  force-scan)
+    if [[ "${1:-}" == "" ]]; then
+      curl_json -X POST "${BASE_URL}/api/index/force"
+    else
+      curl_json -X POST "${BASE_URL}/api/index/force?projectId=$1"
+    fi
+    echo
+    ;;
+  logs)
+    compose logs --no-color --tail="${LOCAL_RAG_LOG_TAIL:-200}" "$@"
+    ;;
+  install-codex)
+    require_code
+    LOCAL_RAG_BASE_URL="${BASE_URL}" "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
+    ;;
+  *)
+    echo "Unknown command: ${command}" >&2
+    usage >&2
+    exit 1
+    ;;
+esac

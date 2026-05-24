@@ -1,0 +1,7 @@
+.git
+.runtime
+.rag_index
+**/target
+**/.gradle
+**/build
+**/.DS_Store

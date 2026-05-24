@@ -1,0 +1,32 @@
+version: 1
+device_id: local-dev
+default_project_id: personal-notes
+
+projects:
+  - project_id: personal-notes
+    display_name: Personal Notes
+    primary_source_id: personal-notes
+    default_context:
+      - personal-notes
+
+sources:
+  - source_id: personal-notes
+    project_id: personal-notes
+    type: source-folder
+    ssot_role: raw-source
+    path: ${LOCAL_RAG_SOURCE_PERSONAL_NOTES}
+    priority: 100
+    active: true
+    sensitivity_default: private
+    include:
+      - "**/*.md"
+      - "**/*.markdown"
+      - "**/*.txt"
+    exclude:
+      - "**/.git/**"
+      - "**/.rag_index/**"
+      - "**/node_modules/**"
+      - "**/build/**"
+      - "**/dist/**"
+    read_policy: registered-default
+    write_policy: read-only-source
