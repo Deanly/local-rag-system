@@ -90,6 +90,7 @@ const tools = [
 ];
 
 let inputBuffer = Buffer.alloc(0);
+let transportMode = "framed";
 
 process.stdin.on("data", (chunk) => {
   inputBuffer = Buffer.concat([inputBuffer, chunk]);
@@ -102,7 +103,18 @@ function processMessages() {
   while (true) {
     const headerEnd = inputBuffer.indexOf("\r\n\r\n");
     if (headerEnd < 0) {
-      return;
+      const newlineEnd = inputBuffer.indexOf("\n");
+      if (newlineEnd < 0) {
+        return;
+      }
+      const line = inputBuffer.subarray(0, newlineEnd).toString("utf8").trim();
+      inputBuffer = inputBuffer.subarray(newlineEnd + 1);
+      if (line.length === 0) {
+        continue;
+      }
+      transportMode = "line";
+      dispatchMessage(line);
+      continue;
     }
 
     const header = inputBuffer.subarray(0, headerEnd).toString("utf8");
@@ -120,15 +132,20 @@ function processMessages() {
 
     const body = inputBuffer.subarray(bodyStart, messageEnd).toString("utf8");
     inputBuffer = inputBuffer.subarray(messageEnd);
-    handleMessage(JSON.parse(body)).catch((error) => {
-      if (body.includes("\"id\"")) {
-        const parsed = JSON.parse(body);
-        sendError(parsed.id, -32603, error.message);
-      } else {
-        console.error(error);
-      }
-    });
+    transportMode = "framed";
+    dispatchMessage(body);
   }
+}
+
+function dispatchMessage(body) {
+  handleMessage(JSON.parse(body)).catch((error) => {
+    if (body.includes("\"id\"")) {
+      const parsed = JSON.parse(body);
+      sendError(parsed.id, -32603, error.message);
+    } else {
+      console.error(error);
+    }
+  });
 }
 
 async function handleMessage(message) {
@@ -139,8 +156,8 @@ async function handleMessage(message) {
   switch (message.method) {
     case "initialize":
       sendResult(message.id, {
-        protocolVersion: "2024-11-05",
-        capabilities: { tools: {} },
+        protocolVersion: message.params?.protocolVersion || "2024-11-05",
+        capabilities: { tools: { listChanged: false } },
         serverInfo: { name: "local-rag", version: "0.1.0" }
       });
       return;
@@ -240,5 +257,9 @@ function sendError(id, code, message) {
 
 function send(message) {
   const json = JSON.stringify(message);
+  if (transportMode === "line") {
+    process.stdout.write(`${json}\n`);
+    return;
+  }
   process.stdout.write(`Content-Length: ${Buffer.byteLength(json, "utf8")}\r\n\r\n${json}`);
 }
