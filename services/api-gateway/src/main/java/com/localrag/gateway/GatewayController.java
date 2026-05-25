@@ -1,7 +1,9 @@
 package com.localrag.gateway;
 
 import com.localrag.common.dto.HealthResponse;
+import com.localrag.common.dto.DocumentFetchRequest;
 import com.localrag.common.dto.SearchRequest;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -104,6 +107,11 @@ public class GatewayController {
         return get(settings.mcpBridgeUrl(), "/api/mcp/rag_index_status");
     }
 
+    @PostMapping("/mcp/rag_get_document")
+    public Object mcpGetDocument(@RequestBody DocumentFetchRequest request) {
+        return post(settings.mcpBridgeUrl(), "/api/mcp/rag_get_document", request);
+    }
+
     @PostMapping("/mcp/rag_force_scan")
     public Object mcpForceScan(@RequestParam(name = "projectId", required = false) String projectId) {
         String suffix = projectId == null || projectId.isBlank()
@@ -119,6 +127,16 @@ public class GatewayController {
                 "status", "not_implemented",
                 "message", "Document fetch will be implemented after retrieval storage contracts are expanded."
         ));
+    }
+
+    @PostMapping("/documents/get")
+    public Object getDocument(@RequestBody DocumentFetchRequest request) {
+        return post(settings.indexerUrl(), "/api/documents/get", request);
+    }
+
+    @ExceptionHandler(RestClientResponseException.class)
+    public ResponseEntity<String> downstreamError(RestClientResponseException exception) {
+        return ResponseEntity.status(exception.getStatusCode()).body(exception.getResponseBodyAsString());
     }
 
     private Object serviceHealth(String baseUrl) {

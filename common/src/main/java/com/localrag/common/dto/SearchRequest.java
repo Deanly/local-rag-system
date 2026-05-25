@@ -1,6 +1,7 @@
 package com.localrag.common.dto;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public record SearchRequest(
@@ -23,6 +24,7 @@ public record SearchRequest(
         if (mode == null || mode.isBlank()) {
             return "hybrid";
         }
-        return mode;
+        String normalized = mode.trim().toLowerCase(Locale.ROOT);
+        return "bm25".equals(normalized) ? "keyword" : normalized;
     }
 }

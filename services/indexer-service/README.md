@@ -19,9 +19,10 @@ Initial endpoints:
 GET  /api/index/status
 POST /api/index/scan
 POST /api/index/force
-POST /api/index/file
-GET  /api/index/failures
+POST /api/documents/get
 ```
+
+`POST /api/documents/get` is a source-safe read endpoint for Codex and local tools. It accepts `sourceId` and `relativePath`, then rejects absolute paths, path traversal, unknown source ids, and files excluded by registry filters.
 
 Out of scope:
 

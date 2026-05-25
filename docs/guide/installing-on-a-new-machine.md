@@ -4,7 +4,7 @@ title: installing-on-a-new-machine
 status: active
 owner:
 created: 2026-05-24
-updated: 2026-05-24
+updated: 2026-05-25
 related_project: docs/projects/P0001-local-rag-system.md
 related_task:
 related_design:
@@ -72,21 +72,46 @@ local-rag status
 
 `local-rag deploy` clones or pulls `~/Service/code/local-rag-system`, starts Docker Compose with the local env file, and installs the Codex MCP/skill integration.
 
+## Operation-Zone Update
+
+When a development-zone commit is ready but the running service should not be restarted yet, review the operation-zone impact with:
+
+```bash
+local-rag config
+local-rag pull
+local-rag doctor
+```
+
+For this task class, deployment requires a stack rebuild/recreate because Spring Boot services and the Codex adapter changed:
+
+```bash
+local-rag restart
+local-rag install-codex
+local-rag force-scan local-rag-system
+local-rag codex-smoke
+```
+
+Restart Codex after `install-codex` so the stdio MCP server and skill are reloaded. Use `local-rag codex-smoke --allow-empty-search` only before the first successful indexing run.
+
 ## Source Folder Mapping
 
-Compose mounts one host folder as `/source`:
+Compose mounts one common host folder as `/source` and also provides generic read-only slots under `/sources/source-01` to `/sources/source-05`:
 
 ```env
 LOCAL_RAG_SOURCE_ROOT=/path/to/source-root
+LOCAL_RAG_HOST_SOURCE_04=/path/to/local-rag-system/docs
 ```
 
-Registry source paths must be container paths under `/source`, for example:
+Registry source paths must be container paths under `/source` or `/sources`, for example:
 
 ```yaml
 sources:
   - source_id: project-alpha.docs
     project_id: project-alpha
     path: /source/project-alpha/docs
+  - source_id: local-rag-system.docs
+    project_id: local-rag-system
+    path: /sources/source-04
 ```
 
 If real source folders are not under a common parent, create a local compose override with additional read-only mounts and point registry paths at those container mount paths.
@@ -123,6 +148,14 @@ For machine-specific project ids or source names, keep a local skill file outsid
 ```
 
 `local-rag deploy` and `local-rag install-codex` use that file when it exists. For manual installation, pass `LOCAL_RAG_SKILL_FILE=/path/to/SKILL.md`.
+
+Codex readiness is not proven by config installation alone. Run the project-owned smoke command to verify gateway health, index status, MCP adapter framing, representative `rag_search`, source-safe document fetch, and invalid-project behavior:
+
+```bash
+local-rag codex-smoke --allow-empty-search
+```
+
+Use `--allow-empty-search` before the first successful indexing run. Remove it after sources are indexed so the smoke fails when retrieval is not returning evidence.
 
 ## Expected Model Settings
 

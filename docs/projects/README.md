@@ -16,4 +16,4 @@
 
 ## Done
 
-- [`P0001-local-rag-system.md`](P0001-local-rag-system.md): 장비별 source roots 대상 1인용 local-only RAG functional baseline. Updated: 2026-05-24.
+- [`P0001-local-rag-system.md`](P0001-local-rag-system.md): 장비별 source roots 대상 1인용 local-only RAG functional baseline. Active follow-up task: `T0010`. Updated: 2026-05-25.

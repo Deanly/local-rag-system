@@ -5,7 +5,7 @@ status: current
 domain: local-rag-system
 owner:
 created: 2026-05-24
-updated: 2026-05-24
+updated: 2026-05-25
 retrieval_class:
   - domain-current
 context:
@@ -17,6 +17,7 @@ referenced_by:
   - docs/projects/P0001-local-rag-system.md
   - docs/tasks/T0001-source-registry-project-ssot-registration.md
   - docs/tasks/T0002-msa-runtime-baseline.md
+  - docs/tasks/T0010-codex-rag-utilization-hardening.md
 source_refs:
   - source:planning/local-rag-system-project-note
   - source:planning/local-rag-system-design-note
@@ -36,6 +37,7 @@ tags:
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/tasks/T0001-source-registry-project-ssot-registration.md`
+  - `docs/tasks/T0010-codex-rag-utilization-hardening.md`
 
 ## Context
 
@@ -226,8 +228,9 @@ POST /api/registry/validate
 GET  /api/index/status
 POST /api/index/scan
 POST /api/index/force
-GET  /api/index/failures
 POST /api/search
+POST /api/answer
+POST /api/documents/get
 GET  /api/documents/{documentId}
 ```
 
@@ -237,10 +240,25 @@ Codex MCP tools:
 rag_list_projects
 rag_list_sources
 rag_search
+rag_answer
 rag_get_document
 rag_index_status
 rag_force_scan
 ```
+
+### Codex Utilization Hardening Requirements
+
+Codex integration is not considered healthy merely because `~/.codex/config.toml` contains a `local_rag` MCP server block. The integration must be verified from the active Codex usage surface.
+
+Hardening requirements:
+
+- MCP adapter framing smoke must prove `initialize`, `tools/list`, and representative `tools/call` paths.
+- A new Codex session must expose the local RAG tools, or the blocker and REST fallback must be documented.
+- `rag_search` mode contract must be consistent across MCP schema, REST bridge, retrieval service, and docs. The public modes are `hybrid`, `vector`, and `keyword`; legacy `bm25` input may be accepted only as an alias for `keyword`.
+- `rag_get_document` must either be source-safe and implemented, or absent from every advertised surface.
+- unknown `project_id` must fail with a clear 400-level response before audit persistence, never with a database FK violation.
+- `local-rag-system.docs` should be registered like other project docs so this project can use its own RAG index for design and operation questions.
+- A `doctor` or equivalent smoke script should verify gateway health, index status, MCP adapter readiness, representative search, document fetch, and invalid-project behavior.
 
 입력/출력 계약:
 
@@ -378,6 +396,7 @@ Phase 5, attachment expansion:
 | embedding/chat은 Ollama local endpoint만 사용한다. | private source content가 외부 API로 나가지 않아야 한다. |
 | retrieval은 `Retriever` interface 뒤에 둔다. | Weaviate에서 Qdrant/OpenSearch로 교체할 가능성을 보존한다. |
 | rerank와 graph expansion은 MVP 이후로 둔다. | hybrid search와 citation이 먼저 안정화되어야 품질 개선의 기준선이 생긴다. |
+| Codex RAG readiness는 active tool visibility와 smoke로 검증한다. | config 존재만으로는 Codex가 RAG를 실제 사용할 수 있다고 볼 수 없다. |
 
 ## Open Questions
 
@@ -402,3 +421,4 @@ Phase 5, attachment expansion:
 - 2026-05-24: 장비별 source registry, project SSOT registration, compiled knowledge source 결정을 개발 방향에 반영.
 - 2026-05-24: 단일 application server 방향을 Spring Boot MSA services, PostgreSQL control store, Weaviate retrieval index 방향으로 갱신.
 - 2026-05-24: Python BM25 scaffold 제거 결정을 반영하고 active implementation target을 Spring Boot MSA로 단일화.
+- 2026-05-25: Codex utilization hardening requirements를 추가해 MCP discovery, search mode contract, source-safe document fetch, invalid project handling, self-indexing source registration, doctor smoke를 후속 remediation 기준으로 고정.

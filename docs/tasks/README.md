@@ -11,7 +11,7 @@
 
 ## Active
 
-- _none_
+- [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): Codex RAG utilization hardening 구현은 개발존에서 완료됐고, 운영존 deploy/restart 및 live runtime smoke가 남아 있음. Updated: 2026-05-25.
 
 ## Blocked
 

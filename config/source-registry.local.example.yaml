@@ -23,6 +23,13 @@ projects:
       - project-beta.docs
       - personal-notes
 
+  - project_id: local-rag-system
+    display_name: Local RAG System
+    primary_source_id: local-rag-system.docs
+    default_context:
+      - local-rag-system.docs
+      - personal-notes
+
 sources:
   - source_id: personal-notes
     project_id: personal-notes
@@ -86,5 +93,27 @@ sources:
       - "**/build/**"
       - "**/dist/**"
       - "**/legacy/**"
+    read_policy: registered-default
+    write_policy: repo-docs
+
+  - source_id: local-rag-system.docs
+    project_id: local-rag-system
+    type: project-docs
+    ssot_role: project-current-truth
+    path: ${LOCAL_RAG_SOURCE_LOCAL_RAG_SYSTEM_DOCS}
+    priority: 100
+    active: true
+    sensitivity_default: private
+    include:
+      - "**/*.md"
+      - "**/*.markdown"
+      - "**/*.txt"
+    exclude:
+      - "**/.git/**"
+      - "**/.rag_index/**"
+      - "**/node_modules/**"
+      - "**/build/**"
+      - "**/dist/**"
+      - "**/target/**"
     read_policy: registered-default
     write_policy: repo-docs

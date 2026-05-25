@@ -14,7 +14,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 
 | ID | Title | Status | Parent / Reference Project | Related Design | Updated |
 | --- | --- | --- | --- | --- | --- |
-| _none_ | _none_ | _none_ | _none_ | _none_ | _none_ |
+| T0010 | codex-rag-utilization-hardening | active | `P0001` | `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-25 |
 
 ## Blocked Tasks
 
@@ -56,3 +56,5 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-05-25: `T0009` blocker resolved; missing images pulled, Compose stack started, current registered sources indexed, and search/answer smoke passed.
 - 2026-05-25: `T0009` answer generation stabilized by disabling Ollama thinking output in the bounded chat request.
 - 2026-05-25: Device-specific source names, host paths, and preferred default project selection were kept in ignored local config or the installed global skill, not in committed repo defaults.
+- 2026-05-25: `T0010` issued for Codex RAG utilization hardening after active-session MCP tool visibility and API/tool contract gaps were identified.
+- 2026-05-25: `T0010` implementation reached development-zone hardening completion: `rag_get_document`, mode normalization, unknown-project 400 handling, `local-rag-system.docs` examples, Codex skill guidance, and smoke tooling are in place; operation-zone deploy/restart remains pending.

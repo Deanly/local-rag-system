@@ -10,7 +10,7 @@ completion_mode: functional
 owner:
 created: 2026-05-24
 updated: 2026-05-25
-current_focus: "Functional baseline completed with portable host-local Ollama answer runtime"
+current_focus: "Functional baseline completed with portable host-local Ollama answer runtime; active follow-up hardens Codex RAG utilization"
 related_control_plane: docs/design/control-plane.md
 related_design:
   - docs/design/local-rag-system-development-direction.md
@@ -43,7 +43,7 @@ tags:
 - Owner:
 - Created: 2026-05-24
 - Updated: 2026-05-25
-- Current Focus: Functional baseline completed with portable host-local Ollama answer runtime
+- Current Focus: Functional baseline completed with portable host-local Ollama answer runtime; active follow-up hardens Codex RAG utilization
 - Related Control Plane: docs/design/control-plane.md
 - Related Design:
   - `docs/design/local-rag-system-development-direction.md`
@@ -166,6 +166,7 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 실제 로컬
 | T0007 | Codex global RAG integration | Done | 100% | installable stdio MCP adapter and global Codex skill |
 | T0008 | Portable ops zone deployment | Done | 100% | portable localhost defaults and `~/Service` operation zone |
 | T0009 | Host-local Ollama RAG configuration | Done | 100% | portable source slots, answer endpoint, global integration refresh, indexing/search/answer smoke |
+| T0010 | Codex RAG utilization hardening | Active | 86% | implementation complete in development zone; operation-zone deploy/restart and live runtime smoke remain pending by instruction |
 | T-candidate-08 | Retrieval quality baseline | Deferred | 0% | evaluation set, rerank, graph expansion remain next optimization work |
 
 ## Planned Task Candidates
@@ -270,3 +271,4 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 실제 로컬
 - 2026-05-24: T0008 separated portable defaults from this device's direct-network config and moved operation to `~/Service`.
 - 2026-05-25: T0009 added host-local Ollama configuration, implemented `/api/answer`, kept source selection in ignored local registry state, and refreshed the Codex integration with registry-driven MCP descriptions.
 - 2026-05-25: T0009 blocker resolved. The missing images were pulled, the Compose stack started, the current machine-local registry was indexed, and search/MCP search/local answer smoke passed after disabling Ollama thinking output for bounded answer generation.
+- 2026-05-25: T0010 issued as a post-baseline remediation task after audit showed the runtime and adapter are healthy but the active Codex session does not expose local RAG MCP tools directly, and several API/tool contract gaps remain.

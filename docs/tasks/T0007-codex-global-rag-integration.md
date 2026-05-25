@@ -6,7 +6,7 @@ status: done
 owner:
 created: 2026-05-24
 updated: 2026-05-25
-current_focus: "Installable Codex global MCP and skill integration"
+current_focus: "Installable Codex global MCP and skill integration; active utilization hardening moved to T0010"
 completion_mode: functional
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: P0001-local-rag-system
@@ -38,7 +38,7 @@ tags:
 - Owner:
 - Created: 2026-05-24
 - Updated: 2026-05-25
-- Current Focus: Installable Codex global MCP and skill integration
+- Current Focus: Installable Codex global MCP and skill integration; active utilization hardening moved to T0010
 - Related Control Plane: docs/design/control-plane.md
 - Related Project: docs/projects/P0001-local-rag-system.md
 
@@ -160,3 +160,4 @@ tags:
 
 - 2026-05-24: Created installable Codex integration and installed it globally on this device. Codex restart is required for new global MCP/skill discovery.
 - 2026-05-25: Refreshed the global integration for registry-driven local sources, added `rag_answer`, and kept the default project id as machine-local install state.
+- 2026-05-25: Post-install audit confirmed the runtime and stdio adapter are healthy, but active-session tool visibility and API/tool contract gaps require follow-up. Remediation moved to `T0010-codex-rag-utilization-hardening.md`.
