@@ -10,7 +10,7 @@ completion_mode: functional
 owner:
 created: 2026-05-24
 updated: 2026-05-25
-current_focus: "Functional baseline completed with portable host-local Ollama answer runtime; active follow-up hardens Codex RAG utilization"
+current_focus: "Functional baseline completed with portable host-local Ollama answer runtime; active follow-up hardens Codex RAG utilization in operation"
 related_control_plane: docs/design/control-plane.md
 related_design:
   - docs/design/local-rag-system-development-direction.md
@@ -43,7 +43,7 @@ tags:
 - Owner:
 - Created: 2026-05-24
 - Updated: 2026-05-25
-- Current Focus: Functional baseline completed with portable host-local Ollama answer runtime; active follow-up hardens Codex RAG utilization
+- Current Focus: Functional baseline completed with portable host-local Ollama answer runtime; active follow-up hardens Codex RAG utilization in operation
 - Related Control Plane: docs/design/control-plane.md
 - Related Design:
   - `docs/design/local-rag-system-development-direction.md`
@@ -167,18 +167,14 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 실제 로컬
 | T0008 | Portable ops zone deployment | Done | 100% | portable localhost defaults and `~/Service` operation zone |
 | T0009 | Host-local Ollama RAG configuration | Done | 100% | portable source slots, answer endpoint, global integration refresh, indexing/search/answer smoke |
 | T0010 | Codex RAG utilization hardening | Active | 86% | implementation complete in development zone; operation-zone deploy/restart and live runtime smoke remain pending by instruction |
-| T-candidate-08 | Retrieval quality baseline | Deferred | 0% | evaluation set, rerank, graph expansion remain next optimization work |
+| T0011 | Retrieval quality hardening | Done | 100% | evaluation harness, baseline/post-change metrics, deterministic source/path rerank, primary source weighting, and diversity control implemented |
 
-## Planned Task Candidates
+## Remaining Task Candidates
 
-- `design-baseline-closeout`: 하네스 적용과 설계 기준 검증 완료
-- `spring-boot-msa-skeleton`: Spring Boot MSA skeleton, build, health endpoints, Compose smoke
-- `source-registry-project-ssot-registration`: 장비별 source registry와 project SSOT registration 구현
-- `source-state-indexer`: scanner/watcher/state diff
-- `markdown-weaviate-indexing`: Markdown chunking, embedding, upsert/delete
-- `hybrid-search-api`: search API, citation, filters, score breakdown
-- `codex-mcp-bridge`: Codex 연동
-- `retrieval-quality-baseline`: evaluation set, rerank, graph expansion 기준
+- `retrieval-chunking-hardening`: Markdown AST/frontmatter/title/heading metadata, overlap, and reindex validation
+- `retrieval-audit-schema-expansion`: phase latency, source distribution, and rerank score persistence
+- `local-reranker-evaluation`: local cross-encoder or embedding-similarity reranker benchmark after deterministic ranking plateaus
+- `operation-zone-codex-utilization-closeout`: `T0010` operation deploy/restart and live runtime smoke when explicitly requested
 
 ## Overall Progress
 
@@ -225,9 +221,10 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 실제 로컬
 - 현재 산출물: `docs/design/msa-runtime-and-storage.md`
 - 현재 산출물: `docs/guide/sdlc-automation.md`
 - 현재 산출물: `docs/projects/P0001-local-rag-system.md`
-- 후속 handoff: `T0003`이 Spring Boot MSA skeleton, build, health endpoints, Compose smoke를 시작한다.
-- 후속 handoff: `T0003` 완료 후 `T0001`이 source registry loader/validator와 project-scoped search 구현을 시작한다.
-- 후속 handoff: retrieval quality task는 MVP search API가 나온 뒤 evaluation set과 rerank/graph expansion을 다룬다.
+- 현재 산출물: `docs/design/retrieval-quality-improvement-design.md`
+- 현재 산출물: `docs/evaluation/retrieval-quality-cases.yaml`
+- 현재 산출물: `docs/bin/validate-retrieval-quality.sh`
+- 후속 handoff: chunking/schema and local model reranker improvements should start from `docs/design/retrieval-quality-improvement-design.md` and preserve the T0011 evaluation fixture.
 
 ## Quality Axes In Scope
 

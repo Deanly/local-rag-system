@@ -9,6 +9,7 @@ This is a compact design selection map derived from `docs/design/README.md`.
 | `docs/design/local-rag-system-development-direction.md` | `domain-current` | local-rag-system | medium | false | false |
 | `docs/design/source-registry-and-project-ssot.md` | `domain-current` | source-registry | medium | false | false |
 | `docs/design/msa-runtime-and-storage.md` | `domain-current` | runtime/storage | medium | false | false |
+| `docs/design/retrieval-quality-improvement-design.md` | `domain-current` | retrieval-quality | medium | false | false |
 
 ## Change Log
 
@@ -16,3 +17,4 @@ This is a compact design selection map derived from `docs/design/README.md`.
 - 2026-05-24: Source registry and project SSOT design added to compact design map.
 - 2026-05-24: MSA runtime and storage design added to compact design map.
 - 2026-05-25: MSA runtime source mount contract updated to generic source slots.
+- 2026-05-25: Retrieval quality improvement design added to compact design map.

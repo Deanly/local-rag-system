@@ -1,0 +1,234 @@
+version: 1
+description: "Local RAG retrieval quality fixture. Store only queries and expected source/path targets, never private source content."
+case_groups:
+  - id: english-identifier
+    description: "English and identifier/file-name oriented queries."
+    cases:
+      - id: rq-en-001
+        projectId: worknote
+        language: english
+        intent: ssot-strategy
+        query: "personal rag ssot strategy source registry project id"
+        expected:
+          sourceId: worknote.wiki
+          relativePath: queries/personal-rag-ssot-strategy.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-002
+        projectId: worknote
+        language: english
+        intent: daily-para-model
+        query: "daily para operating model project daily notes task renderTaskListByTags"
+        expected:
+          sourceId: worknote.wiki
+          relativePath: queries/daily-to-para-operating-model.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-003
+        projectId: worknote
+        language: english
+        intent: dkt-weekly-summary
+        query: "dkt weekly reports 2025 summary"
+        expected:
+          sourceId: worknote.wiki
+          relativePath: resources/dkt-weekly-reports-2025-summary.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-004
+        projectId: personal-core
+        language: english
+        intent: a2a-remote-bridge
+        query: "A2A remote M4 Codex bridge agent spec"
+        expected:
+          sourceId: personal-core.docs
+          relativePath: guide/a2a-remote-m4-codex-bridge-agent-spec.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-005
+        projectId: personal-core
+        language: english
+        intent: telegram-workroom-architecture
+        query: "telegram workroom product architecture channel product"
+        expected:
+          sourceId: personal-core.docs
+          relativePath: design/telegram-workroom-product-architecture.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-006
+        projectId: personal-core
+        language: english
+        intent: operator-message-review
+        query: "operator facing message readability language guard review"
+        expected:
+          sourceId: personal-core.docs
+          relativePath: reports/2026-05-25-operator-facing-message-readability-and-language-guard-review.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-007
+        projectId: crypto-bot
+        language: english
+        intent: fact-authority-design
+        query: "fact authority research surface design baseline"
+        expected:
+          sourceId: crypto-bot.docs
+          relativePath: design/fact-authority-and-research-surface.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-008
+        projectId: crypto-bot
+        language: english
+        intent: wallet-lifecycle-report
+        query: "wallet lifecycle investigation unresolved issues panel review"
+        expected:
+          sourceId: crypto-bot.docs
+          relativePath: reports/2026-04-30-p0008-wallet-lifecycle-investigation.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-009
+        projectId: crypto-bot
+        language: english
+        intent: autonomous-investment-report
+        query: "llm autonomous investment decision table investigation"
+        expected:
+          sourceId: crypto-bot.docs
+          relativePath: reports/2026-05-24-llm-autonomous-investment-decision-table-investigation.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-010
+        projectId: local-rag-system
+        language: english
+        intent: codex-utilization-hardening
+        query: "codex rag utilization hardening rag_get_document unknown project error"
+        expected:
+          sourceId: local-rag-system.docs
+          relativePath: tasks/T0010-codex-rag-utilization-hardening.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-011
+        projectId: local-rag-system
+        language: english
+        intent: source-registry-design
+        query: "source registry project ssot registered source root write policy"
+        expected:
+          sourceId: local-rag-system.docs
+          relativePath: design/source-registry-and-project-ssot.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-012
+        projectId: local-rag-system
+        language: english
+        intent: ops-zone-deployment
+        query: "portable ops zone deployment Service code config local.env"
+        expected:
+          sourceId: local-rag-system.docs
+          relativePath: tasks/T0008-portable-ops-zone-deployment.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-013
+        projectId: qr-service-mvp
+        language: english
+        intent: paid-product-threshold
+        query: "QRoute paid product threshold report"
+        expected:
+          sourceId: qr-service-mvp.docs
+          relativePath: reports/2026-05-25-qroute-paid-product-threshold.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-014
+        projectId: qr-service-mvp
+        language: english
+        intent: backend-local-mvp
+        query: "QRoute backend local MVP T0007 gradle spring skeleton"
+        expected:
+          sourceId: qr-service-mvp.docs
+          relativePath: tasks/T0007-qroute-backend-local-mvp.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-en-015
+        projectId: qr-service-mvp
+        language: english
+        intent: service-architecture
+        query: "qroute service architecture QR creation stats redirect"
+        expected:
+          sourceId: qr-service-mvp.docs
+          relativePath: design/qroute-service-architecture.md
+        modes: [hybrid, keyword, vector]
+  - id: korean-natural-language
+    description: "Korean natural-language queries for project-scoped retrieval."
+    cases:
+      - id: rq-ko-001
+        projectId: worknote
+        language: korean
+        intent: ssot-strategy
+        query: "실버스톤 RAG SSOT 전략 source registry project id는 어떻게 정했나"
+        expected:
+          sourceId: worknote.wiki
+          relativePath: queries/personal-rag-ssot-strategy.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-ko-002
+        projectId: worknote
+        language: korean
+        intent: daily-para-model
+        query: "데일리 노트를 PARA 프로젝트 운영 모델로 쓰는 방식"
+        expected:
+          sourceId: worknote.wiki
+          relativePath: queries/daily-to-para-operating-model.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-ko-003
+        projectId: personal-core
+        language: korean
+        intent: a2a-remote-bridge
+        query: "A2A 원격 M4 코덱스 브릿지 에이전트 스펙"
+        expected:
+          sourceId: personal-core.docs
+          relativePath: guide/a2a-remote-m4-codex-bridge-agent-spec.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-ko-004
+        projectId: personal-core
+        language: korean
+        intent: telegram-workroom-architecture
+        query: "텔레그램 워크룸 제품 아키텍처 채널 설계"
+        expected:
+          sourceId: personal-core.docs
+          relativePath: design/telegram-workroom-product-architecture.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-ko-005
+        projectId: crypto-bot
+        language: korean
+        intent: fact-authority-design
+        query: "크립토봇 사실 권한 리서치 표면 설계"
+        expected:
+          sourceId: crypto-bot.docs
+          relativePath: design/fact-authority-and-research-surface.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-ko-006
+        projectId: crypto-bot
+        language: korean
+        intent: wallet-lifecycle-report
+        query: "지갑 라이프사이클 조사 리포트"
+        expected:
+          sourceId: crypto-bot.docs
+          relativePath: reports/2026-04-30-p0008-wallet-lifecycle-investigation.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-ko-007
+        projectId: local-rag-system
+        language: korean
+        intent: codex-utilization-hardening
+        query: "코덱스 RAG 활용 강화 rag_get_document unknown project 에러"
+        expected:
+          sourceId: local-rag-system.docs
+          relativePath: tasks/T0010-codex-rag-utilization-hardening.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-ko-008
+        projectId: local-rag-system
+        language: korean
+        intent: source-registry-design
+        query: "소스 레지스트리 프로젝트 SSOT 등록된 소스 루트 쓰기 정책"
+        expected:
+          sourceId: local-rag-system.docs
+          relativePath: design/source-registry-and-project-ssot.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-ko-009
+        projectId: qr-service-mvp
+        language: korean
+        intent: paid-product-threshold
+        query: "QRoute 유료 상품 기준 임계값 리포트"
+        expected:
+          sourceId: qr-service-mvp.docs
+          relativePath: reports/2026-05-25-qroute-paid-product-threshold.md
+        modes: [hybrid, keyword, vector]
+      - id: rq-ko-010
+        projectId: qr-service-mvp
+        language: korean
+        intent: backend-local-mvp
+        query: "QRoute 백엔드 로컬 MVP 그래들 스프링 스켈레톤"
+        expected:
+          sourceId: qr-service-mvp.docs
+          relativePath: tasks/T0007-qroute-backend-local-mvp.md
+        modes: [hybrid, keyword, vector]

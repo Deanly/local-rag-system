@@ -114,6 +114,7 @@ tags:
 | `docs/design/local-rag-system-development-direction.md` | 개발 방향, architecture, invariants, API 경계 | Active | 구현 task의 primary design input |
 | `docs/design/source-registry-and-project-ssot.md` | 장비별 source registry, project id, SSOT 등록, Codex/RAG skill scope | Active | source registration implementation의 primary design input |
 | `docs/design/msa-runtime-and-storage.md` | MSA runtime, Docker Compose, PostgreSQL DDL, Weaviate schema | Active | runtime/storage implementation의 primary design input |
+| `docs/design/retrieval-quality-improvement-design.md` | 검색 품질 evaluation, source weighting, rerank, chunking 개선 | Active | retrieval quality hardening의 primary design input |
 
 ## Umbrella Initiative Policy
 
@@ -133,7 +134,7 @@ tags:
 | Surface | Purpose | Status | Notes |
 | --- | --- | --- | --- |
 | `docs/projects/README.md` | active umbrella project 입구 | Active | `P0001`을 노출 |
-| `docs/tasks/README.md` | active task 입구 | Active | `T0010` Codex RAG utilization hardening active |
+| `docs/tasks/README.md` | active task 입구 | Active | `T0010` Codex RAG utilization hardening active; `T0011` retrieval quality hardening done |
 | `docs/guide/sdlc-automation.md` | SDLC 자동화 목표, critical path, gate, verification ladder | Active | implementation session entry guide |
 | `docs/reports/README.md` | active report 입구 | Active | 현재 active report 없음 |
 | `docs/design/README.md` | design retrieval 입구 | Active | domain design 포함 |
@@ -193,3 +194,5 @@ tags:
 - 2026-05-24: Python BM25 scaffold를 active runtime surface에서 제거하고 Spring Boot MSA target으로 단일화.
 - 2026-05-24: SDLC automation guide와 T0003 first implementation gate를 active execution surface에 추가.
 - 2026-05-25: `T0010`을 active execution surface로 추가해 Codex MCP discovery, API/tool contract drift, source-safe document fetch, invalid project handling, and self-indexing registration remediation을 추적.
+- 2026-05-25: `retrieval-quality-improvement-design`과 `T0011`을 추가해 evaluation-backed retrieval quality hardening을 추적.
+- 2026-05-25: `T0011` 개발존 구현 완료. Retrieval evaluation runner, deterministic ranker, primary source weighting, and document diversity control are now part of the implementation baseline.

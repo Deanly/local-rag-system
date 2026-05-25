@@ -36,6 +36,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | T0007 | codex-global-rag-integration | done | `P0001` | Global MCP adapter, skill installer, and `rag_answer` refresh | 2026-05-25 |
 | T0008 | portable-ops-zone-deployment | done | `P0001` | Portable defaults and operation-zone deployment | 2026-05-24 |
 | T0009 | host-local-ollama-rag-configuration | done | `P0001` | Portable source-slot runtime indexing/search/answer smoke | 2026-05-25 |
+| T0011 | retrieval-quality-hardening | done | `P0001` | Evaluation harness, deterministic rerank, primary-source weighting, and diversity control | 2026-05-25 |
 
 ## Active Reports
 
@@ -58,3 +59,5 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-05-25: Device-specific source names, host paths, and preferred default project selection were kept in ignored local config or the installed global skill, not in committed repo defaults.
 - 2026-05-25: `T0010` issued for Codex RAG utilization hardening after active-session MCP tool visibility and API/tool contract gaps were identified.
 - 2026-05-25: `T0010` implementation reached development-zone hardening completion: `rag_get_document`, mode normalization, unknown-project 400 handling, `local-rag-system.docs` examples, Codex skill guidance, and smoke tooling are in place; operation-zone deploy/restart remains pending.
+- 2026-05-25: Retrieval quality baseline, improvement design, and `T0011` active task were added for evaluation-backed ranking hardening.
+- 2026-05-25: `T0011` completed in the development zone with versioned evaluation cases, runner, deterministic source/path rerank, document diversity control, and before/after metrics.
