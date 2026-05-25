@@ -1,6 +1,6 @@
 ---
 name: "local-rag"
-description: "Use when the user asks about local project knowledge, personal-notes compiled wiki content, project-alpha docs, project-beta docs, or asks to search indexed local documents before answering or editing."
+description: "Use when the user asks about indexed local knowledge from registered local sources, or asks to search local documents before answering or editing."
 ---
 
 # Local RAG
@@ -9,12 +9,7 @@ Use this skill to retrieve local, source-backed context from the `local-rag-syst
 
 ## When To Use
 
-Use Local RAG before answering or editing when the request depends on indexed local knowledge from:
-
-- `personal-notes`
-- `project-alpha`
-- `project-beta`
-- cross-project planning, task, design, and report documents that may be in the registered local source folders
+Use Local RAG before answering or editing when the request depends on indexed local knowledge from the machine's registered source registry, such as project docs, local notes, exported wiki content, or other private filesystem sources.
 
 Use it especially for:
 
@@ -30,6 +25,7 @@ Do not use Local RAG for general internet facts, current news, package docs, pri
 If MCP tools are available, use them:
 
 - `mcp__local_rag__rag_search`
+- `mcp__local_rag__rag_answer`
 - `mcp__local_rag__rag_list_projects`
 - `mcp__local_rag__rag_list_sources`
 - `mcp__local_rag__rag_index_status`
@@ -40,33 +36,23 @@ If MCP tools are not available in the current session, use the REST bridge with 
 ```bash
 curl -fsS -X POST http://127.0.0.1:42120/api/mcp/rag_search \
   -H 'Content-Type: application/json' \
-  -d '{"projectId":"project-alpha","query":"source registry hybrid retrieval","limit":5,"mode":"hybrid"}'
+  -d '{"projectId":"project-alpha","query":"source registry","limit":5,"mode":"hybrid"}'
 ```
 
 ## Project Ids
 
-- `personal-notes`: compiled wiki support layer
-- `project-alpha`: Project Alpha docs, with `personal-notes` as support context
-- `project-beta`: Project Beta docs, with `personal-notes` as support context
+Project ids and source ids are registry-defined and differ by machine. Use `rag_list_projects` and `rag_list_sources` when the right id is not obvious.
 
-When the current workspace path is under:
-
-- `/path/to/workspace/project-alpha`, default to `projectId: "project-alpha"`.
-- `/path/to/workspace/project-beta`, default to `projectId: "project-beta"`.
-- `/path/to/personal-notes`, default to `projectId: "personal-notes"`.
-
-If the user asks for cross-project context, either omit `projectId` or run multiple focused searches.
+If `LOCAL_RAG_DEFAULT_PROJECT_ID` was configured during install, `projectId` can be omitted for default searches. If the user asks for cross-project context, either omit `projectId` or run multiple focused searches using ids returned by the registry.
 
 ## Search Practice
 
 1. Start with `mode: "hybrid"` and `limit: 5`.
 2. Prefer concise queries that include project/task/design terms.
-3. If results are noisy, narrow with `includeSourceIds`:
-   - `personal-notes`
-   - `project-alpha.docs`
-   - `project-beta.docs`
+3. If results are noisy, narrow with `includeSourceIds` using ids returned by `rag_list_sources`.
 4. Cite the returned `citation` fields in the answer when using retrieved context.
-5. If freshness matters, check `rag_index_status`; use `rag_force_scan` only when the user asks for immediate sync or the answer depends on just-changed files.
+5. Use `rag_answer` when the user wants a synthesized answer from indexed local evidence.
+6. If freshness matters, check `rag_index_status`; use `rag_force_scan` only when the user asks for immediate sync or the answer depends on just-changed files.
 
 ## Response Rule
 

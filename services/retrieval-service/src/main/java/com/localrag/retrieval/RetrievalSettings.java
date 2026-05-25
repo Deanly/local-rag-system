@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record RetrievalSettings(
         String ollamaBaseUrl,
         String embeddingModel,
+        String chatModel,
         String weaviateUrl,
         boolean embeddingFallbackEnabled
 ) {
@@ -15,6 +16,9 @@ public record RetrievalSettings(
         }
         if (embeddingModel == null || embeddingModel.isBlank()) {
             embeddingModel = System.getenv().getOrDefault("RAG_EMBEDDING_MODEL", "qwen3-embedding:4b");
+        }
+        if (chatModel == null) {
+            chatModel = System.getenv().getOrDefault("RAG_CHAT_MODEL", "");
         }
         if (weaviateUrl == null || weaviateUrl.isBlank()) {
             weaviateUrl = System.getenv().getOrDefault("RAG_WEAVIATE_URL", "http://weaviate:8080");

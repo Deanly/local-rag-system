@@ -61,6 +61,11 @@ services:
     volumes:
       - "${LOCAL_RAG_CONFIG_DIR:-./config}:/config:ro"
       - "${LOCAL_RAG_SOURCE_ROOT:-./data/sample}:/source:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_01:-./data/sample/project-alpha-docs}:/sources/source-01:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_02:-./data/sample/project-beta-docs}:/sources/source-02:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_03:-./data/sample/personal-notes}:/sources/source-03:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_04:-./data/sample/project-alpha-docs}:/sources/source-04:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_05:-./data/sample/personal-notes}:/sources/source-05:ro"
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,6 +97,11 @@ services:
     volumes:
       - "${LOCAL_RAG_CONFIG_DIR:-./config}:/config:ro"
       - "${LOCAL_RAG_SOURCE_ROOT:-./data/sample}:/source:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_01:-./data/sample/project-alpha-docs}:/sources/source-01:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_02:-./data/sample/project-beta-docs}:/sources/source-02:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_03:-./data/sample/personal-notes}:/sources/source-03:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_04:-./data/sample/project-alpha-docs}:/sources/source-04:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_05:-./data/sample/personal-notes}:/sources/source-05:ro"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

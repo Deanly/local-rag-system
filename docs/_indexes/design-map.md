@@ -15,3 +15,4 @@ This is a compact design selection map derived from `docs/design/README.md`.
 - 2026-05-24: Local RAG domain design added to compact design map.
 - 2026-05-24: Source registry and project SSOT design added to compact design map.
 - 2026-05-24: MSA runtime and storage design added to compact design map.
+- 2026-05-25: MSA runtime source mount contract updated to generic source slots.

@@ -34,6 +34,7 @@ LOCAL_RAG_DEFAULT_PROJECT_ID=project-alpha \
 ## Installed MCP Tools
 
 - `rag_search`
+- `rag_answer`
 - `rag_list_projects`
 - `rag_list_sources`
 - `rag_index_status`
@@ -47,5 +48,5 @@ LOCAL_RAG_DEFAULT_PROJECT_ID=project-alpha \
 curl -fsS http://127.0.0.1:42120/api/index/status
 curl -fsS -X POST http://127.0.0.1:42120/api/mcp/rag_search \
   -H 'Content-Type: application/json' \
-  -d '{"projectId":"project-alpha","query":"source registry hybrid retrieval","limit":3,"mode":"hybrid"}'
+  -d '{"projectId":"project-alpha","query":"source registry","limit":3,"mode":"hybrid"}'
 ```

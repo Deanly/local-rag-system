@@ -5,7 +5,7 @@ title: codex-global-rag-integration
 status: done
 owner:
 created: 2026-05-24
-updated: 2026-05-24
+updated: 2026-05-25
 current_focus: "Installable Codex global MCP and skill integration"
 completion_mode: functional
 related_control_plane: docs/design/control-plane.md
@@ -37,7 +37,7 @@ tags:
 - Completion Mode: functional
 - Owner:
 - Created: 2026-05-24
-- Updated: 2026-05-24
+- Updated: 2026-05-25
 - Current Focus: Installable Codex global MCP and skill integration
 - Related Control Plane: docs/design/control-plane.md
 - Related Project: docs/projects/P0001-local-rag-system.md
@@ -119,9 +119,10 @@ tags:
 ## Completion Evidence
 
 - `integrations/codex/install-codex-local-rag.sh` installs and uninstalls global config.
-- `integrations/codex/local-rag-mcp-server.mjs` exposes `rag_search`, `rag_list_projects`, `rag_list_sources`, `rag_index_status`, and `rag_force_scan`.
-- `integrations/codex/skill/SKILL.md` defines local RAG use rules and project ids.
+- `integrations/codex/local-rag-mcp-server.mjs` exposes `rag_search`, `rag_answer`, `rag_list_projects`, `rag_list_sources`, `rag_index_status`, and `rag_force_scan`.
+- `integrations/codex/skill/SKILL.md` defines registry-driven local RAG use rules.
 - `~/.codex/config.toml` contains `[mcp_servers.local_rag]`.
+- 2026-05-25 refresh installed `[mcp_servers.local_rag]` with a machine-local default project id and exactly one config block.
 - `~/.codex/skills/local-rag/SKILL.md` exists after install.
 
 ## Outputs / Handoff
@@ -158,3 +159,4 @@ tags:
 ## Status
 
 - 2026-05-24: Created installable Codex integration and installed it globally on this device. Codex restart is required for new global MCP/skill discovery.
+- 2026-05-25: Refreshed the global integration for registry-driven local sources, added `rag_answer`, and kept the default project id as machine-local install state.

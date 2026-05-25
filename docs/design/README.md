@@ -35,10 +35,11 @@
 | [`ubiquitous-language.md`](ubiquitous-language.md) | term-registry | `term-excerpt` | canonical term, naming, status vocabulary, boundary vocabulary 판단이 필요할 때 | ordinary task work에서 full document를 기본 로딩할 때 | small | all domains | all term-linked docs |
 | [`local-rag-system-development-direction.md`](local-rag-system-development-direction.md) | domain design | `domain-current` | Local RAG architecture, MVP scope, indexing/search/Codex boundary를 판단할 때 | 하네스 운영 규칙만 확인할 때 | medium | local-rag-system | `docs/projects/P0001-local-rag-system.md` |
 | [`source-registry-and-project-ssot.md`](source-registry-and-project-ssot.md) | domain design | `domain-current` | 장비별 source registry, project SSOT registration, Codex/RAG skill scope를 구현할 때 | 일반 RAG 개념만 확인할 때 | medium | source-registry | `docs/tasks/T0001-source-registry-project-ssot-registration.md` |
-| [`msa-runtime-and-storage.md`](msa-runtime-and-storage.md) | runtime design | `domain-current` | MSA service boundary, Docker Compose, PostgreSQL DDL, Weaviate schema를 구현할 때 | 순수 검색 ranking 알고리즘만 확인할 때 | medium | runtime/storage | `docs/tasks/T0002-msa-runtime-baseline.md` |
+| [`msa-runtime-and-storage.md`](msa-runtime-and-storage.md) | runtime design | `domain-current` | MSA service boundary, Docker Compose, PostgreSQL DDL, Weaviate schema, source mount contract를 구현할 때 | 순수 검색 ranking 알고리즘만 확인할 때 | medium | runtime/storage | `docs/tasks/T0002-msa-runtime-baseline.md`, `docs/tasks/T0009-host-local-ollama-rag-configuration.md` |
 
 ## Change Log
 
 - 2026-05-24: Local RAG 개발 방향 design surface 추가.
 - 2026-05-24: Source registry and project SSOT design surface 추가.
 - 2026-05-24: MSA runtime and storage design surface 추가.
+- 2026-05-25: MSA runtime source mount contract를 generic source slot 기준으로 갱신.
