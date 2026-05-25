@@ -19,6 +19,7 @@
 
 ## Done
 
+- [`T0011-retrieval-quality-hardening.md`](T0011-retrieval-quality-hardening.md): retrieval evaluation harness, primary source weighting, deterministic rerank, diversity control, and evaluation-output observability를 구현. Updated: 2026-05-25.
 - [`T0009-host-local-ollama-rag-configuration.md`](T0009-host-local-ollama-rag-configuration.md): host-local Ollama answer runtime, portable source slots, global registration, indexing, search, and answer smoke를 완료. Updated: 2026-05-25.
 - [`T0008-portable-ops-zone-deployment.md`](T0008-portable-ops-zone-deployment.md): tracked defaults를 portable하게 조정하고 `~/Service` 운영 zone 배포를 구성. Updated: 2026-05-24.
 - [`T0007-codex-global-rag-integration.md`](T0007-codex-global-rag-integration.md): Codex global MCP adapter, skill, installer, and `rag_answer`를 이 장비에 설치. Updated: 2026-05-25.

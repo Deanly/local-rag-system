@@ -9,6 +9,7 @@
 - `docs/design/local-rag-system-development-direction.md`는 Local RAG 개발 방향의 current truth입니다.
 - `docs/design/source-registry-and-project-ssot.md`는 장비별 source registry, project id, SSOT source registration, Codex/RAG skill scope의 current truth입니다.
 - `docs/design/msa-runtime-and-storage.md`는 MSA runtime, Docker Compose, PostgreSQL DDL, Weaviate schema의 current truth입니다.
+- `docs/design/retrieval-quality-improvement-design.md`는 검색 품질 evaluation, source weighting, rerank, chunking 개선의 current truth입니다.
 - 새 domain design 문서를 추가하면 이 index와 `docs/_indexes/design-map.md`도 함께 갱신합니다.
 - 이 index는 design truth를 대체하지 않습니다. 실제 결정은 source design doc에서 합니다.
 
@@ -36,6 +37,7 @@
 | [`local-rag-system-development-direction.md`](local-rag-system-development-direction.md) | domain design | `domain-current` | Local RAG architecture, MVP scope, indexing/search/Codex boundary를 판단할 때 | 하네스 운영 규칙만 확인할 때 | medium | local-rag-system | `docs/projects/P0001-local-rag-system.md` |
 | [`source-registry-and-project-ssot.md`](source-registry-and-project-ssot.md) | domain design | `domain-current` | 장비별 source registry, project SSOT registration, Codex/RAG skill scope를 구현할 때 | 일반 RAG 개념만 확인할 때 | medium | source-registry | `docs/tasks/T0001-source-registry-project-ssot-registration.md` |
 | [`msa-runtime-and-storage.md`](msa-runtime-and-storage.md) | runtime design | `domain-current` | MSA service boundary, Docker Compose, PostgreSQL DDL, Weaviate schema, source mount contract를 구현할 때 | 순수 검색 ranking 알고리즘만 확인할 때 | medium | runtime/storage | `docs/tasks/T0002-msa-runtime-baseline.md`, `docs/tasks/T0009-host-local-ollama-rag-configuration.md` |
+| [`retrieval-quality-improvement-design.md`](retrieval-quality-improvement-design.md) | domain design | `domain-current` | 검색 품질, evaluation harness, primary source weighting, rerank, chunking 개선을 구현할 때 | source registry 등록이나 Compose mount contract만 확인할 때 | medium | retrieval-quality | `docs/tasks/T0011-retrieval-quality-hardening.md` |
 
 ## Change Log
 
@@ -43,3 +45,4 @@
 - 2026-05-24: Source registry and project SSOT design surface 추가.
 - 2026-05-24: MSA runtime and storage design surface 추가.
 - 2026-05-25: MSA runtime source mount contract를 generic source slot 기준으로 갱신.
+- 2026-05-25: Retrieval quality improvement design surface 추가.

@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 @Service
 public class RetrievalService {
     private static final Set<String> SUPPORTED_SEARCH_MODES = Set.of("hybrid", "vector", "keyword");
+    private static final int MAX_CANDIDATE_LIMIT = 50;
+    private static final int MIN_CANDIDATE_LIMIT = 20;
 
     private final EmbeddingClient embeddingClient;
     private final OllamaChatClient ollamaChatClient;
@@ -60,12 +62,21 @@ public class RetrievalService {
                 request.excludeSourceIds(),
                 request.filters()
         );
-        List<String> sourceIds = resolveSources(normalizedRequest);
-        String graphQl = buildQuery(normalizedRequest, mode, sourceIds);
         Instant started = Instant.now();
+        SearchScope searchScope = resolveSearchScope(normalizedRequest);
+        List<String> sourceIds = searchScope.sourceIds();
+        int requestedLimit = normalizedRequest.effectiveLimit();
+        int candidateLimit = candidateLimit(requestedLimit);
+        String graphQl = buildQuery(normalizedRequest, mode, sourceIds, candidateLimit);
         JsonNode response = weaviateClient.graphQl(graphQl);
-        List<SearchResultItem> results = parseResults(response);
-        audit(projectId, normalizedRequest.query(), mode, normalizedRequest.effectiveLimit(), sourceIds, results.size(), started);
+        List<RetrievalRanker.RankCandidate> candidates = parseCandidates(response);
+        List<SearchResultItem> results = RetrievalRanker.rank(
+                normalizedRequest,
+                searchScope.rankContext(),
+                candidates,
+                requestedLimit
+        );
+        audit(projectId, normalizedRequest.query(), mode, requestedLimit, sourceIds, results.size(), started);
         return new SearchResponse(projectId, normalizedRequest.query(), mode, sourceIds, results);
     }
 
@@ -84,34 +95,41 @@ public class RetrievalService {
         );
     }
 
-    private List<String> resolveSources(SearchRequest request) {
+    private SearchScope resolveSearchScope(SearchRequest request) {
         Set<String> excluded = request.excludeSourceIds() == null
                 ? Set.of()
                 : new HashSet<>(request.excludeSourceIds());
+        ProjectContext projectContext = projectContext(request.projectId());
+        List<String> sourceIds;
         if (request.includeSourceIds() != null && !request.includeSourceIds().isEmpty()) {
-            return activeSourceIds(request.includeSourceIds()).stream()
+            sourceIds = activeSourceIds(request.includeSourceIds()).stream()
                     .filter(sourceId -> !excluded.contains(sourceId))
                     .toList();
+            Map<String, RetrievalRanker.SourceInfo> sourceMetadata = sourceMetadata(sourceIds);
+            return new SearchScope(sourceIds, new RetrievalRanker.RankContext(
+                    request.projectId(),
+                    projectContext.primarySourceId(),
+                    Set.copyOf(projectContext.defaultContextSourceIds()),
+                    sourceMetadata
+            ));
         }
         if (request.projectId() == null || request.projectId().isBlank()) {
-            return jdbcTemplate.query("SELECT source_id FROM source_root WHERE active ORDER BY priority DESC", (rs, rowNum) -> rs.getString(1)).stream()
+            sourceIds = jdbcTemplate.query("SELECT source_id FROM source_root WHERE active ORDER BY priority DESC", (rs, rowNum) -> rs.getString(1)).stream()
                     .filter(sourceId -> !excluded.contains(sourceId))
                     .toList();
+            Map<String, RetrievalRanker.SourceInfo> sourceMetadata = sourceMetadata(sourceIds);
+            return new SearchScope(sourceIds, new RetrievalRanker.RankContext(
+                    null,
+                    null,
+                    Set.of(),
+                    sourceMetadata
+            ));
         }
         LinkedHashSet<String> ordered = new LinkedHashSet<>();
-        jdbcTemplate.query("""
-                        SELECT primary_source_id, default_context_source_ids
-                        FROM project_registration
-                        WHERE active AND project_id = ?
-                        """,
-                rs -> {
-                    if (rs.next()) {
-                        ordered.add(rs.getString("primary_source_id"));
-                        ordered.addAll(readTextArray(rs.getArray("default_context_source_ids")));
-                    }
-                    return null;
-                },
-                request.projectId());
+        if (projectContext.primarySourceId() != null && !projectContext.primarySourceId().isBlank()) {
+            ordered.add(projectContext.primarySourceId());
+        }
+        ordered.addAll(projectContext.defaultContextSourceIds());
         jdbcTemplate.query("""
                         SELECT source_id
                         FROM source_root
@@ -125,9 +143,16 @@ public class RetrievalService {
                     return null;
                 },
                 request.projectId());
-        return activeSourceIds(new ArrayList<>(ordered)).stream()
+        sourceIds = activeSourceIds(new ArrayList<>(ordered)).stream()
                 .filter(sourceId -> !excluded.contains(sourceId))
                 .toList();
+        Map<String, RetrievalRanker.SourceInfo> sourceMetadata = sourceMetadata(sourceIds);
+        return new SearchScope(sourceIds, new RetrievalRanker.RankContext(
+                request.projectId(),
+                projectContext.primarySourceId(),
+                Set.copyOf(projectContext.defaultContextSourceIds()),
+                sourceMetadata
+        ));
     }
 
     private String normalizeMode(SearchRequest request) {
@@ -158,7 +183,7 @@ public class RetrievalService {
         }
     }
 
-    private String buildQuery(SearchRequest request, String mode, List<String> sourceIds) {
+    private String buildQuery(SearchRequest request, String mode, List<String> sourceIds, int limit) {
         String where = buildWhere(request, sourceIds);
         String searchClause;
         if ("vector".equals(mode)) {
@@ -178,15 +203,17 @@ public class RetrievalService {
                       documentId
                       projectId
                       sourceId
+                      sourceType
                       ssotRole
                       relativePath
                       headingPath
+                      contentHash
                       content
                       _additional { score distance }
                     }
                   }
                 }
-                """.formatted(searchClause, where, request.effectiveLimit());
+                """.formatted(searchClause, where, limit);
     }
 
     private String buildWhere(SearchRequest request, List<String> sourceIds) {
@@ -221,12 +248,13 @@ public class RetrievalService {
                 || (request.includeSourceIds() != null && !request.includeSourceIds().isEmpty());
     }
 
-    private List<SearchResultItem> parseResults(JsonNode response) {
+    private List<RetrievalRanker.RankCandidate> parseCandidates(JsonNode response) {
         JsonNode rows = response.path("data").path("Get").path("LocalRagChunk");
-        List<SearchResultItem> results = new ArrayList<>();
+        List<RetrievalRanker.RankCandidate> candidates = new ArrayList<>();
         if (!rows.isArray()) {
-            return results;
+            return candidates;
         }
+        int rawRank = 0;
         for (JsonNode row : rows) {
             String content = row.path("content").asText("");
             String relativePath = row.path("relativePath").asText("");
@@ -236,7 +264,7 @@ public class RetrievalService {
             if (!row.path("_additional").path("distance").isMissingNode()) {
                 score.put("distance", row.path("_additional").path("distance").asDouble());
             }
-            results.add(new SearchResultItem(
+            SearchResultItem item = new SearchResultItem(
                     row.path("chunkId").asText(),
                     row.path("documentId").asText(),
                     row.path("projectId").asText(),
@@ -247,9 +275,11 @@ public class RetrievalService {
                     heading.isBlank() ? relativePath : relativePath + "#" + heading,
                     snippet(content),
                     score
-            ));
+            );
+            candidates.add(new RetrievalRanker.RankCandidate(item, row.path("contentHash").asText(null), rawRank));
+            rawRank++;
         }
-        return results;
+        return candidates;
     }
 
     private void audit(String projectId, String query, String mode, int limit, List<String> sources, int resultCount, Instant started) {
@@ -259,6 +289,52 @@ public class RetrievalService {
                         """,
                 projectId, query, mode, limit,
                 sources.toArray(String[]::new), resultCount, (int) (Instant.now().toEpochMilli() - started.toEpochMilli()));
+    }
+
+    private ProjectContext projectContext(String projectId) {
+        if (projectId == null || projectId.isBlank()) {
+            return new ProjectContext(null, List.of());
+        }
+        return jdbcTemplate.query("""
+                        SELECT primary_source_id, default_context_source_ids
+                        FROM project_registration
+                        WHERE active AND project_id = ?
+                        """,
+                rs -> {
+                    if (!rs.next()) {
+                        return new ProjectContext(null, List.of());
+                    }
+                    return new ProjectContext(
+                            rs.getString("primary_source_id"),
+                            readTextArray(rs.getArray("default_context_source_ids"))
+                    );
+                },
+                projectId);
+    }
+
+    private Map<String, RetrievalRanker.SourceInfo> sourceMetadata(List<String> sourceIds) {
+        if (sourceIds.isEmpty()) {
+            return Map.of();
+        }
+        return jdbcTemplate.query("""
+                        SELECT source_id, project_id, source_type, ssot_role, priority
+                        FROM source_root
+                        WHERE active AND source_id = ANY (?)
+                        """,
+                ps -> ps.setArray(1, ps.getConnection().createArrayOf("text", sourceIds.toArray(String[]::new))),
+                rs -> {
+                    Map<String, RetrievalRanker.SourceInfo> metadata = new LinkedHashMap<>();
+                    while (rs.next()) {
+                        metadata.put(rs.getString("source_id"), new RetrievalRanker.SourceInfo(
+                                rs.getString("source_id"),
+                                rs.getString("project_id"),
+                                rs.getString("source_type"),
+                                rs.getString("ssot_role"),
+                                rs.getInt("priority")
+                        ));
+                    }
+                    return metadata;
+                });
     }
 
     private List<String> activeSourceIds(List<String> requestedSourceIds) {
@@ -327,5 +403,18 @@ public class RetrievalService {
 
     private static String quote(String value) {
         return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\"";
+    }
+
+    private static int candidateLimit(int requestedLimit) {
+        return Math.min(MAX_CANDIDATE_LIMIT, Math.max(MIN_CANDIDATE_LIMIT, requestedLimit * 4));
+    }
+
+    private record ProjectContext(String primarySourceId, List<String> defaultContextSourceIds) {
+        private ProjectContext {
+            defaultContextSourceIds = defaultContextSourceIds == null ? List.of() : List.copyOf(defaultContextSourceIds);
+        }
+    }
+
+    private record SearchScope(List<String> sourceIds, RetrievalRanker.RankContext rankContext) {
     }
 }
