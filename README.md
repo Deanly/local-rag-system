@@ -50,7 +50,7 @@ Authoritative design:
 - Store registry, document state, jobs, failures, and audit records in PostgreSQL.
 - Store searchable chunks in Weaviate with external vectors.
 - Use local Ollama embedding/chat models only.
-- Provide hybrid BM25/vector search with citations.
+- Provide hybrid keyword/vector search with citations.
 - Expose one local API surface for CLI, UI, and Codex/MCP adapters.
 
 ## Target Runtime Layout
@@ -94,6 +94,7 @@ Create a local `.env` and point source host variables at the folders that should
 - `personal-notes`
 - `project-alpha.docs`
 - `project-beta.docs`
+- `local-rag-system.docs`
 
 ```bash
 cp .env.example .env
@@ -118,6 +119,7 @@ curl -fsS -X POST http://127.0.0.1:42120/api/search \
 curl -fsS -X POST http://127.0.0.1:42120/api/answer \
   -H 'Content-Type: application/json' \
   -d '{"projectId":"project-alpha","query":"registered source 운영 기준을 요약해줘","limit":3,"mode":"hybrid"}'
+node integrations/codex/smoke-local-rag.mjs --adapter-only
 ```
 
 The tracked Compose file provides generic read-only source slots for machine-local registry paths:
@@ -184,6 +186,7 @@ Common operations:
 ```bash
 local-rag deploy
 local-rag status
+local-rag codex-smoke --allow-empty-search
 local-rag force-scan
 local-rag logs
 local-rag down
@@ -200,3 +203,5 @@ Codex needs Node.js for the MCP stdio adapter and a running Local RAG gateway. I
 The installer registers a `local_rag` MCP stdio server in `~/.codex/config.toml` and installs the `local-rag` skill under `~/.codex/skills/local-rag`. Restart Codex after installation.
 
 If the local registry has a preferred default project, set `LOCAL_RAG_DEFAULT_PROJECT_ID` during install. Otherwise the gateway's configured default project is used.
+
+After installation, run `node integrations/codex/smoke-local-rag.mjs --adapter-only` to verify MCP framing and advertised tools. Once the stack is up and indexed, run `local-rag codex-smoke` or `node integrations/codex/smoke-local-rag.mjs` to verify gateway health, registry listing, index status, `rag_search`, source-safe `rag_get_document`, and unknown-project 400 behavior.

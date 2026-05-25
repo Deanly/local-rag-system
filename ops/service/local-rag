@@ -28,6 +28,7 @@ Commands:
   force-scan [project] Force scan all sources or one project id.
   logs [service...]   Show recent compose logs.
   install-codex       Install global Codex MCP/skill integration.
+  codex-smoke [args]  Run Codex MCP adapter and REST smoke checks.
 
 Environment:
   LOCAL_RAG_SERVICE_ROOT default: ~/Service
@@ -100,6 +101,12 @@ LOCAL_RAG_SOURCE_ROOT=${CODE_DIR}/data/sample
 LOCAL_RAG_SOURCE_PERSONAL_NOTES=/source/personal-notes
 LOCAL_RAG_SOURCE_PROJECT_ALPHA_DOCS=/source/project-alpha-docs
 LOCAL_RAG_SOURCE_PROJECT_BETA_DOCS=/source/project-beta-docs
+LOCAL_RAG_SOURCE_LOCAL_RAG_SYSTEM_DOCS=/sources/source-04
+LOCAL_RAG_HOST_SOURCE_01=${CODE_DIR}/data/sample/project-alpha-docs
+LOCAL_RAG_HOST_SOURCE_02=${CODE_DIR}/data/sample/project-beta-docs
+LOCAL_RAG_HOST_SOURCE_03=${CODE_DIR}/data/sample/personal-notes
+LOCAL_RAG_HOST_SOURCE_04=${CODE_DIR}/docs
+LOCAL_RAG_HOST_SOURCE_05=${CODE_DIR}/data/sample/personal-notes
 EOF
   fi
 
@@ -147,6 +154,9 @@ doctor() {
     echo "local-rag prerequisites look ready."
     if [[ -f "${CONFIG_DIR}/docker-compose.override.yaml" ]]; then
       echo "compose override: ${CONFIG_DIR}/docker-compose.override.yaml"
+    fi
+    if [[ -x "${CODE_DIR}/integrations/codex/smoke-local-rag.mjs" ]]; then
+      env LOCAL_RAG_BASE_URL="${BASE_URL}" node "${CODE_DIR}/integrations/codex/smoke-local-rag.mjs" --adapter-only
     fi
   fi
   return "${failed}"
@@ -247,6 +257,10 @@ case "${command}" in
       skill_env=(LOCAL_RAG_SKILL_FILE="${CONFIG_DIR}/codex-skill.local.md")
     fi
     env LOCAL_RAG_BASE_URL="${BASE_URL}" "${skill_env[@]}" "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
+    ;;
+  codex-smoke)
+    require_code
+    env LOCAL_RAG_BASE_URL="${BASE_URL}" node "${CODE_DIR}/integrations/codex/smoke-local-rag.mjs" "$@"
     ;;
   *)
     echo "Unknown command: ${command}" >&2

@@ -8,8 +8,10 @@ import com.localrag.common.dto.SearchResultItem;
 import com.localrag.common.embedding.EmbeddingClient;
 import com.localrag.common.ollama.OllamaChatClient;
 import com.localrag.common.weaviate.WeaviateClient;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.Array;
 import java.sql.SQLException;
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class RetrievalService {
+    private static final Set<String> SUPPORTED_SEARCH_MODES = Set.of("hybrid", "vector", "keyword");
+
     private final EmbeddingClient embeddingClient;
     private final OllamaChatClient ollamaChatClient;
     private final WeaviateClient weaviateClient;
@@ -44,15 +48,25 @@ public class RetrievalService {
     }
 
     public SearchResponse search(SearchRequest request) {
-        String mode = request.effectiveMode().toLowerCase(Locale.ROOT);
-        String projectId = request.projectId();
-        List<String> sourceIds = resolveSources(request);
-        String graphQl = buildQuery(request, mode, sourceIds);
+        String mode = normalizeMode(request);
+        String projectId = normalizeProjectId(request.projectId());
+        validateProject(projectId);
+        SearchRequest normalizedRequest = new SearchRequest(
+                projectId,
+                request.query(),
+                request.limit(),
+                mode,
+                request.includeSourceIds(),
+                request.excludeSourceIds(),
+                request.filters()
+        );
+        List<String> sourceIds = resolveSources(normalizedRequest);
+        String graphQl = buildQuery(normalizedRequest, mode, sourceIds);
         Instant started = Instant.now();
         JsonNode response = weaviateClient.graphQl(graphQl);
         List<SearchResultItem> results = parseResults(response);
-        audit(projectId, request.query(), mode, request.effectiveLimit(), sourceIds, results.size(), started);
-        return new SearchResponse(projectId, request.query(), mode, sourceIds, results);
+        audit(projectId, normalizedRequest.query(), mode, normalizedRequest.effectiveLimit(), sourceIds, results.size(), started);
+        return new SearchResponse(projectId, normalizedRequest.query(), mode, sourceIds, results);
     }
 
     public AnswerResponse answer(SearchRequest request) {
@@ -114,6 +128,34 @@ public class RetrievalService {
         return activeSourceIds(new ArrayList<>(ordered)).stream()
                 .filter(sourceId -> !excluded.contains(sourceId))
                 .toList();
+    }
+
+    private String normalizeMode(SearchRequest request) {
+        String mode = request.effectiveMode().toLowerCase(Locale.ROOT);
+        if (!SUPPORTED_SEARCH_MODES.contains(mode)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported search mode: " + request.mode());
+        }
+        return mode;
+    }
+
+    private String normalizeProjectId(String projectId) {
+        return projectId == null || projectId.isBlank() ? null : projectId.trim();
+    }
+
+    private void validateProject(String projectId) {
+        if (projectId == null) {
+            return;
+        }
+        Integer count = jdbcTemplate.queryForObject("""
+                        SELECT count(*)
+                        FROM project_registration
+                        WHERE active AND project_id = ?
+                        """,
+                Integer.class,
+                projectId);
+        if (count == null || count == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown projectId: " + projectId);
+        }
     }
 
     private String buildQuery(SearchRequest request, String mode, List<String> sourceIds) {

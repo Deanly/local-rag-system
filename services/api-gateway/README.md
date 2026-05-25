@@ -19,10 +19,20 @@ GET  /api/registry/sources
 GET  /api/index/status
 POST /api/index/scan
 POST /api/index/force
-GET  /api/index/failures
 POST /api/search
+POST /api/answer
+POST /api/documents/get
 GET  /api/documents/{documentId}
+GET  /api/mcp/rag_list_projects
+GET  /api/mcp/rag_list_sources
+POST /api/mcp/rag_search
+POST /api/mcp/rag_answer
+POST /api/mcp/rag_get_document
+GET  /api/mcp/rag_index_status
+POST /api/mcp/rag_force_scan
 ```
+
+`GET /api/documents/{documentId}` remains a compatibility placeholder. Source-safe document reads use `POST /api/documents/get` or the MCP bridge equivalent.
 
 Out of scope:
 

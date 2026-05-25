@@ -47,6 +47,29 @@ const ragQueryInputSchema = {
   additionalProperties: false
 };
 
+const ragDocumentInputSchema = {
+  type: "object",
+  properties: {
+    sourceId: {
+      type: "string",
+      description: "Registered source id that owns the document."
+    },
+    relativePath: {
+      type: "string",
+      description: "Path relative to the registered source root. Absolute paths and path traversal are rejected."
+    },
+    maxBytes: {
+      type: "integer",
+      minimum: 1000,
+      maximum: 200000,
+      default: 20000,
+      description: "Maximum UTF-8 bytes to return from the document."
+    }
+  },
+  required: ["sourceId", "relativePath"],
+  additionalProperties: false
+};
+
 const tools = [
   {
     name: "rag_search",
@@ -57,6 +80,11 @@ const tools = [
     name: "rag_answer",
     description: "Generate a local-only answer from retrieved local RAG snippets with citations.",
     inputSchema: ragQueryInputSchema
+  },
+  {
+    name: "rag_get_document",
+    description: "Fetch a registered source document by source id and relative path. Reads are constrained to registered source roots.",
+    inputSchema: ragDocumentInputSchema
   },
   {
     name: "rag_list_projects",
@@ -91,13 +119,18 @@ const tools = [
 
 let inputBuffer = Buffer.alloc(0);
 let transportMode = "framed";
+let pendingMessages = 0;
+let stdinEnded = false;
 
 process.stdin.on("data", (chunk) => {
   inputBuffer = Buffer.concat([inputBuffer, chunk]);
   processMessages();
 });
 
-process.stdin.on("end", () => process.exit(0));
+process.stdin.on("end", () => {
+  stdinEnded = true;
+  maybeExitWhenIdle();
+});
 
 function processMessages() {
   while (true) {
@@ -138,14 +171,20 @@ function processMessages() {
 }
 
 function dispatchMessage(body) {
-  handleMessage(JSON.parse(body)).catch((error) => {
-    if (body.includes("\"id\"")) {
-      const parsed = JSON.parse(body);
-      sendError(parsed.id, -32603, error.message);
-    } else {
+  const parsed = JSON.parse(body);
+  pendingMessages += 1;
+  handleMessage(parsed)
+    .catch((error) => {
+      if (parsed.id !== undefined && parsed.id !== null) {
+        sendError(parsed.id, -32603, error.message);
+        return;
+      }
       console.error(error);
-    }
-  });
+    })
+    .finally(() => {
+      pendingMessages -= 1;
+      maybeExitWhenIdle();
+    });
 }
 
 async function handleMessage(message) {
@@ -182,21 +221,18 @@ async function callTool(id, params) {
   try {
     let result;
     if (name === "rag_search") {
-      const body = {
-        ...args,
-        projectId: args.projectId || defaultProjectId || undefined,
-        limit: args.limit || 5,
-        mode: args.mode || "hybrid"
-      };
+      const body = normalizeSearchArgs(args);
       result = await requestJson("POST", "/api/mcp/rag_search", body);
     } else if (name === "rag_answer") {
-      const body = {
-        ...args,
-        projectId: args.projectId || defaultProjectId || undefined,
-        limit: args.limit || 5,
-        mode: args.mode || "hybrid"
-      };
+      const body = normalizeSearchArgs(args);
       result = await requestJson("POST", "/api/mcp/rag_answer", body);
+    } else if (name === "rag_get_document") {
+      const body = {
+        sourceId: args.sourceId,
+        relativePath: args.relativePath,
+        maxBytes: args.maxBytes || undefined
+      };
+      result = await requestJson("POST", "/api/mcp/rag_get_document", body);
     } else if (name === "rag_list_projects") {
       result = await requestJson("GET", "/api/mcp/rag_list_projects");
     } else if (name === "rag_list_sources") {
@@ -233,6 +269,26 @@ async function callTool(id, params) {
   }
 }
 
+function normalizeSearchArgs(args) {
+  return {
+    ...args,
+    projectId: args.projectId || defaultProjectId || undefined,
+    limit: args.limit || 5,
+    mode: normalizeMode(args.mode || "hybrid")
+  };
+}
+
+function normalizeMode(mode) {
+  const normalized = String(mode || "hybrid").trim().toLowerCase();
+  if (normalized === "bm25") {
+    return "keyword";
+  }
+  if (["hybrid", "vector", "keyword"].includes(normalized)) {
+    return normalized;
+  }
+  throw new Error(`Unsupported rag_search mode: ${mode}`);
+}
+
 async function requestJson(method, path, body) {
   const response = await fetch(`${baseUrl}${path}`, {
     method,
@@ -262,4 +318,10 @@ function send(message) {
     return;
   }
   process.stdout.write(`Content-Length: ${Buffer.byteLength(json, "utf8")}\r\n\r\n${json}`);
+}
+
+function maybeExitWhenIdle() {
+  if (stdinEnded && pendingMessages === 0 && inputBuffer.length === 0) {
+    setImmediate(() => process.exit(0));
+  }
 }

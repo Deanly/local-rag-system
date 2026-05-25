@@ -1,7 +1,10 @@
 package com.localrag.mcp;
 
+import com.localrag.common.dto.DocumentFetchRequest;
 import com.localrag.common.dto.HealthResponse;
 import com.localrag.common.dto.SearchRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -9,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.Map;
 
@@ -26,7 +30,7 @@ public class McpBridgeController {
     @GetMapping("/health")
     public HealthResponse health() {
         return HealthResponse.up("mcp-bridge", Map.of(
-                "tools", "rag_list_projects,rag_list_sources,rag_search,rag_answer,rag_index_status,rag_force_scan"
+                "tools", "rag_list_projects,rag_list_sources,rag_search,rag_answer,rag_get_document,rag_index_status,rag_force_scan"
         ));
     }
 
@@ -55,12 +59,22 @@ public class McpBridgeController {
         return get(settings.indexerUrl(), "/api/index/status");
     }
 
+    @PostMapping("/mcp/rag_get_document")
+    public Object getDocument(@RequestBody DocumentFetchRequest request) {
+        return post(settings.indexerUrl(), "/api/documents/get", request);
+    }
+
     @PostMapping("/mcp/rag_force_scan")
     public Object forceScan(@RequestParam(name = "projectId", required = false) String projectId) {
         String suffix = projectId == null || projectId.isBlank()
                 ? "/api/index/force"
                 : "/api/index/force?projectId=" + projectId;
         return post(settings.indexerUrl(), suffix, null);
+    }
+
+    @ExceptionHandler(RestClientResponseException.class)
+    public ResponseEntity<String> downstreamError(RestClientResponseException exception) {
+        return ResponseEntity.status(exception.getStatusCode()).body(exception.getResponseBodyAsString());
     }
 
     private Object get(String baseUrl, String path) {

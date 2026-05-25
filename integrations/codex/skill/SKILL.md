@@ -17,6 +17,7 @@ Use it especially for:
 - project-specific questions where local docs are more authoritative than model memory
 - code changes that should respect project design/task documents
 - checking stale assumptions before summarizing a project
+- questions about registered worknote, `personal-core`, `crypto-bot`, and `local-rag-system` project documents when those sources are present in the registry
 
 Do not use Local RAG for general internet facts, current news, package docs, prices, schedules, or other external facts. Use web or official docs for those.
 
@@ -26,6 +27,7 @@ If MCP tools are available, use them:
 
 - `mcp__local_rag__rag_search`
 - `mcp__local_rag__rag_answer`
+- `mcp__local_rag__rag_get_document`
 - `mcp__local_rag__rag_list_projects`
 - `mcp__local_rag__rag_list_sources`
 - `mcp__local_rag__rag_index_status`
@@ -48,11 +50,17 @@ If `LOCAL_RAG_DEFAULT_PROJECT_ID` was configured during install, `projectId` can
 ## Search Practice
 
 1. Start with `mode: "hybrid"` and `limit: 5`.
-2. Prefer concise queries that include project/task/design terms.
-3. If results are noisy, narrow with `includeSourceIds` using ids returned by `rag_list_sources`.
-4. Cite the returned `citation` fields in the answer when using retrieved context.
-5. Use `rag_answer` when the user wants a synthesized answer from indexed local evidence.
-6. If freshness matters, check `rag_index_status`; use `rag_force_scan` only when the user asks for immediate sync or the answer depends on just-changed files.
+2. Public search modes are `hybrid`, `vector`, and `keyword`; treat old `bm25` wording as `keyword`.
+3. Prefer concise queries that include project/task/design terms.
+4. If results are noisy, narrow with `includeSourceIds` using ids returned by `rag_list_sources`.
+5. Cite the returned `citation` fields in the answer when using retrieved context.
+6. Use `rag_get_document` only for a returned `sourceId` and `relativePath` when a full registered source document is needed.
+7. Use `rag_answer` when the user wants a synthesized answer from indexed local evidence.
+8. If freshness matters, check `rag_index_status`; use `rag_force_scan` only when the user asks for immediate sync or the answer depends on just-changed files.
+
+## Fallback Practice
+
+If MCP tools are not exposed in the current Codex session, use the REST examples above instead of answering from memory. If the gateway is unavailable, say that Local RAG could not be reached and continue only with explicitly available repository files or user-provided context.
 
 ## Response Rule
 

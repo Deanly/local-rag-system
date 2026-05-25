@@ -5,7 +5,7 @@ status: current
 domain: control-plane
 owner:
 created: 2026-05-24
-updated: 2026-05-24
+updated: 2026-05-25
 retrieval_class:
   - core-start
 context:
@@ -133,7 +133,7 @@ tags:
 | Surface | Purpose | Status | Notes |
 | --- | --- | --- | --- |
 | `docs/projects/README.md` | active umbrella project 입구 | Active | `P0001`을 노출 |
-| `docs/tasks/README.md` | active task 입구 | Active | `T0003` active, `T0001` blocked, `T0002` done 노출 |
+| `docs/tasks/README.md` | active task 입구 | Active | `T0010` Codex RAG utilization hardening active |
 | `docs/guide/sdlc-automation.md` | SDLC 자동화 목표, critical path, gate, verification ladder | Active | implementation session entry guide |
 | `docs/reports/README.md` | active report 입구 | Active | 현재 active report 없음 |
 | `docs/design/README.md` | design retrieval 입구 | Active | domain design 포함 |
@@ -192,3 +192,4 @@ tags:
 - 2026-05-24: MSA runtime, Docker Compose, PostgreSQL DDL, Weaviate schema design surface를 active control plane에 추가.
 - 2026-05-24: Python BM25 scaffold를 active runtime surface에서 제거하고 Spring Boot MSA target으로 단일화.
 - 2026-05-24: SDLC automation guide와 T0003 first implementation gate를 active execution surface에 추가.
+- 2026-05-25: `T0010`을 active execution surface로 추가해 Codex MCP discovery, API/tool contract drift, source-safe document fetch, invalid project handling, and self-indexing registration remediation을 추적.

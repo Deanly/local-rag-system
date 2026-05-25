@@ -35,12 +35,15 @@ LOCAL_RAG_DEFAULT_PROJECT_ID=project-alpha \
 
 - `rag_search`
 - `rag_answer`
+- `rag_get_document`
 - `rag_list_projects`
 - `rag_list_sources`
 - `rag_index_status`
 - `rag_force_scan`
 
-`rag_get_document` is intentionally not exposed yet because the current REST bridge does not implement a source-safe document fetch endpoint.
+`rag_search` accepts public modes `hybrid`, `vector`, and `keyword`. Legacy `bm25` input is normalized to `keyword` by the adapter and backend DTO.
+
+`rag_get_document` reads by `sourceId` plus `relativePath`. The backend rejects absolute paths, path traversal, unknown sources, and files excluded by source registry filters.
 
 ## Manual Smoke
 
@@ -50,3 +53,26 @@ curl -fsS -X POST http://127.0.0.1:42120/api/mcp/rag_search \
   -H 'Content-Type: application/json' \
   -d '{"projectId":"project-alpha","query":"source registry","limit":3,"mode":"hybrid"}'
 ```
+
+Adapter-only framing smoke:
+
+```bash
+node integrations/codex/smoke-local-rag.mjs --adapter-only
+```
+
+Full runtime smoke after the stack is up and indexed:
+
+```bash
+LOCAL_RAG_SMOKE_PROJECT_ID=local-rag-system \
+node integrations/codex/smoke-local-rag.mjs
+```
+
+Operation-zone installs can run the same check through:
+
+```bash
+local-rag codex-smoke
+```
+
+## Hardening Plan
+
+`docs/tasks/T0010-codex-rag-utilization-hardening.md` records the implementation and verification status for this integration.

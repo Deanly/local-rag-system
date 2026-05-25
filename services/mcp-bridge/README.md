@@ -14,6 +14,7 @@ Initial tools:
 rag_list_projects
 rag_list_sources
 rag_search
+rag_answer
 rag_get_document
 rag_index_status
 rag_force_scan
