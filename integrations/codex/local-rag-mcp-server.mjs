@@ -3,53 +3,60 @@
 const baseUrl = (process.env.LOCAL_RAG_BASE_URL || "http://127.0.0.1:42120").replace(/\/$/, "");
 const defaultProjectId = process.env.LOCAL_RAG_DEFAULT_PROJECT_ID || "";
 
+const ragQueryInputSchema = {
+  type: "object",
+  properties: {
+    projectId: {
+      type: "string",
+      description: "Optional project id from the local source registry. If omitted, the configured default project id is used."
+    },
+    query: {
+      type: "string",
+      description: "Natural-language or keyword query to search in the local RAG index."
+    },
+    limit: {
+      type: "integer",
+      minimum: 1,
+      maximum: 50,
+      default: 5
+    },
+    mode: {
+      type: "string",
+      enum: ["hybrid", "vector", "keyword"],
+      default: "hybrid"
+    },
+    includeSourceIds: {
+      type: "array",
+      items: { type: "string" },
+      description: "Optional source ids from the local source registry to include."
+    },
+    excludeSourceIds: {
+      type: "array",
+      items: { type: "string" },
+      description: "Optional source ids to exclude."
+    },
+    filters: {
+      type: "object",
+      additionalProperties: {
+        type: "array",
+        items: { type: "string" }
+      }
+    }
+  },
+  required: ["query"],
+  additionalProperties: false
+};
+
 const tools = [
   {
     name: "rag_search",
     description: "Search the local RAG index with project-aware hybrid retrieval and citation-bearing results.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        projectId: {
-          type: "string",
-          description: "Optional project id such as personal-notes, project-alpha, or project-beta. If omitted, active sources are searched."
-        },
-        query: {
-          type: "string",
-          description: "Natural-language or keyword query to search in the local RAG index."
-        },
-        limit: {
-          type: "integer",
-          minimum: 1,
-          maximum: 50,
-          default: 5
-        },
-        mode: {
-          type: "string",
-          enum: ["hybrid", "vector", "bm25"],
-          default: "hybrid"
-        },
-        includeSourceIds: {
-          type: "array",
-          items: { type: "string" },
-          description: "Optional source ids to include, such as project-alpha.docs or personal-notes."
-        },
-        excludeSourceIds: {
-          type: "array",
-          items: { type: "string" },
-          description: "Optional source ids to exclude."
-        },
-        filters: {
-          type: "object",
-          additionalProperties: {
-            type: "array",
-            items: { type: "string" }
-          }
-        }
-      },
-      required: ["query"],
-      additionalProperties: false
-    }
+    inputSchema: ragQueryInputSchema
+  },
+  {
+    name: "rag_answer",
+    description: "Generate a local-only answer from retrieved local RAG snippets with citations.",
+    inputSchema: ragQueryInputSchema
   },
   {
     name: "rag_list_projects",
@@ -74,7 +81,7 @@ const tools = [
       properties: {
         projectId: {
           type: "string",
-          description: "Optional project id to scan, such as personal-notes, project-alpha, or project-beta."
+          description: "Optional project id from the local source registry to scan."
         }
       },
       additionalProperties: false
@@ -165,6 +172,14 @@ async function callTool(id, params) {
         mode: args.mode || "hybrid"
       };
       result = await requestJson("POST", "/api/mcp/rag_search", body);
+    } else if (name === "rag_answer") {
+      const body = {
+        ...args,
+        projectId: args.projectId || defaultProjectId || undefined,
+        limit: args.limit || 5,
+        mode: args.mode || "hybrid"
+      };
+      result = await requestJson("POST", "/api/mcp/rag_answer", body);
     } else if (name === "rag_list_projects") {
       result = await requestJson("GET", "/api/mcp/rag_list_projects");
     } else if (name === "rag_list_sources") {

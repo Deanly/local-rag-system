@@ -1,6 +1,7 @@
 package com.localrag.retrieval;
 
 import com.localrag.common.embedding.EmbeddingClient;
+import com.localrag.common.ollama.OllamaChatClient;
 import com.localrag.common.weaviate.WeaviateClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,6 +16,11 @@ public class RetrievalServiceApplication {
     @Bean
     EmbeddingClient embeddingClient(RetrievalSettings settings) {
         return new EmbeddingClient(settings.ollamaBaseUrl(), settings.embeddingModel(), settings.embeddingFallbackEnabled());
+    }
+
+    @Bean
+    OllamaChatClient ollamaChatClient(RetrievalSettings settings) {
+        return new OllamaChatClient(settings.ollamaBaseUrl(), settings.chatModel());
     }
 
     @Bean

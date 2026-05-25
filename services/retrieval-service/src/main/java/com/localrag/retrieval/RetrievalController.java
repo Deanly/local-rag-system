@@ -1,6 +1,7 @@
 package com.localrag.retrieval;
 
 import com.localrag.common.dto.HealthResponse;
+import com.localrag.common.dto.AnswerResponse;
 import com.localrag.common.dto.SearchRequest;
 import com.localrag.common.dto.SearchResponse;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,5 +27,10 @@ public class RetrievalController {
     @PostMapping("/search")
     public SearchResponse search(@RequestBody SearchRequest request) {
         return retrievalService.search(request);
+    }
+
+    @PostMapping("/answer")
+    public AnswerResponse answer(@RequestBody SearchRequest request) {
+        return retrievalService.answer(request);
     }
 }

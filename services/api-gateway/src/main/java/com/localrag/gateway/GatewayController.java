@@ -74,6 +74,11 @@ public class GatewayController {
         return post(settings.retrievalUrl(), "/api/search", request);
     }
 
+    @PostMapping("/answer")
+    public Object answer(@RequestBody SearchRequest request) {
+        return post(settings.retrievalUrl(), "/api/answer", request);
+    }
+
     @GetMapping("/mcp/rag_list_projects")
     public Object mcpListProjects() {
         return get(settings.mcpBridgeUrl(), "/api/mcp/rag_list_projects");
@@ -87,6 +92,11 @@ public class GatewayController {
     @PostMapping("/mcp/rag_search")
     public Object mcpSearch(@RequestBody SearchRequest request) {
         return post(settings.mcpBridgeUrl(), "/api/mcp/rag_search", request);
+    }
+
+    @PostMapping("/mcp/rag_answer")
+    public Object mcpAnswer(@RequestBody SearchRequest request) {
+        return post(settings.mcpBridgeUrl(), "/api/mcp/rag_answer", request);
     }
 
     @GetMapping("/mcp/rag_index_status")

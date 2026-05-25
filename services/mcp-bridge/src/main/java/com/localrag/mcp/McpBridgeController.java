@@ -26,7 +26,7 @@ public class McpBridgeController {
     @GetMapping("/health")
     public HealthResponse health() {
         return HealthResponse.up("mcp-bridge", Map.of(
-                "tools", "rag_list_projects,rag_list_sources,rag_search,rag_get_document,rag_index_status,rag_force_scan"
+                "tools", "rag_list_projects,rag_list_sources,rag_search,rag_answer,rag_index_status,rag_force_scan"
         ));
     }
 
@@ -43,6 +43,11 @@ public class McpBridgeController {
     @PostMapping("/mcp/rag_search")
     public Object search(@RequestBody SearchRequest request) {
         return post(settings.retrievalUrl(), "/api/search", request);
+    }
+
+    @PostMapping("/mcp/rag_answer")
+    public Object answer(@RequestBody SearchRequest request) {
+        return post(settings.retrievalUrl(), "/api/answer", request);
     }
 
     @GetMapping("/mcp/rag_index_status")

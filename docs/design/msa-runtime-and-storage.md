@@ -5,7 +5,7 @@ status: current
 domain: runtime
 owner:
 created: 2026-05-24
-updated: 2026-05-24
+updated: 2026-05-25
 retrieval_class:
   - domain-current
 context:
@@ -31,7 +31,7 @@ tags:
 - Type: design
 - Domain: runtime
 - Created: 2026-05-24
-- Updated: 2026-05-24
+- Updated: 2026-05-25
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/tasks/T0002-msa-runtime-baseline.md`
@@ -151,13 +151,13 @@ Minimum local startup flow after service implementation:
 
 ```bash
 cp .env.example .env
-# edit LOCAL_RAG_SOURCE_ROOT and LOCAL_RAG_DATA_DIR
+# edit LOCAL_RAG_SOURCE_ROOT, LOCAL_RAG_HOST_SOURCE_*, and LOCAL_RAG_DATA_DIR
 # optionally tune LOCAL_RAG_WATCH_DEBOUNCE_SECONDS for editor autosave behavior
 # optionally set LOCAL_RAG_SOURCE_REGISTRY to /config/source-registry.yaml
 docker compose --env-file .env up -d --build
 ```
 
-The current Compose baseline mounts one read-only source root and lets the registry refer to paths under `/source`:
+The current Compose baseline keeps the legacy sample `/source` mount and also supports generic read-only slots under `/sources` for machine-local RAG corpora:
 
 | Container Path | Host Env Var | Intended Source |
 | --- | --- | --- |
@@ -165,8 +165,13 @@ The current Compose baseline mounts one read-only source root and lets the regis
 | `/source/personal-notes` | `LOCAL_RAG_SOURCE_PERSONAL_NOTES` | sample Personal Notes source |
 | `/source/project-alpha-docs` | `LOCAL_RAG_SOURCE_PROJECT_ALPHA_DOCS` | sample Project Alpha docs |
 | `/source/project-beta-docs` | `LOCAL_RAG_SOURCE_PROJECT_BETA_DOCS` | sample Project Beta docs |
+| `/sources/source-01` | `LOCAL_RAG_HOST_SOURCE_01` | machine-local source slot |
+| `/sources/source-02` | `LOCAL_RAG_HOST_SOURCE_02` | machine-local source slot |
+| `/sources/source-03` | `LOCAL_RAG_HOST_SOURCE_03` | machine-local source slot |
+| `/sources/source-04` | `LOCAL_RAG_HOST_SOURCE_04` | machine-local source slot |
+| `/sources/source-05` | `LOCAL_RAG_HOST_SOURCE_05` | machine-local source slot |
 
-If real source folders do not share a single parent, the operator should add a local Compose override with additional read-only mounts and point registry paths at those container paths.
+If real source folders do not fit these generic slots, the operator should add a local Compose override with additional read-only mounts and point registry paths at those container paths.
 
 Expected public endpoints:
 
@@ -208,3 +213,4 @@ POST http://127.0.0.1:42120/api/search
 ## Change Log
 
 - 2026-05-24: MSA runtime, Docker Compose, PostgreSQL DDL, Weaviate schema, and service boundaries added as current runtime design.
+- 2026-05-25: Compose source mounts generalized to portable `/sources/source-*` slots so real source names and host paths remain machine-local.

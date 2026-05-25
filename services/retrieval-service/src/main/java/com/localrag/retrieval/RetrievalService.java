@@ -1,10 +1,12 @@
 package com.localrag.retrieval;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.localrag.common.dto.AnswerResponse;
 import com.localrag.common.dto.SearchRequest;
 import com.localrag.common.dto.SearchResponse;
 import com.localrag.common.dto.SearchResultItem;
 import com.localrag.common.embedding.EmbeddingClient;
+import com.localrag.common.ollama.OllamaChatClient;
 import com.localrag.common.weaviate.WeaviateClient;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -25,11 +27,18 @@ import java.util.stream.Collectors;
 @Service
 public class RetrievalService {
     private final EmbeddingClient embeddingClient;
+    private final OllamaChatClient ollamaChatClient;
     private final WeaviateClient weaviateClient;
     private final JdbcTemplate jdbcTemplate;
 
-    public RetrievalService(EmbeddingClient embeddingClient, WeaviateClient weaviateClient, JdbcTemplate jdbcTemplate) {
+    public RetrievalService(
+            EmbeddingClient embeddingClient,
+            OllamaChatClient ollamaChatClient,
+            WeaviateClient weaviateClient,
+            JdbcTemplate jdbcTemplate
+    ) {
         this.embeddingClient = embeddingClient;
+        this.ollamaChatClient = ollamaChatClient;
         this.weaviateClient = weaviateClient;
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -44,6 +53,21 @@ public class RetrievalService {
         List<SearchResultItem> results = parseResults(response);
         audit(projectId, request.query(), mode, request.effectiveLimit(), sourceIds, results.size(), started);
         return new SearchResponse(projectId, request.query(), mode, sourceIds, results);
+    }
+
+    public AnswerResponse answer(SearchRequest request) {
+        SearchResponse search = search(request);
+        String answer = ollamaChatClient.chat(systemPrompt(), answerPrompt(request.query(), search.results()));
+        return new AnswerResponse(
+                search.projectId(),
+                search.query(),
+                search.mode(),
+                ollamaChatClient.model(),
+                answer,
+                search.sourcesSearched(),
+                search.results().stream().map(SearchResultItem::citation).distinct().toList(),
+                search.results()
+        );
     }
 
     private List<String> resolveSources(SearchRequest request) {
@@ -232,6 +256,31 @@ public class RetrievalService {
     private static String snippet(String content) {
         String normalized = content.replaceAll("\\s+", " ").trim();
         return normalized.length() <= 500 ? normalized : normalized.substring(0, 497) + "...";
+    }
+
+    private static String systemPrompt() {
+        return """
+                You are a local-only RAG assistant. Answer only from the supplied context.
+                Cite sources using the citation labels in square brackets.
+                If the context is insufficient, say that the indexed local sources do not contain enough evidence.
+                Answer in the same language as the question.
+                """;
+    }
+
+    private static String answerPrompt(String query, List<SearchResultItem> results) {
+        String context = results.stream()
+                .map(result -> "[%s]\n%s".formatted(result.citation(), result.snippet()))
+                .collect(Collectors.joining("\n\n"));
+        if (context.isBlank()) {
+            context = "No retrieved context.";
+        }
+        return """
+                Question:
+                %s
+
+                Retrieved context:
+                %s
+                """.formatted(query, context);
     }
 
     private static String quote(String value) {
