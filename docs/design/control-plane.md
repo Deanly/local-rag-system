@@ -5,7 +5,7 @@ status: current
 domain: control-plane
 owner:
 created: 2026-05-24
-updated: 2026-05-25
+updated: 2026-05-29
 retrieval_class:
   - core-start
 context:
@@ -34,7 +34,7 @@ tags:
 - Domain: control-plane
 - Owner:
 - Created: 2026-05-24
-- Updated: 2026-05-24
+- Updated: 2026-05-29
 - Referenced By:
   - `docs/README.md`
   - `docs/projects/P0001-local-rag-system.md`
@@ -57,7 +57,7 @@ tags:
 - local 장비에서 실제로 다루는 프로젝트만 `project_id`와 SSOT source root로 등록한다.
 - repo `docs/`는 해당 repo의 current truth로, 별도 등록된 compiled knowledge source는 cross-project reference로 구분한다.
 - 변경된 파일만 재인덱싱하고 삭제/이름 변경을 index에 반영한다.
-- local Ollama embedding/chat만 사용한다.
+- local 또는 LAN-local Ollama embedding/chat만 사용한다.
 - BM25/keyword와 vector를 결합한 hybrid retrieval을 기본 검색으로 제공한다.
 - Codex, CLI, future UI가 같은 API surface를 사용한다.
 - Docker Compose로 로컬에서 재현 가능하게 실행한다.
@@ -114,27 +114,27 @@ tags:
 | `docs/design/local-rag-system-development-direction.md` | 개발 방향, architecture, invariants, API 경계 | Active | 구현 task의 primary design input |
 | `docs/design/source-registry-and-project-ssot.md` | 장비별 source registry, project id, SSOT 등록, Codex/RAG skill scope | Active | source registration implementation의 primary design input |
 | `docs/design/msa-runtime-and-storage.md` | MSA runtime, Docker Compose, PostgreSQL DDL, Weaviate schema | Active | runtime/storage implementation의 primary design input |
-| `docs/design/retrieval-quality-improvement-design.md` | 검색 품질 evaluation, source weighting, rerank, chunking 개선 | Active | retrieval quality hardening의 primary design input |
+| `docs/design/retrieval-quality-improvement-design.md` | 검색 품질 evaluation, source weighting, rerank, chunking 개선 | Active | P0002/T0013 retrieval governance hardening의 primary design input |
 
 ## Umbrella Initiative Policy
 
-- human이 인식하는 `local-rag-system` initiative는 기본적으로 umbrella `project` 1개로 유지한다.
-- 새 work는 먼저 `P0001` 아래의 새 `task`로 수용 가능한지 검토한다.
+- human이 인식하는 `local-rag-system` functional baseline은 `P0001`로 닫고, 후속 delivery boundary가 명확히 분리될 때만 exception branch project를 둔다.
+- 새 work는 먼저 active project 아래의 새 `task`로 수용 가능한지 검토한다.
 - 새 `project` 발급은 사용자 명시 요청 또는 completion boundary/owner/검증 체계가 분리되는 예외가 명확할 때만 허용한다.
 - exception branch project가 필요하면 왜 task가 아닌지와 왜 human에게 별도 project가 더 읽기 쉬운지 남긴다.
 
 ## Active Umbrella Projects
 
-| Umbrella Project | Initiative | Status | Notes |
+| Project | Initiative | Status | Notes |
 | --- | --- | --- | --- |
-| `docs/projects/P0001-local-rag-system.md` | device-local source roots RAG system | Active | 개발 방향과 source registry 후속 구현 task owner |
+| `docs/projects/P0002-retrieval-governance-hardening.md` | governed Hybrid RAG retrieval quality | Active | P0001 functional baseline 이후 metadata/chunking/filter/answer/evaluation/audit hardening owner |
 
 ## Active Execution Surfaces
 
 | Surface | Purpose | Status | Notes |
 | --- | --- | --- | --- |
-| `docs/projects/README.md` | active umbrella project 입구 | Active | `P0001`을 노출 |
-| `docs/tasks/README.md` | active task 입구 | Active | `T0010` Codex RAG utilization hardening active; `T0011` retrieval quality hardening done |
+| `docs/projects/README.md` | active project 입구 | Active | `P0002` active, `P0001` done |
+| `docs/tasks/README.md` | active task 입구 | Active | `T0013` P0002 critical path active; `T0010` operation-zone follow-up active |
 | `docs/guide/sdlc-automation.md` | SDLC 자동화 목표, critical path, gate, verification ladder | Active | implementation session entry guide |
 | `docs/reports/README.md` | active report 입구 | Active | 현재 active report 없음 |
 | `docs/design/README.md` | design retrieval 입구 | Active | domain design 포함 |
@@ -176,8 +176,9 @@ tags:
 ## Handoff Rules
 
 - `design`은 현재 truth를 잠그고 `project`와 `task`가 이를 읽는다.
-- `P0001`은 initiative lineage와 completion boundary를 보존한다.
-- 구현은 `P0001` 아래의 task로 분해한다.
+- `P0001`은 functional baseline lineage와 completion boundary를 보존한다.
+- `P0002`는 retrieval governance exception branch lineage와 completion boundary를 보존한다.
+- 구현은 active project 아래의 task로 분해한다.
 - raw source는 일반 파일 시스템 경로로 참조하고 생성 문서는 `source_refs`로 연결한다.
 - project planning/meta source는 repo SSOT가 아니라 planning/meta layer로 취급한다.
 - source registry와 project SSOT 구현 task는 `docs/design/source-registry-and-project-ssot.md`를 primary design input으로 읽는다.
@@ -185,6 +186,7 @@ tags:
 - Spring Boot 구현 task는 `docs/design/local-rag-system-development-direction.md`와 `docs/design/msa-runtime-and-storage.md`의 invariants와 interfaces를 우선한다.
 - report는 시점성 정리를 담되, 재사용 가치가 생기면 `design`, `guide`, `project`, `task`로 승격한다.
 - SDLC 자동화 세션은 `docs/guide/sdlc-automation.md`를 읽고 active critical path task 하나를 우선 진행한다.
+- Retrieval governance 세션은 `docs/projects/P0002-retrieval-governance-hardening.md`, `docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md`, and `docs/design/retrieval-quality-improvement-design.md`를 우선 읽는다.
 
 ## Change Log
 
@@ -196,3 +198,5 @@ tags:
 - 2026-05-25: `T0010`을 active execution surface로 추가해 Codex MCP discovery, API/tool contract drift, source-safe document fetch, invalid project handling, and self-indexing registration remediation을 추적.
 - 2026-05-25: `retrieval-quality-improvement-design`과 `T0011`을 추가해 evaluation-backed retrieval quality hardening을 추적.
 - 2026-05-25: `T0011` 개발존 구현 완료. Retrieval evaluation runner, deterministic ranker, primary source weighting, and document diversity control are now part of the implementation baseline.
+- 2026-05-29: Ollama endpoint 설정은 notebook-local과 LAN-local Mac mini를 모두 담을 수 있는 ordered local endpoint list로 확장했다.
+- 2026-05-29: `P0002`를 P0001 functional baseline 이후 active retrieval governance hardening exception branch로 추가했다. `T0013`은 metadata-aware chunking and document authority indexing의 첫 critical-path task다.

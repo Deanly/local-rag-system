@@ -18,3 +18,5 @@ This is a compact design selection map derived from `docs/design/README.md`.
 - 2026-05-24: MSA runtime and storage design added to compact design map.
 - 2026-05-25: MSA runtime source mount contract updated to generic source slots.
 - 2026-05-25: Retrieval quality improvement design added to compact design map.
+- 2026-05-29: Runtime and Local RAG design docs updated for ordered local/LAN Ollama endpoint failover.
+- 2026-05-29: Retrieval quality improvement design now feeds P0002/T0013 retrieval governance hardening.

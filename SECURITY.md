@@ -8,6 +8,7 @@ Local RAG System is designed to index local folders. Do not commit real source r
 - Use `config/source-registry.local.example.yaml` for portable examples only.
 - Do not commit absolute user paths, private network endpoints, real project names, indexed document content, Weaviate data, PostgreSQL data, logs, or model cache files.
 - Put host-specific Ollama, oMLX, source-folder, and operation-zone settings in an untracked env file.
+- Do not commit real `LOCAL_RAG_OLLAMA_BASE_URLS` values when they reveal private LAN hostnames or IP addresses.
 
 ## Reporting
 

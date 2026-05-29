@@ -1,6 +1,6 @@
 version: 1
 device_id: local-dev-machine
-default_project_id: project-alpha
+default_project_id: local-rag-system
 
 projects:
   - project_id: personal-notes

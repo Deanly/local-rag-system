@@ -21,7 +21,7 @@ Each service directory is a Spring Boot Maven subproject. Dockerfiles use a mult
 Expected artifact convention:
 
 ```text
-services/<service-name>/target/<service-name>-0.1.0.jar
+services/<service-name>/target/<service-name>-1.0.0.jar
 ```
 
 The implemented baseline includes real Spring Boot source, focused tests, Docker build output, and smoke-tested registry/index/search endpoints.

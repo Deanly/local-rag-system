@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,6 +40,23 @@ class OllamaChatClientTests {
         assertTrue(requestBody.contains("\"num_predict\":512"));
     }
 
+    @Test
+    void triesNextEndpointWhenPrimaryEndpointFails() throws IOException {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/api/chat", this::handleChat);
+        server.start();
+
+        String workingUrl = "http://127.0.0.1:" + server.getAddress().getPort();
+        OllamaChatClient client = new OllamaChatClient(
+                String.join(",", List.of("http://127.0.0.1:" + closedLocalPort(), workingUrl)),
+                "chat-model",
+                100,
+                1_000
+        );
+
+        assertEquals("answer", client.chat("system", "user"));
+    }
+
     private void handleChat(HttpExchange exchange) throws IOException {
         requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         byte[] response = """
@@ -53,5 +72,11 @@ class OllamaChatClientTests {
         exchange.sendResponseHeaders(200, response.length);
         exchange.getResponseBody().write(response);
         exchange.close();
+    }
+
+    private static int closedLocalPort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
     }
 }

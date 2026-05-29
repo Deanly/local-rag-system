@@ -5,7 +5,7 @@ status: current
 domain: runtime
 owner:
 created: 2026-05-24
-updated: 2026-05-25
+updated: 2026-05-29
 retrieval_class:
   - domain-current
 context:
@@ -31,7 +31,7 @@ tags:
 - Type: design
 - Domain: runtime
 - Created: 2026-05-24
-- Updated: 2026-05-25
+- Updated: 2026-05-29
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/tasks/T0002-msa-runtime-baseline.md`
@@ -98,7 +98,7 @@ flowchart LR
 All service directories are Spring Boot Maven subprojects. The current Dockerfiles define the artifact convention:
 
 ```text
-services/<service>/target/<service>-0.1.0.jar
+services/<service>/target/<service>-1.0.0.jar
 ```
 
 ## Infrastructure Services
@@ -108,7 +108,9 @@ services/<service>/target/<service>-0.1.0.jar
 | `postgres` | `42130` | source registry, document state, jobs, failures, audit |
 | `weaviate` | `42131`, `42132` | BM25/vector hybrid retrieval index |
 
-Ollama is configured through `LOCAL_RAG_OLLAMA_BASE_URL`. The Compose default is `http://host.docker.internal:11434` because application services run inside containers. Device-specific direct-network endpoints belong only in an untracked local env file.
+Ollama is configured through `LOCAL_RAG_OLLAMA_BASE_URL` for backward compatibility and `LOCAL_RAG_OLLAMA_BASE_URLS` for ordered multi-endpoint operation. The Compose default is `http://host.docker.internal:11434` because application services run inside containers. Device-specific direct-network endpoints, such as a Mac mini Ollama host on the local network, belong only in an untracked local env file.
+
+When `LOCAL_RAG_OLLAMA_BASE_URLS` is set, indexer and retrieval services try the comma-separated endpoints in order for both embeddings and chat. This supports a Mac mini preferred profile with notebook-local fallback, or a notebook-local preferred profile with Mac mini fallback. Endpoint fallback is not a hosted-provider fallback and must remain within operator-owned local/LAN Ollama endpoints.
 
 ## Storage Contracts
 
@@ -156,6 +158,8 @@ cp .env.example .env
 # optionally set LOCAL_RAG_SOURCE_REGISTRY to /config/source-registry.yaml
 docker compose --env-file .env up -d --build
 ```
+
+The single-user operation-zone command defaults to `~/Services/local-rag-system`, with code, config, runtime data, logs, and command wrappers kept below that directory. `~/Services/bin/local-rag` is a convenience symlink to the service command.
 
 The current Compose baseline keeps the legacy sample `/source` mount and also supports generic read-only slots under `/sources` for machine-local RAG corpora:
 
@@ -214,3 +218,4 @@ POST http://127.0.0.1:42120/api/search
 
 - 2026-05-24: MSA runtime, Docker Compose, PostgreSQL DDL, Weaviate schema, and service boundaries added as current runtime design.
 - 2026-05-25: Compose source mounts generalized to portable `/sources/source-*` slots so real source names and host paths remain machine-local.
+- 2026-05-29: Ollama configuration extended from a single base URL to an ordered local/LAN endpoint list with connection/read timeout controls.

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SERVICE_ROOT="${LOCAL_RAG_SERVICE_ROOT:-${HOME}/Service}"
-CODE_DIR="${LOCAL_RAG_CODE_DIR:-${SERVICE_ROOT}/code/local-rag-system}"
+SERVICE_ROOT="${LOCAL_RAG_SERVICE_ROOT:-${HOME}/Services/local-rag-system}"
+CODE_DIR="${LOCAL_RAG_CODE_DIR:-${SERVICE_ROOT}/code}"
 REPO_URL="${LOCAL_RAG_REPO_URL:-https://github.com/Deanly/local-rag-system.git}"
-CONFIG_DIR="${LOCAL_RAG_CONFIG_DIR:-${SERVICE_ROOT}/config/local-rag-system}"
+CONFIG_DIR="${LOCAL_RAG_CONFIG_DIR:-${SERVICE_ROOT}/config}"
 ENV_FILE="${LOCAL_RAG_ENV_FILE:-${CONFIG_DIR}/local.env}"
 BASE_URL="${LOCAL_RAG_BASE_URL:-http://127.0.0.1:42120}"
+BIN_DIR="${LOCAL_RAG_BIN_DIR:-${SERVICE_ROOT}/bin}"
+SOURCE_CHECKOUT_FILE="${CONFIG_DIR}/source-checkout.path"
 
 usage() {
   cat <<'USAGE'
@@ -14,13 +16,20 @@ Usage: local-rag <command> [args]
 
 Commands:
   config              Print operational paths.
-  init-dirs           Create Service directories.
+  install-command     Install this command under ~/Services.
+  init-dirs           Create Services directories.
   init-config         Create an operational checkout and sample local config.
+  sync-local [path]   Copy a local checkout into the operational code dir.
   doctor              Check local prerequisites and operational files.
-  pull                Clone or pull ~/Service/code/local-rag-system.
+  pull                Clone/pull the configured repo, or sync a configured local checkout.
   deploy              Pull code, start stack, and install Codex integration.
+  update              Refresh code, rebuild/restart stack, and install Codex integration.
+  start               Start the Docker Compose stack without rebuilding.
+  run                 Alias for start.
   up                  Start/rebuild the Docker Compose stack.
+  rebuild             Rebuild/recreate the Docker Compose stack.
   down                Stop the Docker Compose stack without deleting data.
+  stop                Alias for down.
   restart             Recreate the Docker Compose stack.
   status              Show compose ps, health, and index status.
   health              Show gateway health.
@@ -31,29 +40,87 @@ Commands:
   codex-smoke [args]  Run Codex MCP adapter and REST smoke checks.
 
 Environment:
-  LOCAL_RAG_SERVICE_ROOT default: ~/Service
-  LOCAL_RAG_CODE_DIR     default: ~/Service/code/local-rag-system
-  LOCAL_RAG_CONFIG_DIR   default: ~/Service/config/local-rag-system
-  LOCAL_RAG_ENV_FILE     default: ~/Service/config/local-rag-system/local.env
+  LOCAL_RAG_SERVICE_ROOT default: ~/Services/local-rag-system
+  LOCAL_RAG_CODE_DIR     default: ~/Services/local-rag-system/code
+  LOCAL_RAG_CONFIG_DIR   default: ~/Services/local-rag-system/config
+  LOCAL_RAG_ENV_FILE     default: ~/Services/local-rag-system/config/local.env
   LOCAL_RAG_REPO_URL     default: https://github.com/Deanly/local-rag-system.git
   LOCAL_RAG_BASE_URL     default: http://127.0.0.1:42120
+  LOCAL_RAG_SOURCE_CHECKOUT optional local checkout to sync instead of git pull
 
 Optional operation-zone files:
-  ~/Service/config/local-rag-system/docker-compose.override.yaml
+  ~/Services/local-rag-system/config/docker-compose.override.yaml
                          read automatically when present
 USAGE
 }
 
 init_dirs() {
-  mkdir -p "${SERVICE_ROOT}/code" "${CONFIG_DIR}" "${SERVICE_ROOT}/runtime/local-rag-system" "${SERVICE_ROOT}/logs/local-rag-system"
+  mkdir -p "${CODE_DIR}" "${CONFIG_DIR}" "${SERVICE_ROOT}/runtime" "${SERVICE_ROOT}/logs" "${BIN_DIR}"
+}
+
+code_ready() {
+  [[ -f "${CODE_DIR}/docker-compose.yml" && -f "${CODE_DIR}/pom.xml" ]]
+}
+
+resolve_source_checkout() {
+  if [[ -n "${LOCAL_RAG_SOURCE_CHECKOUT:-}" ]]; then
+    printf '%s\n' "${LOCAL_RAG_SOURCE_CHECKOUT}"
+  elif [[ -f "${SOURCE_CHECKOUT_FILE}" ]]; then
+    sed -n '1p' "${SOURCE_CHECKOUT_FILE}"
+  fi
+}
+
+sync_code_from_checkout() {
+  local source_checkout="$1"
+  if [[ -z "${source_checkout}" ]]; then
+    echo "Missing local checkout path." >&2
+    exit 1
+  fi
+  if [[ ! -f "${source_checkout}/docker-compose.yml" || ! -f "${source_checkout}/pom.xml" ]]; then
+    echo "Not a local-rag-system checkout: ${source_checkout}" >&2
+    exit 1
+  fi
+  if ! command -v rsync >/dev/null 2>&1; then
+    echo "rsync is required for sync-local" >&2
+    exit 1
+  fi
+  init_dirs
+  rsync -a --delete \
+    --exclude='.git/' \
+    --exclude='.runtime/' \
+    --exclude='target/' \
+    --exclude='*/target/' \
+    --exclude='.env' \
+    --exclude='config/*.local.yaml' \
+    "${source_checkout%/}/" "${CODE_DIR}/"
+  printf '%s\n' "${source_checkout}" > "${SOURCE_CHECKOUT_FILE}"
+  echo "Synced local checkout into ${CODE_DIR}"
+}
+
+install_command() {
+  init_dirs
+  install -m 0755 "$0" "${BIN_DIR}/local-rag"
+  mkdir -p "${HOME}/Services/bin"
+  ln -sf "${BIN_DIR}/local-rag" "${HOME}/Services/bin/local-rag"
+  echo "Installed command: ${BIN_DIR}/local-rag"
+  echo "Convenience symlink: ${HOME}/Services/bin/local-rag"
 }
 
 ensure_code() {
   init_dirs
-  if [[ ! -d "${CODE_DIR}/.git" ]]; then
+  local source_checkout
+  source_checkout="$(resolve_source_checkout || true)"
+  if [[ -n "${source_checkout}" ]]; then
+    sync_code_from_checkout "${source_checkout}"
+  elif [[ ! -d "${CODE_DIR}/.git" ]]; then
     if [[ -e "${CODE_DIR}" && -n "$(find "${CODE_DIR}" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
-      echo "Code directory exists and is not a git checkout: ${CODE_DIR}" >&2
-      exit 1
+      if code_ready; then
+        echo "Using existing operational code snapshot: ${CODE_DIR}"
+        return
+      else
+        echo "Code directory exists and is not a usable checkout: ${CODE_DIR}" >&2
+        exit 1
+      fi
     fi
     git clone "${REPO_URL}" "${CODE_DIR}"
   else
@@ -62,8 +129,8 @@ ensure_code() {
 }
 
 require_code() {
-  if [[ ! -d "${CODE_DIR}/.git" ]]; then
-    echo "Missing operational checkout: ${CODE_DIR}. Run: local-rag pull" >&2
+  if ! code_ready; then
+    echo "Missing operational code: ${CODE_DIR}. Run: local-rag pull or local-rag sync-local /path/to/checkout" >&2
     exit 1
   fi
 }
@@ -77,7 +144,7 @@ require_env() {
 
 init_config() {
   ensure_code
-  mkdir -p "${CONFIG_DIR}" "${SERVICE_ROOT}/runtime/local-rag-system"
+  mkdir -p "${CONFIG_DIR}" "${SERVICE_ROOT}/runtime"
 
   if [[ ! -f "${CONFIG_DIR}/source-registry.local.yaml" ]]; then
     cp "${CODE_DIR}/config/source-registry.local.example.yaml" "${CONFIG_DIR}/source-registry.local.yaml"
@@ -87,9 +154,12 @@ init_config() {
     cat > "${ENV_FILE}" <<EOF
 LOCAL_RAG_SOURCE_REGISTRY=/config/source-registry.local.yaml
 LOCAL_RAG_CONFIG_DIR=${CONFIG_DIR}
-LOCAL_RAG_DATA_DIR=${SERVICE_ROOT}/runtime/local-rag-system
+LOCAL_RAG_DATA_DIR=${SERVICE_ROOT}/runtime
 LOCAL_RAG_POSTGRES_PASSWORD=local-rag-dev
 LOCAL_RAG_OLLAMA_BASE_URL=http://host.docker.internal:11434
+LOCAL_RAG_OLLAMA_BASE_URLS=
+LOCAL_RAG_OLLAMA_CONNECT_TIMEOUT_MILLIS=1500
+LOCAL_RAG_OLLAMA_READ_TIMEOUT_MILLIS=120000
 LOCAL_RAG_EMBEDDING_MODEL=qwen3-embedding:4b
 LOCAL_RAG_CHAT_MODEL=
 LOCAL_RAG_OMLX_BASE_URL=
@@ -97,6 +167,7 @@ LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED=false
 LOCAL_RAG_SCAN_INTERVAL_SECONDS=300
 LOCAL_RAG_WATCH_ENABLED=true
 LOCAL_RAG_WATCH_DEBOUNCE_SECONDS=10
+LOCAL_RAG_DEFAULT_PROJECT_ID=local-rag-system
 LOCAL_RAG_SOURCE_ROOT=${CODE_DIR}/data/sample
 LOCAL_RAG_SOURCE_PERSONAL_NOTES=/source/personal-notes
 LOCAL_RAG_SOURCE_PROJECT_ALPHA_DOCS=/source/project-alpha-docs
@@ -135,8 +206,8 @@ doctor() {
     failed=1
   fi
 
-  if [[ ! -d "${CODE_DIR}/.git" ]]; then
-    echo "missing checkout: ${CODE_DIR}" >&2
+  if ! code_ready; then
+    echo "missing operational code: ${CODE_DIR}" >&2
     failed=1
   fi
 
@@ -152,6 +223,11 @@ doctor() {
 
   if [[ "${failed}" == "0" ]]; then
     echo "local-rag prerequisites look ready."
+    local source_checkout
+    source_checkout="$(resolve_source_checkout || true)"
+    if [[ -n "${source_checkout}" ]]; then
+      echo "source checkout: ${source_checkout}"
+    fi
     if [[ -f "${CONFIG_DIR}/docker-compose.override.yaml" ]]; then
       echo "compose override: ${CONFIG_DIR}/docker-compose.override.yaml"
     fi
@@ -160,6 +236,27 @@ doctor() {
     fi
   fi
   return "${failed}"
+}
+
+load_local_env() {
+  require_env
+  set -a
+  # shellcheck disable=SC1090
+  source "${ENV_FILE}"
+  set +a
+}
+
+install_codex_integration() {
+  require_code
+  load_local_env
+  if [[ -f "${CONFIG_DIR}/codex-skill.local.md" ]]; then
+    env LOCAL_RAG_BASE_URL="${BASE_URL}" \
+      LOCAL_RAG_SKILL_FILE="${CONFIG_DIR}/codex-skill.local.md" \
+      "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
+  else
+    env LOCAL_RAG_BASE_URL="${BASE_URL}" \
+      "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
+  fi
 }
 
 compose() {
@@ -188,7 +285,14 @@ case "${command}" in
     printf 'CODE_DIR=%s\n' "${CODE_DIR}"
     printf 'CONFIG_DIR=%s\n' "${CONFIG_DIR}"
     printf 'ENV_FILE=%s\n' "${ENV_FILE}"
+    printf 'BIN_DIR=%s\n' "${BIN_DIR}"
     printf 'BASE_URL=%s\n' "${BASE_URL}"
+    if [[ -f "${SOURCE_CHECKOUT_FILE}" ]]; then
+      printf 'SOURCE_CHECKOUT=%s\n' "$(sed -n '1p' "${SOURCE_CHECKOUT_FILE}")"
+    fi
+    ;;
+  install-command)
+    install_command
     ;;
   init-dirs)
     init_dirs
@@ -196,32 +300,34 @@ case "${command}" in
   init-config)
     init_config
     ;;
+  sync-local)
+    sync_code_from_checkout "${1:-$(pwd)}"
+    ;;
   doctor)
     doctor
     ;;
   pull)
     ensure_code
     ;;
+  start|run)
+    compose up -d
+    ;;
   up)
     compose up -d --build
     ;;
-  down)
-    compose down
-    ;;
-  restart)
+  rebuild|restart)
     compose up -d --build --force-recreate
     ;;
-  deploy)
+  down|stop)
+    compose down
+    ;;
+  deploy|update)
     ensure_code
     if [[ ! -f "${ENV_FILE}" ]]; then
       init_config
     fi
     compose up -d --build
-    skill_env=()
-    if [[ -f "${CONFIG_DIR}/codex-skill.local.md" ]]; then
-      skill_env=(LOCAL_RAG_SKILL_FILE="${CONFIG_DIR}/codex-skill.local.md")
-    fi
-    env LOCAL_RAG_BASE_URL="${BASE_URL}" "${skill_env[@]}" "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
+    install_codex_integration
     ;;
   status)
     compose ps
@@ -251,15 +357,12 @@ case "${command}" in
     compose logs --no-color --tail="${LOCAL_RAG_LOG_TAIL:-200}" "$@"
     ;;
   install-codex)
-    require_code
-    skill_env=()
-    if [[ -f "${CONFIG_DIR}/codex-skill.local.md" ]]; then
-      skill_env=(LOCAL_RAG_SKILL_FILE="${CONFIG_DIR}/codex-skill.local.md")
-    fi
-    env LOCAL_RAG_BASE_URL="${BASE_URL}" "${skill_env[@]}" "${CODE_DIR}/integrations/codex/install-codex-local-rag.sh"
+    install_codex_integration
     ;;
   codex-smoke)
     require_code
+    load_local_env
+    export LOCAL_RAG_SMOKE_PROJECT_ID="${LOCAL_RAG_SMOKE_PROJECT_ID:-${LOCAL_RAG_DEFAULT_PROJECT_ID:-}}"
     env LOCAL_RAG_BASE_URL="${BASE_URL}" node "${CODE_DIR}/integrations/codex/smoke-local-rag.mjs" "$@"
     ;;
   *)

@@ -8,13 +8,14 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 
 | ID | Title | Status | Source | Related Tasks | Updated |
 | --- | --- | --- | --- | --- | --- |
-| _none_ | _none_ | _none_ | _none_ | _none_ | _none_ |
+| P0002 | retrieval-governance-hardening | active | `docs/projects/P0002-retrieval-governance-hardening.md` | `T0013` | 2026-05-29 |
 
 ## Active Tasks
 
 | ID | Title | Status | Parent / Reference Project | Related Design | Updated |
 | --- | --- | --- | --- | --- | --- |
-| T0010 | codex-rag-utilization-hardening | active | `P0001` | `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-25 |
+| T0013 | retrieval-chunking-and-document-authority-hardening | active | `P0002` | `retrieval-quality-improvement-design`, `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-29 |
+| T0010 | codex-rag-utilization-hardening | active | `P0001` | `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-29 |
 
 ## Blocked Tasks
 
@@ -26,7 +27,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 
 | ID | Title | Status | Parent / Reference Project | Evidence | Updated |
 | --- | --- | --- | --- | --- | --- |
-| P0001 | local-rag-system | done | self | Functional baseline plus portable host-local Ollama RAG smoke | 2026-05-25 |
+| P0001 | local-rag-system | done | self | Functional baseline plus portable host-local/LAN Ollama endpoint failover | 2026-05-29 |
 | T0001 | source-registry-project-ssot-registration | done | `P0001` | Registry validation and scope resolution smoke | 2026-05-24 |
 | T0002 | msa-runtime-baseline | done | `P0001` | Compose config, DDL smoke, service/storage contracts | 2026-05-24 |
 | T0003 | spring-boot-msa-skeleton | done | `P0001` | Maven tests, Compose build/up, gateway health | 2026-05-24 |
@@ -37,6 +38,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | T0008 | portable-ops-zone-deployment | done | `P0001` | Portable defaults and operation-zone deployment | 2026-05-24 |
 | T0009 | host-local-ollama-rag-configuration | done | `P0001` | Portable source-slot runtime indexing/search/answer smoke | 2026-05-25 |
 | T0011 | retrieval-quality-hardening | done | `P0001` | Evaluation harness, deterministic rerank, primary-source weighting, and diversity control | 2026-05-25 |
+| T0012 | portable-ollama-endpoint-failover | done | `P0001` | Ordered local/LAN Ollama endpoint failover for notebook-local and Mac mini profiles | 2026-05-29 |
 
 ## Active Reports
 
@@ -61,3 +63,6 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-05-25: `T0010` implementation reached development-zone hardening completion: `rag_get_document`, mode normalization, unknown-project 400 handling, `local-rag-system.docs` examples, Codex skill guidance, and smoke tooling are in place; operation-zone deploy/restart remains pending.
 - 2026-05-25: Retrieval quality baseline, improvement design, and `T0011` active task were added for evaluation-backed ranking hardening.
 - 2026-05-25: `T0011` completed in the development zone with versioned evaluation cases, runner, deterministic source/path rerank, document diversity control, and before/after metrics.
+- 2026-05-29: `T0012` completed ordered local/LAN Ollama endpoint failover so a notebook-local endpoint and Mac mini endpoint can be configured without committing private hostnames.
+- 2026-05-29: `T0010` operation deployment resumed by user request, with `~/Services/local-rag-system` as the operation-zone root.
+- 2026-05-29: `P0002` issued as the retrieval governance hardening exception branch after P0001 functional baseline; `T0013` is the first active P0002 task.

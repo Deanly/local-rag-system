@@ -13,8 +13,11 @@ class IndexerSettingsTests {
                 null,
                 null,
                 null,
+                null,
                 false,
                 true,
+                0,
+                0,
                 0,
                 0
         );
@@ -28,14 +31,18 @@ class IndexerSettingsTests {
                 "/config/source-registry.yaml",
                 true,
                 "http://ollama:11434",
+                "http://mac-mini.local:11434,http://ollama:11434",
                 "embedding-model",
                 "http://weaviate:8080",
                 false,
                 true,
                 300_000,
-                7_500
+                7_500,
+                250,
+                60_000
         );
 
         assertThat(settings.watchDebounceMillis()).isEqualTo(7_500L);
+        assertThat(settings.ollamaBaseUrls()).isEqualTo("http://mac-mini.local:11434,http://ollama:11434");
     }
 }

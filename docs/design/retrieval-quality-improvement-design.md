@@ -5,7 +5,7 @@ status: current
 domain: retrieval-quality
 owner:
 created: 2026-05-25
-updated: 2026-05-25
+updated: 2026-05-29
 retrieval_class:
   - domain-current
 context:
@@ -15,7 +15,9 @@ context:
   size_tier: medium
 referenced_by:
   - docs/projects/P0001-local-rag-system.md
+  - docs/projects/P0002-retrieval-governance-hardening.md
   - docs/tasks/T0011-retrieval-quality-hardening.md
+  - docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md
 source_refs:
   - docs/reports/2026-05-25-retrieval-quality-baseline.md
   - docs/design/local-rag-system-development-direction.md
@@ -38,10 +40,12 @@ tags:
 - Domain: retrieval-quality
 - Owner:
 - Created: 2026-05-25
-- Updated: 2026-05-25
+- Updated: 2026-05-29
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
+  - `docs/projects/P0002-retrieval-governance-hardening.md`
   - `docs/tasks/T0011-retrieval-quality-hardening.md`
+  - `docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md`
 
 ## Context
 
@@ -57,7 +61,7 @@ Local RAG의 functional baseline은 완성되어 있다. 현재 시스템은 등
 - project-scoped search에서 default context가 primary project source보다 앞서는 경우가 있다.
 - reranker, source weighting, document-level diversity, 정식 evaluation harness가 없다.
 
-이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. Markdown AST/frontmatter chunking and model-based rerank are deferred until a reindex-aware follow-up task.
+이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-29 기준 Markdown AST/frontmatter chunking and document authority metadata work is active in `P0002` / `T0013`.
 
 ## Whole-System Role
 
@@ -423,14 +427,16 @@ Authoritative artifacts:
 
 - `docs/reports/2026-05-25-retrieval-quality-baseline.md`
 - `docs/design/retrieval-quality-improvement-design.md`
+- `docs/projects/P0002-retrieval-governance-hardening.md`
 - `docs/tasks/T0011-retrieval-quality-hardening.md`
+- `docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md`
 - `docs/evaluation/retrieval-quality-cases.yaml`
 - `docs/bin/validate-retrieval-quality.sh`
 
 Expected future artifacts:
 
-- a generated local report path for evaluation runs.
-- a follow-up task for Markdown AST/frontmatter chunking and reindex validation.
+- generated local report paths for evaluation runs.
+- follow-up tasks for search filter/answer context governance, staleness evaluation, audit expansion, and optional local reranker evaluation.
 
 ## Quality Axes
 
@@ -459,10 +465,11 @@ Expected future artifacts:
 2. Done: Record baseline metrics on current runtime.
 3. Done: Implement deterministic source weighting and diversity control behind current search API.
 4. Done: Re-run evaluation and compare metrics.
-5. Next: Add chunk metadata parsing and reindex.
-6. Next: Re-run evaluation and inspect regressions.
-7. Later: Evaluate local reranker model only after deterministic improvements plateau.
+5. Active: `T0013` adds chunk metadata parsing, document authority metadata, and reindex validation.
+6. Next: Add search filters and answer context source-priority governance.
+7. Next: Expand evaluation for stale/deprecated misuse and answer faithfulness.
 8. Later: Expand audit fields once ranking phases exist.
+9. Later: Evaluate local reranker model only after deterministic improvements plateau.
 
 ## Open Questions
 
@@ -476,3 +483,4 @@ Expected future artifacts:
 
 - 2026-05-25: design created from retrieval quality baseline. It locks evaluation-first retrieval improvement, primary source weighting, local-only rerank, chunking improvement, duplicate control, and audit expansion as the next quality path.
 - 2026-05-25: `T0011` implemented the evaluation runner, deterministic primary-source/source-role/path rerank, and document diversity control. Chunking and audit schema expansion remain follow-up work.
+- 2026-05-29: `P0002` and `T0013` added as the active retrieval governance hardening path for Markdown/frontmatter-aware chunking, document authority metadata, and reindex validation.
