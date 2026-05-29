@@ -15,12 +15,23 @@ public class RetrievalServiceApplication {
 
     @Bean
     EmbeddingClient embeddingClient(RetrievalSettings settings) {
-        return new EmbeddingClient(settings.ollamaBaseUrl(), settings.embeddingModel(), settings.embeddingFallbackEnabled());
+        return new EmbeddingClient(
+                settings.ollamaBaseUrls(),
+                settings.embeddingModel(),
+                settings.embeddingFallbackEnabled(),
+                settings.ollamaConnectTimeoutMillis(),
+                settings.ollamaReadTimeoutMillis()
+        );
     }
 
     @Bean
     OllamaChatClient ollamaChatClient(RetrievalSettings settings) {
-        return new OllamaChatClient(settings.ollamaBaseUrl(), settings.chatModel());
+        return new OllamaChatClient(
+                settings.ollamaBaseUrls(),
+                settings.chatModel(),
+                settings.ollamaConnectTimeoutMillis(),
+                settings.ollamaReadTimeoutMillis()
+        );
     }
 
     @Bean

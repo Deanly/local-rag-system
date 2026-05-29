@@ -37,7 +37,13 @@ public class IndexerServiceApplication {
 
     @Bean
     EmbeddingClient embeddingClient(IndexerSettings settings) {
-        return new EmbeddingClient(settings.ollamaBaseUrl(), settings.embeddingModel(), settings.embeddingFallbackEnabled());
+        return new EmbeddingClient(
+                settings.ollamaBaseUrls(),
+                settings.embeddingModel(),
+                settings.embeddingFallbackEnabled(),
+                settings.ollamaConnectTimeoutMillis(),
+                settings.ollamaReadTimeoutMillis()
+        );
     }
 
     @Bean

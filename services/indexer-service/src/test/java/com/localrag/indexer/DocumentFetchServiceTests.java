@@ -87,12 +87,15 @@ class DocumentFetchServiceTests {
                 registry.toString(),
                 true,
                 "http://localhost:11434",
+                "http://localhost:11434",
                 "qwen3-embedding:4b",
                 "http://weaviate:8080",
                 false,
                 false,
                 300_000,
-                10_000
+                10_000,
+                1_500,
+                120_000
         );
         return new DocumentFetchService(settings, new SourceRegistryLoader(), new SourceRegistryValidator());
     }

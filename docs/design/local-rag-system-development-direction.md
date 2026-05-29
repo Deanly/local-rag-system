@@ -5,7 +5,7 @@ status: current
 domain: local-rag-system
 owner:
 created: 2026-05-24
-updated: 2026-05-25
+updated: 2026-05-29
 retrieval_class:
   - domain-current
 context:
@@ -33,7 +33,7 @@ tags:
 - Domain: local-rag-system
 - Owner:
 - Created: 2026-05-24
-- Updated: 2026-05-24
+- Updated: 2026-05-29
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/tasks/T0001-source-registry-project-ssot-registration.md`
@@ -90,7 +90,7 @@ tags:
 
 - Source folder: read-only mount로만 접근한다.
 - Source registry: 어떤 source root가 indexing/search 대상인지 결정하는 machine-local control plane이다.
-- Ollama: 기존 local/network Ollama endpoint를 사용하고, 모델 제공자는 이 시스템 밖의 operator prerequisite으로 둔다.
+- Ollama: 기존 local/network Ollama endpoint를 사용하고, 모델 제공자는 이 시스템 밖의 operator prerequisite으로 둔다. 여러 local/LAN endpoint가 설정되면 순서대로 시도하되 hosted provider로 넘어가지 않는다.
 - Weaviate: vector/lexical index 저장소이며 재생성 가능한 derived state로 취급한다.
 - Codex/CLI/UI: `api-gateway` 또는 `mcp-bridge`가 제공하는 동일한 search/index API를 소비한다.
 
@@ -160,7 +160,8 @@ queued/indexing -> failed -> queued
 - 파일 변경 판단은 path, mtime, size만으로 끝내지 않고 sha256을 최종 diff key로 사용한다.
 - 변경 파일은 기존 document chunks를 삭제한 뒤 upsert한다.
 - 삭제 파일은 검색 결과에서 사라져야 한다.
-- embedding/chat 호출은 local endpoint로만 나가야 한다.
+- embedding/chat 호출은 local 또는 LAN-local Ollama endpoint로만 나가야 한다.
+- 여러 Ollama endpoint를 설정해도 fallback은 operator가 명시한 local/LAN endpoint 목록 안에서만 일어나야 한다.
 - retrieval API는 검색 엔진 교체를 숨기는 interface 뒤에 둔다.
 - 검색 결과는 source path, heading, snippet, score breakdown, citation을 포함해야 한다.
 - 실패는 조용히 삼키지 않고 `FailureRecord`와 index status에 남긴다.

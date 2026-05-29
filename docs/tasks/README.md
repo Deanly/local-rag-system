@@ -11,7 +11,8 @@
 
 ## Active
 
-- [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): Codex RAG utilization hardening 구현은 개발존에서 완료됐고, 운영존 deploy/restart 및 live runtime smoke가 남아 있음. Updated: 2026-05-25.
+- [`T0013-retrieval-chunking-and-document-authority-hardening.md`](T0013-retrieval-chunking-and-document-authority-hardening.md): P0002 첫 critical path로 Markdown/frontmatter-aware chunking과 document authority metadata indexing을 준비. Updated: 2026-05-29.
+- [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): Codex RAG utilization hardening 구현은 개발존에서 완료됐고, `~/Services` 운영존 deploy/restart 및 live runtime smoke를 진행 중. Updated: 2026-05-29.
 
 ## Blocked
 
@@ -19,6 +20,7 @@
 
 ## Done
 
+- [`T0012-portable-ollama-endpoint-failover.md`](T0012-portable-ollama-endpoint-failover.md): notebook-local Ollama and optional Mac mini Ollama can be configured as ordered local/LAN endpoints with failover. Updated: 2026-05-29.
 - [`T0011-retrieval-quality-hardening.md`](T0011-retrieval-quality-hardening.md): retrieval evaluation harness, primary source weighting, deterministic rerank, diversity control, and evaluation-output observability를 구현. Updated: 2026-05-25.
 - [`T0009-host-local-ollama-rag-configuration.md`](T0009-host-local-ollama-rag-configuration.md): host-local Ollama answer runtime, portable source slots, global registration, indexing, search, and answer smoke를 완료. Updated: 2026-05-25.
 - [`T0008-portable-ops-zone-deployment.md`](T0008-portable-ops-zone-deployment.md): tracked defaults를 portable하게 조정하고 `~/Service` 운영 zone 배포를 구성. Updated: 2026-05-24.

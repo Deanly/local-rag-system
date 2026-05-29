@@ -37,7 +37,7 @@
 | [`local-rag-system-development-direction.md`](local-rag-system-development-direction.md) | domain design | `domain-current` | Local RAG architecture, MVP scope, indexing/search/Codex boundary를 판단할 때 | 하네스 운영 규칙만 확인할 때 | medium | local-rag-system | `docs/projects/P0001-local-rag-system.md` |
 | [`source-registry-and-project-ssot.md`](source-registry-and-project-ssot.md) | domain design | `domain-current` | 장비별 source registry, project SSOT registration, Codex/RAG skill scope를 구현할 때 | 일반 RAG 개념만 확인할 때 | medium | source-registry | `docs/tasks/T0001-source-registry-project-ssot-registration.md` |
 | [`msa-runtime-and-storage.md`](msa-runtime-and-storage.md) | runtime design | `domain-current` | MSA service boundary, Docker Compose, PostgreSQL DDL, Weaviate schema, source mount contract를 구현할 때 | 순수 검색 ranking 알고리즘만 확인할 때 | medium | runtime/storage | `docs/tasks/T0002-msa-runtime-baseline.md`, `docs/tasks/T0009-host-local-ollama-rag-configuration.md` |
-| [`retrieval-quality-improvement-design.md`](retrieval-quality-improvement-design.md) | domain design | `domain-current` | 검색 품질, evaluation harness, primary source weighting, rerank, chunking 개선을 구현할 때 | source registry 등록이나 Compose mount contract만 확인할 때 | medium | retrieval-quality | `docs/tasks/T0011-retrieval-quality-hardening.md` |
+| [`retrieval-quality-improvement-design.md`](retrieval-quality-improvement-design.md) | domain design | `domain-current` | 검색 품질, evaluation harness, primary source weighting, rerank, chunking 개선을 구현할 때 | source registry 등록이나 Compose mount contract만 확인할 때 | medium | retrieval-quality | `docs/projects/P0002-retrieval-governance-hardening.md`, `docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md` |
 
 ## Change Log
 
@@ -46,3 +46,5 @@
 - 2026-05-24: MSA runtime and storage design surface 추가.
 - 2026-05-25: MSA runtime source mount contract를 generic source slot 기준으로 갱신.
 - 2026-05-25: Retrieval quality improvement design surface 추가.
+- 2026-05-29: MSA runtime and Local RAG design surfaces updated for ordered local/LAN Ollama endpoint failover.
+- 2026-05-29: Retrieval quality design surface linked to P0002 and T0013 for governed Hybrid RAG hardening.

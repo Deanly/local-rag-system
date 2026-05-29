@@ -9,8 +9,8 @@ parent_umbrella_project: self
 completion_mode: functional
 owner:
 created: 2026-05-24
-updated: 2026-05-25
-current_focus: "Functional baseline completed with portable host-local Ollama answer runtime; active follow-up hardens Codex RAG utilization in operation"
+updated: 2026-05-29
+current_focus: "Functional baseline closed as official version 1.0.0; P0002 owns retrieval governance hardening"
 related_control_plane: docs/design/control-plane.md
 related_design:
   - docs/design/local-rag-system-development-direction.md
@@ -42,8 +42,8 @@ tags:
 - Completion Mode: functional
 - Owner:
 - Created: 2026-05-24
-- Updated: 2026-05-25
-- Current Focus: Functional baseline completed with portable host-local Ollama answer runtime; active follow-up hardens Codex RAG utilization in operation
+- Updated: 2026-05-29
+- Current Focus: Functional baseline closed as official version 1.0.0; P0002 owns retrieval governance hardening
 - Related Control Plane: docs/design/control-plane.md
 - Related Design:
   - `docs/design/local-rag-system-development-direction.md`
@@ -67,8 +67,9 @@ SDLC 자동화가 끝까지 밀어야 하는 목표는 다음이다.
 ## Umbrella Lineage
 
 - 이 문서는 `local-rag-system` initiative의 기본 umbrella project다.
-- 현재 별도 exception branch project는 없다.
-- 후속 구현은 먼저 이 project 아래의 `task`로 발급한다.
+- 후속 retrieval governance 개선은 사용자 명시 요청에 따라 `P0002-retrieval-governance-hardening` exception branch project로 분리한다.
+- P0001은 runtime, indexing, hybrid search, Codex bridge의 functional baseline closeout owner로 유지한다.
+- P0002는 P0001의 완료 기준을 다시 열지 않고, metadata-aware chunking, stale/deprecated source control, answer context, evaluation, audit hardening을 별도 delivery boundary로 소유한다.
 
 ## Project Issuance Check
 
@@ -89,7 +90,7 @@ SDLC 자동화가 끝까지 밀어야 하는 목표는 다음이다.
 - watcher는 best-effort signal이고 scanner가 freshness authority다.
 - index는 언제든 재생성 가능한 derived state다.
 - search API는 BM25/vector hybrid와 citation을 제공해야 한다.
-- embedding/chat은 local Ollama endpoint만 사용한다.
+- embedding/chat은 local 또는 LAN-local Ollama endpoint만 사용한다.
 - implementation task는 `docs/design/local-rag-system-development-direction.md`의 boundary를 읽고 잘라야 한다.
 
 ## Completion Mode Notes
@@ -166,14 +167,13 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 실제 로컬
 | T0007 | Codex global RAG integration | Done | 100% | installable stdio MCP adapter and global Codex skill |
 | T0008 | Portable ops zone deployment | Done | 100% | portable localhost defaults and `~/Service` operation zone |
 | T0009 | Host-local Ollama RAG configuration | Done | 100% | portable source slots, answer endpoint, global integration refresh, indexing/search/answer smoke |
-| T0010 | Codex RAG utilization hardening | Active | 86% | implementation complete in development zone; operation-zone deploy/restart and live runtime smoke remain pending by instruction |
+| T0010 | Codex RAG utilization hardening | Follow-up | 86% | non-blocking post-baseline operation-zone deploy/restart and live runtime smoke remain pending by instruction |
 | T0011 | Retrieval quality hardening | Done | 100% | evaluation harness, baseline/post-change metrics, deterministic source/path rerank, primary source weighting, and diversity control implemented |
+| T0012 | Portable Ollama endpoint failover | Done | 100% | ordered notebook-local/Mac mini Ollama endpoint failover implemented for embedding and chat clients |
 
 ## Remaining Task Candidates
 
-- `retrieval-chunking-hardening`: Markdown AST/frontmatter/title/heading metadata, overlap, and reindex validation
-- `retrieval-audit-schema-expansion`: phase latency, source distribution, and rerank score persistence
-- `local-reranker-evaluation`: local cross-encoder or embedding-similarity reranker benchmark after deterministic ranking plateaus
+- `P0002-retrieval-governance-hardening`: retrieval chunking, document authority, stale/deprecated control, answer context, evaluation, and audit hardening
 - `operation-zone-codex-utilization-closeout`: `T0010` operation deploy/restart and live runtime smoke when explicitly requested
 
 ## Overall Progress
@@ -211,8 +211,26 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 실제 로컬
 - Actual local device application: 612 documents and 3463 chunks indexed from `personal-notes`, `project-alpha.docs`, and `project-beta.docs` with `qwen3-embedding:4b` and fallback disabled.
 - Codex global integration: `integrations/codex/install-codex-local-rag.sh` installs `mcp_servers.local_rag` and the `local-rag` skill.
 - Operation zone: `~/Service/bin/local-rag` manages the stack from `~/Service/code/local-rag-system` using untracked config under `~/Service/config/local-rag-system`.
+- Portable Ollama endpoints: `LOCAL_RAG_OLLAMA_BASE_URLS` supports ordered local/LAN endpoints so the Mac mini can be preferred at a desk while the notebook-local endpoint remains available when traveling.
+- Official version baseline: P0001 functional baseline starts as `1.0.0`; Maven parent/module versions and service Dockerfile jar paths now use `1.0.0`.
 
 문서만 작성된 상태는 G1의 증빙일 수 있지만 project 전체 `done` evidence로는 부족하다.
+
+## Closeout And Version Review
+
+P0001은 functional baseline 기준으로 이미 닫힌 상태를 유지한다.
+
+Closeout 판단:
+
+- P0001의 원래 목적은 local-only RAG runtime, source registry, scanner/indexer, Weaviate hybrid retrieval, citation-bearing search API, Codex bridge smoke가 가능한 baseline을 만드는 것이었다.
+- 현재 남은 `T0010` operation-zone deploy/restart smoke는 post-baseline Codex utilization remediation이며, 사용자가 명시적으로 operation restart/deploy를 요청하기 전까지 P0001의 functional baseline closeout blocker로 보지 않는다.
+- retrieval chunking, document authority, stale/deprecated source control, answer context, evaluation, audit hardening은 P0001을 다시 열지 않고 `P0002`가 소유한다.
+
+Version 판단:
+
+- P0001 결과를 official `1.0.0` functional baseline으로 정한다.
+- Maven parent/module versions, service Dockerfile jar paths, and runtime docs now use `1.0.0`.
+- Git tag creation and push are still separate operator actions, if desired.
 
 ## Outputs / Handoff
 
@@ -224,7 +242,7 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 실제 로컬
 - 현재 산출물: `docs/design/retrieval-quality-improvement-design.md`
 - 현재 산출물: `docs/evaluation/retrieval-quality-cases.yaml`
 - 현재 산출물: `docs/bin/validate-retrieval-quality.sh`
-- 후속 handoff: chunking/schema and local model reranker improvements should start from `docs/design/retrieval-quality-improvement-design.md` and preserve the T0011 evaluation fixture.
+- 후속 handoff: `P0002-retrieval-governance-hardening` owns chunking/schema, document authority, stale/deprecated source control, answer context, evaluation, audit, and local reranker evaluation while preserving the T0011 evaluation fixture.
 
 ## Quality Axes In Scope
 
@@ -269,3 +287,5 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 실제 로컬
 - 2026-05-25: T0009 added host-local Ollama configuration, implemented `/api/answer`, kept source selection in ignored local registry state, and refreshed the Codex integration with registry-driven MCP descriptions.
 - 2026-05-25: T0009 blocker resolved. The missing images were pulled, the Compose stack started, the current machine-local registry was indexed, and search/MCP search/local answer smoke passed after disabling Ollama thinking output for bounded answer generation.
 - 2026-05-25: T0010 issued as a post-baseline remediation task after audit showed the runtime and adapter are healthy but the active Codex session does not expose local RAG MCP tools directly, and several API/tool contract gaps remain.
+- 2026-05-29: T0012 completed portable Ollama endpoint failover. Indexer and retrieval services now support ordered local/LAN Ollama endpoint lists for notebook-local and Mac mini profiles without committing private hostnames.
+- 2026-05-29: P0001 closeout was reviewed against the new retrieval-governance request. P0001 is now the official `1.0.0` functional baseline; P0002 owns governed Hybrid RAG quality hardening.

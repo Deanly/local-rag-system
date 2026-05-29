@@ -16,6 +16,7 @@ The earlier Python BM25 scaffold has been removed from the active runtime surfac
 
 The functional baseline is implemented and smoke-tested:
 
+- official baseline version `1.0.0`
 - source registry validation and project-scoped source resolution
 - file watcher plus periodic scan fallback
 - Markdown/plain text chunk indexing
@@ -77,7 +78,7 @@ docker-compose.yml
 Prerequisites:
 
 - Docker with Docker Compose
-- Ollama running on the host or on a reachable LAN host
+- Ollama running on the host, a reachable LAN host, or both
 - `qwen3-embedding:4b` installed in Ollama, or another embedding model configured with `LOCAL_RAG_EMBEDDING_MODEL`
 
 For a host-local Ollama on Docker Desktop or a recent Linux Docker engine, containers should use `http://host.docker.internal:11434`, not `http://localhost:11434`. Inside a container, `localhost` means the container itself.
@@ -161,9 +162,29 @@ Periodic scan remains the final freshness authority and defaults to 300 seconds.
 
 ## Ollama Prerequisite
 
-The Docker Compose default expects host Ollama to be reachable from containers on `http://host.docker.internal:11434` with `LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED=false`. If Ollama runs on another machine, set `LOCAL_RAG_OLLAMA_BASE_URL` to that reachable endpoint in the local env file.
+The Docker Compose default expects host Ollama to be reachable from containers on `http://host.docker.internal:11434` with `LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED=false`.
+
+Use `LOCAL_RAG_OLLAMA_BASE_URLS` when this notebook should use more than one local/LAN-local Ollama endpoint. Values are comma-separated and tried in order for both embeddings and chat. Keep real hostnames and IPs in the local `.env` file, not in committed files.
+
+Portable notebook first, Mac mini second:
+
+```env
+LOCAL_RAG_OLLAMA_BASE_URL=http://host.docker.internal:11434
+LOCAL_RAG_OLLAMA_BASE_URLS=http://host.docker.internal:11434,http://mac-mini-host.local:11434
+```
+
+Mac mini preferred when it is reachable, notebook fallback when away from the desk:
+
+```env
+LOCAL_RAG_OLLAMA_BASE_URL=http://host.docker.internal:11434
+LOCAL_RAG_OLLAMA_BASE_URLS=http://mac-mini-host.local:11434,http://host.docker.internal:11434
+```
+
+`LOCAL_RAG_OLLAMA_CONNECT_TIMEOUT_MILLIS` controls how quickly the client moves past an unreachable endpoint. The default is `1500`, which keeps remote-first profiles usable when the notebook leaves the local network. `LOCAL_RAG_OLLAMA_READ_TIMEOUT_MILLIS` defaults to `120000` so local answer generation has enough time to complete.
 
 `qwen3-embedding:4b` is the current embedding baseline because it is materially faster and lighter than `qwen3-embedding:8b` for large indexing runs while remaining multilingual and compatible with the current Ollama `/api/embeddings` endpoint. Device-specific endpoints, such as a directly connected LAN Ollama host, belong in the local env file and should not be committed.
+
+Install the same embedding model on every endpoint in `LOCAL_RAG_OLLAMA_BASE_URLS`. If you change `LOCAL_RAG_EMBEDDING_MODEL`, force a reindex so Weaviate does not mix vectors from different model dimensions or distributions.
 
 Set `LOCAL_RAG_CHAT_MODEL` in the local env file to enable `/api/answer`. The answer path retrieves local chunks first, then sends only those retrieved snippets to the configured local Ollama chat model.
 
@@ -171,25 +192,28 @@ Fallback embeddings are for development smoke only. Do not use fallback for prod
 
 ## Operations
 
-Development happens from a normal workspace checkout. For a single-user host deployment, the provided operation command can run from `~/Service/code/local-rag-system` and read host-specific configuration from `~/Service/config/local-rag-system/local.env`.
+Development happens from a normal workspace checkout. For a single-user host deployment, the provided operation command runs under `~/Services/local-rag-system` and reads host-specific configuration from `~/Services/local-rag-system/config/local.env`.
 
 Install the service command:
 
 ```bash
-install -m 0755 ops/service/local-rag ~/Service/bin/local-rag
-local-rag init-config
-local-rag doctor
+ops/service/local-rag install-command
+~/Services/bin/local-rag sync-local "$PWD"
+~/Services/bin/local-rag init-config
+~/Services/bin/local-rag doctor
 ```
 
 Common operations:
 
 ```bash
-local-rag deploy
-local-rag status
-local-rag codex-smoke --allow-empty-search
-local-rag force-scan
-local-rag logs
-local-rag down
+~/Services/bin/local-rag deploy
+~/Services/bin/local-rag start
+~/Services/bin/local-rag status
+~/Services/bin/local-rag update
+~/Services/bin/local-rag codex-smoke --allow-empty-search
+~/Services/bin/local-rag force-scan
+~/Services/bin/local-rag logs
+~/Services/bin/local-rag stop
 ```
 
 ## Codex Integration

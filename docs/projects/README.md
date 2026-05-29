@@ -12,8 +12,8 @@
 
 ## Active
 
-- _none_
+- [`P0002-retrieval-governance-hardening.md`](P0002-retrieval-governance-hardening.md): P0001 functional baseline 이후 governed Hybrid RAG 검색 거버넌스 hardening exception branch. Parent: `P0001`. Updated: 2026-05-29.
 
 ## Done
 
-- [`P0001-local-rag-system.md`](P0001-local-rag-system.md): 장비별 source roots 대상 1인용 local-only RAG functional baseline. Active follow-up task: `T0010`. Updated: 2026-05-25.
+- [`P0001-local-rag-system.md`](P0001-local-rag-system.md): 장비별 source roots 대상 1인용 local-only RAG functional baseline. Official baseline version: `1.0.0`. Updated: 2026-05-29.
