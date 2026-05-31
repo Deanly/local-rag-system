@@ -5,7 +5,7 @@ status: current
 domain: control-plane
 owner:
 created: 2026-05-24
-updated: 2026-05-29
+updated: 2026-05-31
 retrieval_class:
   - core-start
 context:
@@ -34,7 +34,7 @@ tags:
 - Domain: control-plane
 - Owner:
 - Created: 2026-05-24
-- Updated: 2026-05-29
+- Updated: 2026-05-31
 - Referenced By:
   - `docs/README.md`
   - `docs/projects/P0001-local-rag-system.md`
@@ -127,14 +127,14 @@ tags:
 
 | Project | Initiative | Status | Notes |
 | --- | --- | --- | --- |
-| `docs/projects/P0002-retrieval-governance-hardening.md` | governed Hybrid RAG retrieval quality | Active | P0001 functional baseline 이후 metadata/chunking/filter/answer/evaluation/audit hardening owner |
+| `docs/projects/P0002-retrieval-governance-hardening.md` | governed Hybrid RAG retrieval quality | Done | P0001 functional baseline 이후 metadata/chunking/filter/answer/evaluation/audit hardening completed |
 
 ## Active Execution Surfaces
 
 | Surface | Purpose | Status | Notes |
 | --- | --- | --- | --- |
-| `docs/projects/README.md` | active project 입구 | Active | `P0002` active, `P0001` done |
-| `docs/tasks/README.md` | active task 입구 | Active | `T0013` P0002 critical path active; `T0010` operation-zone follow-up active |
+| `docs/projects/README.md` | active project 입구 | Active | no active project; `P0001` and `P0002` done |
+| `docs/tasks/README.md` | active task 입구 | Active | `T0010` operation-zone follow-up active; P0002 tasks done |
 | `docs/guide/sdlc-automation.md` | SDLC 자동화 목표, critical path, gate, verification ladder | Active | implementation session entry guide |
 | `docs/reports/README.md` | active report 입구 | Active | 현재 active report 없음 |
 | `docs/design/README.md` | design retrieval 입구 | Active | domain design 포함 |
@@ -200,3 +200,4 @@ tags:
 - 2026-05-25: `T0011` 개발존 구현 완료. Retrieval evaluation runner, deterministic ranker, primary source weighting, and document diversity control are now part of the implementation baseline.
 - 2026-05-29: Ollama endpoint 설정은 notebook-local과 LAN-local Mac mini를 모두 담을 수 있는 ordered local endpoint list로 확장했다.
 - 2026-05-29: `P0002`를 P0001 functional baseline 이후 active retrieval governance hardening exception branch로 추가했다. `T0013`은 metadata-aware chunking and document authority indexing의 첫 critical-path task다.
+- 2026-05-31: `P0002`를 done으로 닫았다. Metadata-aware chunking, governance ranking, answer context, staleness/citation evaluation, search audit, and local reranker deployment decision이 완료됐다.

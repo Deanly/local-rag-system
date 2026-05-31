@@ -8,13 +8,12 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 
 | ID | Title | Status | Source | Related Tasks | Updated |
 | --- | --- | --- | --- | --- | --- |
-| P0002 | retrieval-governance-hardening | active | `docs/projects/P0002-retrieval-governance-hardening.md` | `T0013` | 2026-05-29 |
+| _none_ | _none_ | _none_ | _none_ | _none_ | _none_ |
 
 ## Active Tasks
 
 | ID | Title | Status | Parent / Reference Project | Related Design | Updated |
 | --- | --- | --- | --- | --- | --- |
-| T0013 | retrieval-chunking-and-document-authority-hardening | active | `P0002` | `retrieval-quality-improvement-design`, `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-29 |
 | T0010 | codex-rag-utilization-hardening | active | `P0001` | `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-29 |
 
 ## Blocked Tasks
@@ -28,6 +27,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | ID | Title | Status | Parent / Reference Project | Evidence | Updated |
 | --- | --- | --- | --- | --- | --- |
 | P0001 | local-rag-system | done | self | Functional baseline plus portable host-local/LAN Ollama endpoint failover | 2026-05-29 |
+| P0002 | retrieval-governance-hardening | done | `P0001` | Metadata-aware retrieval governance, source-priority answer context, staleness/citation evaluation, search audit observability, and local reranker deployment decision | 2026-05-31 |
 | T0001 | source-registry-project-ssot-registration | done | `P0001` | Registry validation and scope resolution smoke | 2026-05-24 |
 | T0002 | msa-runtime-baseline | done | `P0001` | Compose config, DDL smoke, service/storage contracts | 2026-05-24 |
 | T0003 | spring-boot-msa-skeleton | done | `P0001` | Maven tests, Compose build/up, gateway health | 2026-05-24 |
@@ -39,6 +39,11 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | T0009 | host-local-ollama-rag-configuration | done | `P0001` | Portable source-slot runtime indexing/search/answer smoke | 2026-05-25 |
 | T0011 | retrieval-quality-hardening | done | `P0001` | Evaluation harness, deterministic rerank, primary-source weighting, and diversity control | 2026-05-25 |
 | T0012 | portable-ollama-endpoint-failover | done | `P0001` | Ordered local/LAN Ollama endpoint failover for notebook-local and Mac mini profiles | 2026-05-29 |
+| T0013 | retrieval-chunking-and-document-authority-hardening | done | `P0002` | Metadata-aware chunking, document authority indexing, additive schema migration, force-scan reindex, and search result metadata exposure | 2026-05-30 |
+| T0014 | search-filter-and-answer-context-governance | done | `P0002` | Metadata filter enforcement, stale-source demotion, historical opt-in, and answer source priority cues | 2026-05-30 |
+| T0015 | answer-quality-and-staleness-evaluation | done | `P0002` | Evaluation runner source-use, citation usefulness, staleness error metrics, unknown-project skip, and Korean task-id regression coverage | 2026-05-30 |
+| T0016 | retrieval-audit-observability-expansion | done | `P0002` | Search audit candidate counts, phase latency, top result, source distribution, and score JSON for retrieval debugging | 2026-05-30 |
+| T0017 | local-reranker-evaluation | done | `P0002` | Local reranker deployment decision; separate model reranker deferred from P0002 release path | 2026-05-31 |
 
 ## Active Reports
 
@@ -65,4 +70,13 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-05-25: `T0011` completed in the development zone with versioned evaluation cases, runner, deterministic source/path rerank, document diversity control, and before/after metrics.
 - 2026-05-29: `T0012` completed ordered local/LAN Ollama endpoint failover so a notebook-local endpoint and Mac mini endpoint can be configured without committing private hostnames.
 - 2026-05-29: `T0010` operation deployment resumed by user request, with `~/Services/local-rag-system` as the operation-zone root.
+- 2026-05-29: `T0010` operation-zone deployment completed under `~/Services/local-rag-system`; Docker stack, host Ollama, `local-rag-system` force scan, search, answer, and `local-rag codex-smoke` passed.
+- 2026-05-29: `T0010` operation registry initial source slots expanded using generic `/sources/source-06..08`; live source searches and Codex smoke passed with machine-local identities kept out of committed docs.
 - 2026-05-29: `P0002` issued as the retrieval governance hardening exception branch after P0001 functional baseline; `T0013` is the first active P0002 task.
+- 2026-05-30: P0002/T0013 planning reviewed and supplemented with priority gates, metadata contract draft, and migration plan.
+- 2026-05-30: `T0013` completed P0002 P0 metadata-aware chunking and document authority indexing. P1 search filter, answer context, and staleness evaluation work continued under P0002.
+- 2026-05-30: `T0014` issued as P0002 P1 implementation slice for metadata filter enforcement, stale-source demotion, historical opt-in, and answer source priority cues.
+- 2026-05-30: `T0014` completed. Search filters now use T0013 metadata, stale/low-authority evidence is demoted by default, historical opt-in is supported, and answer context carries source priority cues.
+- 2026-05-30: `T0015` completed. Retrieval evaluation now reports must-use, must-not-use, citation usefulness, and staleness error checks, skips unregistered fixture projects, and covers Korean task-id suffix retrieval.
+- 2026-05-30: `T0016` completed. Search audit now stores candidate limits, raw/final counts, phase latency, top result source/path, source distribution, and score JSON.
+- 2026-05-31: `T0017` and `P0002` completed. Retrieval governance hardening is deployable with deterministic governance ranking and no separate local model reranker in the release path.

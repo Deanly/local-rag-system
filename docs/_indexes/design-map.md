@@ -20,3 +20,7 @@ This is a compact design selection map derived from `docs/design/README.md`.
 - 2026-05-25: Retrieval quality improvement design added to compact design map.
 - 2026-05-29: Runtime and Local RAG design docs updated for ordered local/LAN Ollama endpoint failover.
 - 2026-05-29: Retrieval quality improvement design now feeds P0002/T0013 retrieval governance hardening.
+- 2026-05-30: Retrieval quality and runtime/storage docs updated for T0013 metadata-aware chunking and document authority indexing.
+- 2026-05-30: Retrieval quality design updated for T0014/T0015 metadata filters, answer context governance, and staleness/citation evaluation checks.
+- 2026-05-30: Retrieval quality design updated for T0016 search audit observability expansion.
+- 2026-05-31: Retrieval quality design updated for T0017 local reranker deployment decision and P0002 closeout.

@@ -5,12 +5,46 @@ import org.springframework.http.MediaType;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class WeaviateClient {
     public static final String CLASS_NAME = "LocalRagChunk";
+    private static final List<Map<String, Object>> PROPERTIES = List.of(
+            property("chunkId", "text"),
+            property("documentId", "text"),
+            property("projectId", "text"),
+            property("sourceId", "text"),
+            property("sourceType", "text"),
+            property("ssotRole", "text"),
+            property("relativePath", "text"),
+            property("fileName", "text"),
+            property("folder", "text"),
+            property("extension", "text"),
+            property("title", "text"),
+            property("docType", "text"),
+            property("frontmatterStatus", "text"),
+            property("authority", "text"),
+            property("updated", "date"),
+            property("supersedes", "text[]"),
+            property("supersededBy", "text[]"),
+            property("headingPath", "text"),
+            property("headingPathSegments", "text[]"),
+            property("headingDepth", "int"),
+            property("headingSlug", "text"),
+            property("chunkContext", "text"),
+            property("chunkIndex", "int"),
+            property("content", "text"),
+            property("contentHash", "text"),
+            property("sensitivity", "text"),
+            property("tags", "text[]"),
+            property("links", "text[]"),
+            property("fileMtimeNs", "number"),
+            property("indexedAt", "date")
+    );
 
     private final RestClient restClient;
 
@@ -20,7 +54,8 @@ public class WeaviateClient {
 
     public void ensureSchema() {
         try {
-            restClient.get().uri("/v1/schema/{className}", CLASS_NAME).retrieve().toBodilessEntity();
+            JsonNode schema = restClient.get().uri("/v1/schema/{className}", CLASS_NAME).retrieve().body(JsonNode.class);
+            ensureProperties(schema);
             return;
         } catch (HttpClientErrorException.NotFound ignored) {
             // Create the schema below.
@@ -31,23 +66,7 @@ public class WeaviateClient {
                 .body(Map.of(
                         "class", CLASS_NAME,
                         "vectorizer", "none",
-                        "properties", List.of(
-                                property("chunkId", "text"),
-                                property("documentId", "text"),
-                                property("projectId", "text"),
-                                property("sourceId", "text"),
-                                property("sourceType", "text"),
-                                property("ssotRole", "text"),
-                                property("relativePath", "text"),
-                                property("fileName", "text"),
-                                property("extension", "text"),
-                                property("headingPath", "text"),
-                                property("chunkIndex", "int"),
-                                property("content", "text"),
-                                property("contentHash", "text"),
-                                property("sensitivity", "text"),
-                                property("indexedAt", "date")
-                        )
+                        "properties", PROPERTIES
                 ))
                 .retrieve()
                 .toBodilessEntity();
@@ -85,5 +104,20 @@ public class WeaviateClient {
 
     private static Map<String, Object> property(String name, String dataType) {
         return Map.of("name", name, "dataType", List.of(dataType));
+    }
+
+    private void ensureProperties(JsonNode schema) {
+        Set<String> existing = new HashSet<>();
+        schema.path("properties").forEach(property -> existing.add(property.path("name").asText()));
+        for (Map<String, Object> property : PROPERTIES) {
+            if (!existing.contains(property.get("name"))) {
+                restClient.post()
+                        .uri("/v1/schema/{className}/properties", CLASS_NAME)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(property)
+                        .retrieve()
+                        .toBodilessEntity();
+            }
+        }
     }
 }

@@ -66,6 +66,7 @@ public class IndexerService {
             return new ScanResponse(Instant.now(), 0, 0, 0, 0, 0, errors);
         }
         synchronizer.synchronize(registry);
+        ensureMetadataSchema();
         weaviateClient.ensureSchema();
 
         List<SourceRoot> sources = registry.sources().stream()
@@ -150,32 +151,48 @@ public class IndexerService {
             String sha256 = sha256(bytes);
             BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
             ExistingDocument existing = jdbcTemplate.query("""
-                            SELECT d.sha256, d.status, count(c.chunk_id) AS chunk_count
+                            SELECT d.sha256, d.status, d.metadata_version, count(c.chunk_id) AS chunk_count
                             FROM document_state d
                             LEFT JOIN chunk_state c ON c.document_id = d.document_id
                             WHERE d.source_id = ? AND d.relative_path = ?
-                            GROUP BY d.document_id, d.sha256, d.status
+                            GROUP BY d.document_id, d.sha256, d.status, d.metadata_version
                             """,
                     rs -> rs.next()
-                            ? new ExistingDocument(rs.getString("sha256"), rs.getString("status"), rs.getInt("chunk_count"))
+                            ? new ExistingDocument(
+                            rs.getString("sha256"),
+                            rs.getString("status"),
+                            rs.getInt("metadata_version"),
+                            rs.getInt("chunk_count")
+                    )
                             : null,
                     source.sourceId(), relativePath);
             if (existing != null
                     && sha256.equals(existing.sha256())
                     && "indexed".equals(existing.status())
+                    && existing.metadataVersion() >= MarkdownMetadata.METADATA_VERSION
                     && existing.chunkCount() > 0) {
                 return new IndexFileResult(false, 0);
             }
 
-            UUID documentId = upsertDocument(source, relativePath, path, attrs, sha256);
-            deleteChunks(documentId);
             String text = new String(bytes, StandardCharsets.UTF_8);
-            List<MarkdownChunker.ChunkCandidate> candidates = chunker.chunk(text, 1600);
+            MarkdownChunker.ChunkedDocument chunked = chunker.chunkDocument(
+                    text,
+                    1600,
+                    new MarkdownChunker.DocumentDefaults(
+                            relativePath,
+                            attrs.lastModifiedTime().toInstant(),
+                            source.type(),
+                            source.ssotRole()
+                    )
+            );
+            UUID documentId = upsertDocument(source, relativePath, path, attrs, sha256, chunked.metadata());
+            deleteChunks(documentId);
+            List<MarkdownChunker.ChunkCandidate> candidates = chunked.chunks();
             List<List<Double>> vectors = embeddingClient.embedAll(candidates.stream()
                     .map(MarkdownChunker.ChunkCandidate::content)
                     .toList());
             for (int i = 0; i < candidates.size(); i++) {
-                upsertChunk(source, documentId, relativePath, path, candidates.get(i), vectors.get(i));
+                upsertChunk(source, documentId, relativePath, path, attrs, candidates.get(i), vectors.get(i));
             }
             jdbcTemplate.update("UPDATE document_state SET status = 'indexed', last_indexed_at = now(), updated_at = now() WHERE document_id = ?", documentId);
             return new IndexFileResult(true, candidates.size());
@@ -184,7 +201,14 @@ public class IndexerService {
         }
     }
 
-    private UUID upsertDocument(SourceRoot source, String relativePath, Path path, BasicFileAttributes attrs, String sha256) {
+    private UUID upsertDocument(
+            SourceRoot source,
+            String relativePath,
+            Path path,
+            BasicFileAttributes attrs,
+            String sha256,
+            MarkdownChunker.DocumentMetadata metadata
+    ) {
         String absoluteHash = EmbeddingClient.sha256Hex(path.toAbsolutePath().toString());
         UUID existing = jdbcTemplate.query("""
                         SELECT document_id FROM document_state WHERE source_id = ? AND relative_path = ?
@@ -192,33 +216,79 @@ public class IndexerService {
                 rs -> rs.next() ? rs.getObject("document_id", UUID.class) : null,
                 source.sourceId(), relativePath);
         if (existing != null) {
-            jdbcTemplate.update("""
+            jdbcTemplate.update(connection -> {
+                var statement = connection.prepareStatement("""
                             UPDATE document_state
                             SET absolute_path_hash = ?, file_name = ?, extension = ?, file_size = ?, mtime_ns = ?,
-                                sha256 = ?, status = 'changed', last_detected_at = now(), updated_at = now()
+                                sha256 = ?, status = 'changed', last_detected_at = now(), updated_at = now(),
+                                title = ?, doc_type = ?, frontmatter_status = ?, authority = ?, document_updated = ?,
+                                supersedes = ?, superseded_by = ?, metadata_version = ?
                             WHERE document_id = ?
-                            """,
-                    absoluteHash, path.getFileName().toString(), extension(path), attrs.size(),
-                    attrs.lastModifiedTime().toInstant().toEpochMilli() * 1_000_000L, sha256, existing);
+                            """);
+                statement.setString(1, absoluteHash);
+                statement.setString(2, path.getFileName().toString());
+                statement.setString(3, extension(path));
+                statement.setLong(4, attrs.size());
+                statement.setLong(5, fileMtimeNs(attrs));
+                statement.setString(6, sha256);
+                statement.setString(7, metadata.title());
+                statement.setString(8, metadata.docType());
+                statement.setString(9, metadata.frontmatterStatus());
+                statement.setString(10, metadata.authority());
+                statement.setString(11, metadata.updated());
+                statement.setArray(12, connection.createArrayOf("text", metadata.supersedes().toArray(String[]::new)));
+                statement.setArray(13, connection.createArrayOf("text", metadata.supersededBy().toArray(String[]::new)));
+                statement.setInt(14, MarkdownMetadata.METADATA_VERSION);
+                statement.setObject(15, existing);
+                return statement;
+            });
             return existing;
         }
-        return jdbcTemplate.query("""
+        return jdbcTemplate.query(connection -> {
+                    var statement = connection.prepareStatement("""
                         INSERT INTO document_state(source_id, relative_path, absolute_path_hash, file_name, extension,
-                                                   file_size, mtime_ns, sha256, status)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'queued')
+                                                   file_size, mtime_ns, sha256, status, title, doc_type,
+                                                   frontmatter_status, authority, document_updated, supersedes,
+                                                   superseded_by, metadata_version)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?, ?, ?, ?, ?)
                         RETURNING document_id
-                        """,
+                        """);
+                    statement.setString(1, source.sourceId());
+                    statement.setString(2, relativePath);
+                    statement.setString(3, absoluteHash);
+                    statement.setString(4, path.getFileName().toString());
+                    statement.setString(5, extension(path));
+                    statement.setLong(6, attrs.size());
+                    statement.setLong(7, fileMtimeNs(attrs));
+                    statement.setString(8, sha256);
+                    statement.setString(9, metadata.title());
+                    statement.setString(10, metadata.docType());
+                    statement.setString(11, metadata.frontmatterStatus());
+                    statement.setString(12, metadata.authority());
+                    statement.setString(13, metadata.updated());
+                    statement.setArray(14, connection.createArrayOf("text", metadata.supersedes().toArray(String[]::new)));
+                    statement.setArray(15, connection.createArrayOf("text", metadata.supersededBy().toArray(String[]::new)));
+                    statement.setInt(16, MarkdownMetadata.METADATA_VERSION);
+                    return statement;
+                },
                 rs -> {
                     rs.next();
                     return rs.getObject("document_id", UUID.class);
-                },
-                source.sourceId(), relativePath, absoluteHash, path.getFileName().toString(), extension(path),
-                attrs.size(), attrs.lastModifiedTime().toInstant().toEpochMilli() * 1_000_000L, sha256);
+                });
     }
 
-    private void upsertChunk(SourceRoot source, UUID documentId, String relativePath, Path path, MarkdownChunker.ChunkCandidate candidate, List<Double> vector) {
+    private void upsertChunk(
+            SourceRoot source,
+            UUID documentId,
+            String relativePath,
+            Path path,
+            BasicFileAttributes attrs,
+            MarkdownChunker.ChunkCandidate candidate,
+            List<Double> vector
+    ) {
         String chunkId = documentId + ":" + candidate.index();
         UUID weaviateId = UUID.nameUUIDFromBytes(chunkId.getBytes(StandardCharsets.UTF_8));
+        MarkdownChunker.DocumentMetadata metadata = candidate.metadata();
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("chunkId", chunkId);
         properties.put("documentId", documentId.toString());
@@ -228,27 +298,46 @@ public class IndexerService {
         properties.put("ssotRole", source.ssotRole());
         properties.put("relativePath", relativePath);
         properties.put("fileName", path.getFileName().toString());
+        properties.put("folder", folder(relativePath));
         properties.put("extension", extension(path));
         properties.put("headingPath", candidate.headingPath());
+        properties.put("headingPathSegments", candidate.headingPathSegments());
+        properties.put("headingDepth", candidate.headingDepth());
+        properties.put("headingSlug", candidate.headingSlug());
         properties.put("chunkIndex", candidate.index());
+        properties.put("title", metadata.title());
+        properties.put("docType", metadata.docType());
+        properties.put("frontmatterStatus", metadata.frontmatterStatus());
+        properties.put("authority", metadata.authority());
+        properties.put("updated", metadata.updated());
+        properties.put("supersedes", metadata.supersedes());
+        properties.put("supersededBy", metadata.supersededBy());
+        properties.put("chunkContext", candidate.chunkContext());
         properties.put("content", candidate.content());
         properties.put("contentHash", candidate.contentHash());
         properties.put("sensitivity", source.sensitivityDefault());
+        properties.put("tags", metadata.tags());
+        properties.put("links", metadata.links());
+        properties.put("fileMtimeNs", fileMtimeNs(attrs));
         properties.put("indexedAt", Instant.now().toString());
         weaviateClient.upsert(weaviateId.toString(), vector, properties);
         jdbcTemplate.update("""
-                        INSERT INTO chunk_state(chunk_id, document_id, source_id, chunk_index, heading_path, content_hash,
-                                                token_estimate, weaviate_uuid)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO chunk_state(chunk_id, document_id, source_id, chunk_index, heading_path, heading_depth,
+                                                heading_slug, chunk_context, content_hash, token_estimate, weaviate_uuid)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (chunk_id)
                         DO UPDATE SET heading_path = EXCLUDED.heading_path,
+                                      heading_depth = EXCLUDED.heading_depth,
+                                      heading_slug = EXCLUDED.heading_slug,
+                                      chunk_context = EXCLUDED.chunk_context,
                                       content_hash = EXCLUDED.content_hash,
                                       token_estimate = EXCLUDED.token_estimate,
                                       weaviate_uuid = EXCLUDED.weaviate_uuid,
                                       updated_at = now()
                         """,
                 chunkId, documentId, source.sourceId(), candidate.index(), candidate.headingPath(),
-                candidate.contentHash(), Math.max(1, candidate.content().length() / 4), weaviateId);
+                candidate.headingDepth(), candidate.headingSlug(), candidate.chunkContext(),
+                candidate.contentHash(), candidate.tokenEstimate(), weaviateId);
     }
 
     private void deleteChunks(UUID documentId) {
@@ -287,6 +376,30 @@ public class IndexerService {
         return staleDocumentIds.size();
     }
 
+    private void ensureMetadataSchema() {
+        jdbcTemplate.execute("""
+                ALTER TABLE document_state
+                    ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT '',
+                    ADD COLUMN IF NOT EXISTS doc_type TEXT NOT NULL DEFAULT 'document',
+                    ADD COLUMN IF NOT EXISTS frontmatter_status TEXT NOT NULL DEFAULT 'unknown',
+                    ADD COLUMN IF NOT EXISTS authority TEXT NOT NULL DEFAULT 'source-default',
+                    ADD COLUMN IF NOT EXISTS document_updated TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z',
+                    ADD COLUMN IF NOT EXISTS supersedes TEXT[] NOT NULL DEFAULT '{}',
+                    ADD COLUMN IF NOT EXISTS superseded_by TEXT[] NOT NULL DEFAULT '{}',
+                    ADD COLUMN IF NOT EXISTS metadata_version INTEGER NOT NULL DEFAULT 0
+                """);
+        jdbcTemplate.execute("""
+                ALTER TABLE chunk_state
+                    ADD COLUMN IF NOT EXISTS heading_depth INTEGER NOT NULL DEFAULT 0,
+                    ADD COLUMN IF NOT EXISTS heading_slug TEXT,
+                    ADD COLUMN IF NOT EXISTS chunk_context TEXT
+                """);
+        jdbcTemplate.execute("""
+                CREATE INDEX IF NOT EXISTS idx_document_state_retrieval_metadata
+                ON document_state(source_id, doc_type, frontmatter_status, authority)
+                """);
+    }
+
     private long count(String sql) {
         Long count = jdbcTemplate.queryForObject(sql, Long.class);
         return count == null ? 0 : count;
@@ -309,6 +422,16 @@ public class IndexerService {
         return dot >= 0 ? fileName.substring(dot + 1).toLowerCase() : "";
     }
 
+    private static String folder(String relativePath) {
+        String normalized = relativePath == null ? "" : relativePath.replace('\\', '/');
+        int slash = normalized.lastIndexOf('/');
+        return slash < 0 ? "" : normalized.substring(0, slash);
+    }
+
+    private static long fileMtimeNs(BasicFileAttributes attrs) {
+        return attrs.lastModifiedTime().toInstant().toEpochMilli() * 1_000_000L;
+    }
+
     private static String sha256(byte[] bytes) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
@@ -323,6 +446,13 @@ public class IndexerService {
     private record IndexFileResult(boolean indexed, int chunks) {
     }
 
-    private record ExistingDocument(String sha256, String status, int chunkCount) {
+    private record ExistingDocument(String sha256, String status, int metadataVersion, int chunkCount) {
+    }
+
+    private static final class MarkdownMetadata {
+        private static final int METADATA_VERSION = 1;
+
+        private MarkdownMetadata() {
+        }
     }
 }

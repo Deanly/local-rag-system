@@ -12,6 +12,10 @@ public record SearchResultItem(
         String headingPath,
         String citation,
         String snippet,
+        Map<String, Object> metadata,
         Map<String, Object> score
 ) {
+    public SearchResultItem {
+        metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
+    }
 }

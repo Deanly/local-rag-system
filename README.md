@@ -130,8 +130,11 @@ The tracked Compose file provides generic read-only source slots for machine-loc
 - `/sources/source-03`: `LOCAL_RAG_HOST_SOURCE_03`
 - `/sources/source-04`: `LOCAL_RAG_HOST_SOURCE_04`
 - `/sources/source-05`: `LOCAL_RAG_HOST_SOURCE_05`
+- `/sources/source-06`: `LOCAL_RAG_HOST_SOURCE_06`
+- `/sources/source-07`: `LOCAL_RAG_HOST_SOURCE_07`
+- `/sources/source-08`: `LOCAL_RAG_HOST_SOURCE_08`
 
-For other real documents, copy `config/source-registry.local.example.yaml` to `config/source-registry.local.yaml`, set `LOCAL_RAG_SOURCE_REGISTRY=/config/source-registry.local.yaml`, and edit source `path` values to container paths under `/source` or `/sources`. Keep host paths in `.env` or a local Compose override, not in committed registry examples.
+The initial registry profile is intentionally generic and portable. For real local documents, copy `config/source-registry.local.example.yaml` to `config/source-registry.local.yaml`, set `LOCAL_RAG_SOURCE_REGISTRY=/config/source-registry.local.yaml`, and edit project ids, source ids, and source `path` values to container paths under `/source` or `/sources`. Keep host paths and machine-specific source names in `.env`, an ignored local registry file, or a local Compose override, not in committed registry examples.
 
 ## Development
 
@@ -197,11 +200,15 @@ Development happens from a normal workspace checkout. For a single-user host dep
 Install the service command:
 
 ```bash
+ollama pull qwen3-embedding:4b
+ollama pull qwen3.5:4b
 ops/service/local-rag install-command
 ~/Services/bin/local-rag sync-local "$PWD"
 ~/Services/bin/local-rag init-config
 ~/Services/bin/local-rag doctor
 ```
+
+The generated `local.env` starts with the notebook-local Ollama endpoint through Docker's `host.docker.internal`. To prefer a Mac mini while keeping this notebook portable, set `LOCAL_RAG_OLLAMA_BASE_URLS` to a comma-separated list such as `http://mac-mini-host.local:11434,http://host.docker.internal:11434`.
 
 Common operations:
 

@@ -68,6 +68,14 @@ CREATE TABLE IF NOT EXISTS document_state (
     mtime_ns BIGINT NOT NULL,
     sha256 TEXT,
     status TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    doc_type TEXT NOT NULL DEFAULT 'document',
+    frontmatter_status TEXT NOT NULL DEFAULT 'unknown',
+    authority TEXT NOT NULL DEFAULT 'source-default',
+    document_updated TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z',
+    supersedes TEXT[] NOT NULL DEFAULT '{}',
+    superseded_by TEXT[] NOT NULL DEFAULT '{}',
+    metadata_version INTEGER NOT NULL DEFAULT 0,
     last_detected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_indexed_at TIMESTAMPTZ,
     last_error TEXT,
@@ -85,6 +93,9 @@ CREATE TABLE IF NOT EXISTS chunk_state (
     source_id TEXT NOT NULL REFERENCES source_root(source_id),
     chunk_index INTEGER NOT NULL,
     heading_path TEXT,
+    heading_depth INTEGER NOT NULL DEFAULT 0,
+    heading_slug TEXT,
+    chunk_context TEXT,
     content_hash TEXT NOT NULL,
     token_estimate INTEGER,
     weaviate_uuid UUID,
@@ -138,6 +149,18 @@ CREATE TABLE IF NOT EXISTS search_audit (
     sources_searched TEXT[] NOT NULL DEFAULT '{}',
     result_count INTEGER NOT NULL DEFAULT 0,
     latency_ms INTEGER,
+    candidate_limit INTEGER NOT NULL DEFAULT 0,
+    raw_candidate_count INTEGER NOT NULL DEFAULT 0,
+    final_result_count INTEGER NOT NULL DEFAULT 0,
+    embedding_latency_ms INTEGER,
+    weaviate_latency_ms INTEGER,
+    weighting_latency_ms INTEGER,
+    rerank_latency_ms INTEGER,
+    total_latency_ms INTEGER,
+    source_distribution JSONB NOT NULL DEFAULT '{}'::jsonb,
+    top_result_source_id TEXT,
+    top_result_relative_path TEXT,
+    top_result_score JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT search_audit_mode_check CHECK (mode IN ('keyword', 'vector', 'hybrid'))
 );
@@ -149,3 +172,34 @@ CREATE INDEX IF NOT EXISTS idx_chunk_state_document ON chunk_state(document_id);
 CREATE INDEX IF NOT EXISTS idx_index_job_status_priority ON index_job(status, priority DESC, scheduled_at);
 CREATE INDEX IF NOT EXISTS idx_failure_record_retryable ON failure_record(retryable, resolved_at);
 CREATE INDEX IF NOT EXISTS idx_search_audit_project_created ON search_audit(project_id, created_at DESC);
+
+ALTER TABLE document_state
+    ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS doc_type TEXT NOT NULL DEFAULT 'document',
+    ADD COLUMN IF NOT EXISTS frontmatter_status TEXT NOT NULL DEFAULT 'unknown',
+    ADD COLUMN IF NOT EXISTS authority TEXT NOT NULL DEFAULT 'source-default',
+    ADD COLUMN IF NOT EXISTS document_updated TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z',
+    ADD COLUMN IF NOT EXISTS supersedes TEXT[] NOT NULL DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS superseded_by TEXT[] NOT NULL DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS metadata_version INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE chunk_state
+    ADD COLUMN IF NOT EXISTS heading_depth INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS heading_slug TEXT,
+    ADD COLUMN IF NOT EXISTS chunk_context TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_document_state_retrieval_metadata ON document_state(source_id, doc_type, frontmatter_status, authority);
+
+ALTER TABLE search_audit
+    ADD COLUMN IF NOT EXISTS candidate_limit INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS raw_candidate_count INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS final_result_count INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS embedding_latency_ms INTEGER,
+    ADD COLUMN IF NOT EXISTS weaviate_latency_ms INTEGER,
+    ADD COLUMN IF NOT EXISTS weighting_latency_ms INTEGER,
+    ADD COLUMN IF NOT EXISTS rerank_latency_ms INTEGER,
+    ADD COLUMN IF NOT EXISTS total_latency_ms INTEGER,
+    ADD COLUMN IF NOT EXISTS source_distribution JSONB NOT NULL DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS top_result_source_id TEXT,
+    ADD COLUMN IF NOT EXISTS top_result_relative_path TEXT,
+    ADD COLUMN IF NOT EXISTS top_result_score JSONB NOT NULL DEFAULT '{}'::jsonb;

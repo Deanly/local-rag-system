@@ -2,15 +2,15 @@
 type: project
 doc_id: P0002
 title: retrieval-governance-hardening
-status: active
+status: done
 project_role: exception-branch
 umbrella_initiative: local-rag-system-retrieval-governance
 parent_umbrella_project: P0001-local-rag-system
 completion_mode: functional
 owner:
 created: 2026-05-29
-updated: 2026-05-29
-current_focus: "Prepare and execute governed Hybrid RAG improvements after the P0001 functional baseline"
+updated: 2026-05-31
+current_focus: "Retrieval governance hardening complete and deployable without a separate local model reranker"
 related_control_plane: docs/design/control-plane.md
 related_design:
   - docs/design/retrieval-quality-improvement-design.md
@@ -21,6 +21,7 @@ source_refs:
   - docs/projects/P0001-local-rag-system.md
   - docs/tasks/T0011-retrieval-quality-hardening.md
   - docs/reports/2026-05-25-retrieval-quality-baseline.md
+  - docs/reports/2026-05-31-local-reranker-evaluation-decision.md
   - docs/design/retrieval-quality-improvement-design.md
   - source:conversation/2026-05-29-hybrid-rag-llm-wiki-governance-review
 quality_axes:
@@ -41,15 +42,15 @@ tags:
 
 - Type: project
 - Document ID: P0002
-- Status: active
+- Status: done
 - Project Role: exception-branch
 - Umbrella Initiative: local-rag-system-retrieval-governance
 - Parent Umbrella Project: P0001-local-rag-system
 - Completion Mode: functional
 - Owner:
 - Created: 2026-05-29
-- Updated: 2026-05-29
-- Current Focus: Prepare and execute governed Hybrid RAG improvements after the P0001 functional baseline
+- Updated: 2026-05-31
+- Current Focus: Retrieval governance hardening complete and deployable without a separate local model reranker
 - Related Control Plane: docs/design/control-plane.md
 - Related Design:
   - `docs/design/retrieval-quality-improvement-design.md`
@@ -157,18 +158,38 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 문서 권위
 
 | ID | Work Item | Status | Progress | Notes |
 | --- | --- | --- | --- | --- |
-| T0013 | Retrieval chunking and document authority hardening | Active | 0% | P0: frontmatter/title/status/authority metadata, schema, reindex, stale policy |
+| T0013 | Retrieval chunking and document authority hardening | Done | 100% | P0 complete: frontmatter/title/status/authority metadata, schema, reindex, and search result exposure |
+| T0014 | Search filter and answer context governance | Done | 100% | P1 complete: metadata filters, stale-source demotion, historical opt-in, answer context source priority cues |
+| T0015 | Answer quality and staleness evaluation | Done | 100% | P1 complete: portable fixture cleanup, must-use/must-not-use checks, citation usefulness, staleness errors, optional unknown-project skips, Korean task-id suffix regression |
+| T0016 | Retrieval audit observability expansion | Done | 100% | P2 complete: search audit candidate counts, phase latency, source distribution, top result, and score JSON |
+| T0017 | Local reranker evaluation | Done | 100% | P2 decision complete: default hybrid/vector quality is sufficient for deployment; separate local model reranker deferred |
 
 ## Planned Task Candidates
 
-- `T0014-search-filter-and-answer-context-governance`: P1 search filters, default stale/deprecated exclusion, answer context source priority cues.
-- `T0015-answer-quality-and-staleness-evaluation`: P1 evaluation fixture and runner expansion for staleness error, must/must-not-use, answer faithfulness, citation usefulness.
-- `T0016-retrieval-audit-observability-expansion`: P2 PostgreSQL audit migration and generated quality debugging reports.
-- `T0017-local-reranker-evaluation`: P2 local cross-encoder or embedding-similarity reranker benchmark after metadata and deterministic ranking improvements plateau.
+- _none_
+
+## Execution Plan
+
+Work must proceed in dependency order. Do not start model reranker work before metadata, filtering, answer context, and evaluation gaps are closed.
+
+| Priority | Task | Purpose | Exit Gate |
+| --- | --- | --- | --- |
+| P0 | `T0013-retrieval-chunking-and-document-authority-hardening` | Build the metadata substrate: frontmatter-aware chunking, document authority fields, schema/reindex path, and search result exposure. | New metadata is present in indexed chunks, search results expose it backward-compatibly, reindex is documented, and T0011 retrieval cases show no unacceptable regression. |
+| P1 | `T0014-search-filter-and-answer-context-governance` | Make retrieval and answer generation use document status, authority, freshness, supersession, and source role. | Search filters are enforced, deprecated/superseded docs are excluded or demoted by default, historical queries can opt in, and `/api/answer` receives source priority cues. |
+| P1 | `T0015-answer-quality-and-staleness-evaluation` | Extend quality checks beyond document discovery. | Evaluation reports staleness error, must-use/must-not-use source checks, citation usefulness, and answer faithfulness or an explicitly bounded local-only substitute. |
+| P2 | `T0016-retrieval-audit-observability-expansion` | Make field debugging possible when ranking or answer quality regresses. | Search audit or generated reports include candidate limits, raw/final counts, phase latency, top source/path, source distribution, and rerank score components. |
+| P2 | `T0017-local-reranker-evaluation` | Decide whether a local reranker is worth the operational cost. | Done: current default `hybrid`/`vector` fixture quality does not justify shipping a separate local model reranker in P0002. |
+
+## Release Gates
+
+- `P0 gate`: metadata schema and reindex path are stable enough that later filters and answer context do not need to guess from path-only heuristics.
+- `P1 gate`: Codex-facing answers prefer canonical/current evidence and avoid stale source contamination in repeatable evaluation cases.
+- `P2 gate`: operators can explain and debug retrieval drift without reproducing the whole request manually.
+- `Project closeout gate`: all issued tasks are done, no hosted model path is introduced, and the T0011 baseline plus P0002 staleness cases pass.
 
 ## Overall Progress
 
-- 0%
+- 100%
 
 ## Milestones
 
@@ -199,6 +220,7 @@ Required evidence:
 - answer context smoke with visible source priority cues,
 - retrieval evaluation before/after metrics including staleness cases,
 - audit/report output sample,
+- local reranker deployment decision report,
 - docs validators, compose config, and relevant Maven tests.
 
 Evidence that is not sufficient alone:
@@ -212,8 +234,8 @@ Evidence that is not sufficient alone:
 ## Outputs / Handoff
 
 - P0002 owns the post-P0001 retrieval governance delivery boundary.
-- `T0013` is the first critical-path task and should be worked before search filter or answer evaluation expansion.
-- Later tasks should preserve `docs/evaluation/retrieval-quality-cases.yaml` and extend it rather than replacing the T0011 baseline.
+- The completed tasks preserve `docs/evaluation/retrieval-quality-cases.yaml` and extend it rather than replacing the T0011 baseline.
+- P0002 ships with deterministic governance ranking; future model reranker work needs a new task and expanded default-mode regression evidence.
 - P0001 remains the official `1.0.0` functional runtime baseline.
 
 ## Quality Axes In Scope
@@ -231,12 +253,12 @@ Evidence that is not sufficient alone:
 
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| G1 | Pending | | Starts with `T0013`. |
-| G2 | Pending | | Depends on authority metadata from `T0013`; likely continues in `T0014`. |
-| G3 | Pending | | Planned for `T0014`. |
-| G4 | Pending | | Planned for `T0015`. |
-| G5 | Pending | | Planned for `T0016`. |
-| G6 | Pending | | Verified at each task closeout and project closeout. |
+| G1 | Done | `T0013` completed metadata-aware chunking, document authority indexing, additive schema migration, force-scan reindex, and search result metadata exposure | Full stale/default filter policy was completed in `T0014`. |
+| G2 | Done | `T0014` implemented metadata filters, governance rerank weight, default stale-source demotion, and historical opt-in | `T0015` added deterministic stale-source misuse checks. |
+| G3 | Done | `T0014` added source priority cues to answer context and verified `/api/answer` runtime smoke | `T0015` added bounded local-only source-use/citation usefulness checks. |
+| G4 | Done | `T0015` extended the evaluation runner and fixture with portable local-rag-system default cases, must-use, must-not-use, citation usefulness, staleness error metrics, optional unknown-project skip reporting, and Korean task-id suffix coverage | `local-rag-governance` evaluation cases reported 100% source-use/citation checks and 0 staleness errors. |
+| G5 | Done | `T0016` expanded `search_audit` and retrieval-service audit writes with candidate limit, raw/final counts, phase latency, top result source/path, source distribution, and top score JSON | Runtime DB smoke verified populated audit fields after live search. |
+| G6 | Done | `T0017` reranker decision, retrieval evaluation, Maven tests, docs validators, compose config, runtime health/search/index smoke, and `git diff --check` passed during project closeout | No hosted reranker/LLM judge path introduced; public modes remain `hybrid`, `keyword`, and `vector`. |
 
 ## Completion Guardrails
 
@@ -249,11 +271,18 @@ Evidence that is not sufficient alone:
 
 ## Risks / Open Questions
 
-- Full metadata schema changes may require destructive Weaviate reindexing; the rollback path must be explicit.
 - Git tagging/pushing `v1.0.0` is a separate operator action if a repository tag is desired.
-- Local cross-encoder rerank may add memory pressure and should wait until deterministic metadata improvements plateau.
 - Evaluation fixtures can become stale as docs change; maintenance rules need to be part of the evaluation task.
+- A future larger fixture may justify local model reranker work, but it is not a P0002 deployment blocker.
 
 ## Status
 
 - 2026-05-29: Project issued by explicit user request as the follow-on retrieval governance hardening track after P0001 functional baseline. First critical-path task is `T0013`.
+- 2026-05-30: Existing plan reviewed and supplemented with explicit priority order, release gates, and dependency gates. `T0013` remains the first implementation task.
+- 2026-05-30: P0 `T0013` completed. The retrieval substrate now carries document title/type/status/authority/updated/supersession and full heading metadata through chunking, indexing, reindex, and search results. Next project slice is P1 `T0014` search filter and answer context governance.
+- 2026-05-30: `T0014` issued to make the T0013 metadata contract affect search filters, stale-source ranking, historical opt-in, and answer context cues.
+- 2026-05-30: `T0014` completed metadata filter enforcement, governance rerank weights, historical opt-in, and answer context priority cues.
+- 2026-05-30: `T0015` completed deterministic answer-quality/staleness evaluation expansion and made the default retrieval fixture portable by removing machine-local project dependencies. P0002 now moves to `T0016` audit and observability expansion.
+- 2026-05-30: `T0016` completed search audit and runtime observability expansion. P0002 now moves to `T0017` local reranker evaluation decision.
+- 2026-05-31: `T0017` completed the local reranker deployment decision. P0002 is closed as deployable with deterministic governance ranking, metadata-aware retrieval, source-priority answer context, staleness/citation evaluation, audit observability, and no separate local model reranker in the release path.
+- 2026-05-31: Test deployment verification completed for `local-rag-system`. The operation registry now excludes `docs/_templates/**` from the project docs source; a forced project scan detected 55 active documents and removed 6 template documents. The deployed retrieval fixture passed with overall hit@1 95.8%, hit@5 100.0%, MRR 0.979, must-use 100.0%, must-not-use 100.0%, citation usefulness 100.0%, and staleness errors 0.

@@ -12,8 +12,9 @@
 
 ## Active
 
-- [`P0002-retrieval-governance-hardening.md`](P0002-retrieval-governance-hardening.md): P0001 functional baseline 이후 governed Hybrid RAG 검색 거버넌스 hardening exception branch. Parent: `P0001`. Updated: 2026-05-29.
+- 현재 active project 문서가 없습니다.
 
 ## Done
 
+- [`P0002-retrieval-governance-hardening.md`](P0002-retrieval-governance-hardening.md): P0001 functional baseline 이후 governed Hybrid RAG 검색 거버넌스 hardening exception branch. Deterministic governance ranking release path. Updated: 2026-05-31.
 - [`P0001-local-rag-system.md`](P0001-local-rag-system.md): 장비별 source roots 대상 1인용 local-only RAG functional baseline. Official baseline version: `1.0.0`. Updated: 2026-05-29.
