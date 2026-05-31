@@ -53,6 +53,8 @@ curl -fsS http://127.0.0.1:42120/api/index/status
 From any checkout:
 
 ```bash
+ollama pull qwen3-embedding:4b
+ollama pull qwen3.5:4b
 ops/service/local-rag install-command
 ~/Services/bin/local-rag sync-local "$PWD"
 ~/Services/bin/local-rag init-config
@@ -63,6 +65,8 @@ Edit:
 
 - `~/Services/local-rag-system/config/local.env`
 - `~/Services/local-rag-system/config/source-registry.local.yaml`
+
+The generated env starts with notebook-local Ollama via `http://host.docker.internal:11434`. For a desk setup that prefers a Mac mini but still works when the notebook leaves the LAN, put the Mac mini URL first in `LOCAL_RAG_OLLAMA_BASE_URLS` and keep `http://host.docker.internal:11434` second.
 
 Then run:
 
@@ -95,11 +99,14 @@ Restart Codex after `install-codex` so the stdio MCP server and skill are reload
 
 ## Source Folder Mapping
 
-Compose mounts one common host folder as `/source` and also provides generic read-only slots under `/sources/source-01` to `/sources/source-05`:
+Compose mounts one common host folder as `/source` and also provides generic read-only slots under `/sources/source-01` to `/sources/source-08`:
 
 ```env
 LOCAL_RAG_SOURCE_ROOT=/path/to/source-root
 LOCAL_RAG_HOST_SOURCE_04=/path/to/local-rag-system/docs
+LOCAL_RAG_HOST_SOURCE_06=/path/to/extra-project-06/docs
+LOCAL_RAG_HOST_SOURCE_07=/path/to/extra-project-07/docs
+LOCAL_RAG_HOST_SOURCE_08=/path/to/extra-support-wiki
 ```
 
 Registry source paths must be container paths under `/source` or `/sources`, for example:
@@ -112,6 +119,9 @@ sources:
   - source_id: local-rag-system.docs
     project_id: local-rag-system
     path: /sources/source-04
+  - source_id: extra-support-wiki
+    project_id: extra-support-wiki
+    path: /sources/source-08
 ```
 
 If real source folders are not under a common parent, create a local compose override with additional read-only mounts and point registry paths at those container mount paths.

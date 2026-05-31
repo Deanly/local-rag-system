@@ -1,5 +1,5 @@
 version: 1
-device_id: local-dev-machine
+device_id: example-device
 default_project_id: local-rag-system
 
 projects:
@@ -29,6 +29,26 @@ projects:
     default_context:
       - local-rag-system.docs
       - personal-notes
+
+  - project_id: extra-project-06
+    display_name: Extra Project 06
+    primary_source_id: extra-project-06.docs
+    default_context:
+      - extra-project-06.docs
+      - extra-support-wiki
+
+  - project_id: extra-project-07
+    display_name: Extra Project 07
+    primary_source_id: extra-project-07.docs
+    default_context:
+      - extra-project-07.docs
+      - extra-support-wiki
+
+  - project_id: extra-support-wiki
+    display_name: Extra Support Wiki
+    primary_source_id: extra-support-wiki
+    default_context:
+      - extra-support-wiki
 
 sources:
   - source_id: personal-notes
@@ -111,9 +131,79 @@ sources:
     exclude:
       - "**/.git/**"
       - "**/.rag_index/**"
+      - "**/_templates/**"
       - "**/node_modules/**"
       - "**/build/**"
       - "**/dist/**"
       - "**/target/**"
     read_policy: registered-default
     write_policy: repo-docs
+
+  - source_id: extra-project-06.docs
+    project_id: extra-project-06
+    type: project-docs
+    ssot_role: project-current-truth
+    path: ${LOCAL_RAG_SOURCE_EXTRA_06}
+    priority: 100
+    active: true
+    sensitivity_default: work
+    include:
+      - "**/*.md"
+      - "**/*.markdown"
+      - "**/*.txt"
+    exclude:
+      - "**/.git/**"
+      - "**/.rag_index/**"
+      - "**/.build/**"
+      - "**/DerivedData/**"
+      - "**/node_modules/**"
+      - "**/build/**"
+      - "**/dist/**"
+      - "**/xcuserdata/**"
+    read_policy: registered-default
+    write_policy: repo-docs
+
+  - source_id: extra-project-07.docs
+    project_id: extra-project-07
+    type: project-docs
+    ssot_role: project-current-truth
+    path: ${LOCAL_RAG_SOURCE_EXTRA_07}
+    priority: 100
+    active: true
+    sensitivity_default: private
+    include:
+      - "**/*.md"
+      - "**/*.markdown"
+      - "**/*.txt"
+    exclude:
+      - "**/.git/**"
+      - "**/.rag_index/**"
+      - "**/node_modules/**"
+      - "**/build/**"
+      - "**/dist/**"
+      - "**/target/**"
+    read_policy: registered-default
+    write_policy: repo-docs
+
+  - source_id: extra-support-wiki
+    project_id: extra-support-wiki
+    type: compiled-wiki
+    ssot_role: compiled-wiki
+    path: ${LOCAL_RAG_SOURCE_EXTRA_08}
+    priority: 90
+    active: true
+    sensitivity_default: private
+    include:
+      - "**/*.md"
+      - "**/*.markdown"
+      - "**/*.txt"
+    exclude:
+      - "**/.git/**"
+      - "**/.rag_index/**"
+      - "**/.obsidian/**"
+      - "**/.trash/**"
+      - "**/node_modules/**"
+      - "**/build/**"
+      - "**/dist/**"
+    read_policy: cross-project-support
+    write_policy: source-specific-rule-required

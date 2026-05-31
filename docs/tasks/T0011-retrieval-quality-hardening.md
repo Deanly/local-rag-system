@@ -270,7 +270,7 @@ Final closeout evidence:
 - `docker compose --env-file .env.example config`: passed.
 - `git diff --check`: passed.
 - `docker run --rm -v "$PWD":/workspace -w /workspace maven:3.9.9-eclipse-temurin-17 mvn -q test`: passed.
-- REST smoke for `worknote`, `personal-core`, `crypto-bot`, `local-rag-system`, and `qr-service-mvp`: passed against development retrieval-service.
+- REST smoke for the registered development sources, including `local-rag-system`: passed against development retrieval-service.
 - Unknown project error smoke: passed with HTTP 400.
 - MCP `rag_search` and `rag_get_document` smoke: passed against current gateway.
 

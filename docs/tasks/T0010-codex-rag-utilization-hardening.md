@@ -6,7 +6,7 @@ status: active
 owner:
 created: 2026-05-25
 updated: 2026-05-29
-current_focus: "Deploy current Local RAG project into ~/Services operation zone and verify Codex-facing RAG paths"
+current_focus: "Support initial user-managed source slots in the ~/Services operation registry"
 completion_mode: remediation
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: P0001-local-rag-system
@@ -42,7 +42,7 @@ tags:
 - Owner:
 - Created: 2026-05-25
 - Updated: 2026-05-29
-- Current Focus: Deploy current Local RAG project into ~/Services operation zone and verify Codex-facing RAG paths
+- Current Focus: Support initial user-managed source slots in the ~/Services operation registry
 - Related Control Plane: docs/design/control-plane.md
 - Related Umbrella Project: P0001-local-rag-system
 - Related Project: docs/projects/P0001-local-rag-system.md
@@ -55,7 +55,7 @@ tags:
 
 이 task는 `T0007`에서 설치한 Codex global RAG integration을 실제 Codex 사용 관점에서 hardening한다.
 
-현재 runtime, index, global config, adapter 자체는 동작하지만, 활성 Codex 세션에서 `mcp__local_rag__...` tool이 항상 노출된다고 보장되지 않고, 일부 API/MCP 계약이 실제 구현과 어긋나 있다. 이 task의 목적은 Codex가 `worknote`, `personal-core`, `crypto-bot`, `local-rag-system` 관련 질문에서 Local RAG를 안정적으로 발견하고, 실패 시 명확한 오류를 받고, 필요한 경우 source-safe document fetch까지 사용할 수 있는 상태로 만드는 것이다.
+현재 runtime, index, global config, adapter 자체는 동작하지만, 활성 Codex 세션에서 `mcp__local_rag__...` tool이 항상 노출된다고 보장되지 않고, 일부 API/MCP 계약이 실제 구현과 어긋나 있다. 이 task의 목적은 Codex가 registry에 등록된 project/source 관련 질문에서 Local RAG를 안정적으로 발견하고, 실패 시 명확한 오류를 받고, 필요한 경우 source-safe document fetch까지 사용할 수 있는 상태로 만드는 것이다.
 
 ## Task Placement Check
 
@@ -92,6 +92,7 @@ Completion mode는 `remediation`이다. 이미 설치된 Codex integration의 �
 - `local-rag-system` 자체 문서가 source registry에 등록되어 검색 가능하다.
 - Codex skill이 등록 프로젝트 관련 질문에서 Local RAG를 먼저 쓰도록 더 명확해진다.
 - 설치 후 사용할 수 있는 `doctor` 또는 smoke script가 gateway health, index status, MCP framing, search, document fetch, unknown project failure를 검증한다.
+- 초기 운영 source set은 generic `/sources/source-06..08` slots로 확장 가능하며, 실제 source names and host paths는 untracked local registry/config에만 둔다.
 
 ## Goal Inventory
 
@@ -152,14 +153,15 @@ Completion mode는 `remediation`이다. 이미 설치된 Codex integration의 �
 | W2 | Fix MCP/search contract drift | Done | 100% | public modes are `hybrid`, `vector`, `keyword`; legacy `bm25` normalizes to `keyword` in DTO and adapter |
 | W3 | Implement or remove `rag_get_document` | Done | 100% | implemented source-safe `sourceId + relativePath` fetch through indexer, bridge, gateway, and MCP adapter |
 | W4 | Harden invalid project handling | Done | 100% | retrieval validates active project before query/audit and returns 400 for unknown `projectId` |
-| W5 | Register `local-rag-system.docs` | In Progress | 90% | committed and operation defaults register `/sources/source-04`; force-scan/search citation smoke waits for operation deploy |
+| W5 | Register `local-rag-system.docs` | Done | 100% | operation config registers `/sources/source-04`; force-scan and search citation smoke passed for `local-rag-system.docs` |
 | W6 | Strengthen Codex skill and install guide | Done | 100% | skill now says RAG-first for registered project docs, freshness/status check, REST fallback, and citation rules |
-| W7 | Add doctor/smoke verification | Done | 90% | `integrations/codex/smoke-local-rag.mjs` and `local-rag codex-smoke` cover adapter framing and runtime checks; adapter-only smoke passed |
-| W8 | Deploy to operation zone and verify | In Progress | 20% | user explicitly requested operation deployment under `~/Services`; script/defaults are being updated |
+| W7 | Add doctor/smoke verification | Done | 100% | `integrations/codex/smoke-local-rag.mjs` and `local-rag codex-smoke` passed adapter framing and runtime checks |
+| W8 | Deploy to operation zone and verify | Done | 100% | deployed under `~/Services/local-rag-system`, installed `~/Services/bin/local-rag`, started Compose stack, installed Codex integration, and passed live smoke |
+| W9 | Register initial user source set | Done | 100% | Generic `/sources/source-06..08` mounts and local registry override guidance support user-managed sources without committing machine-specific names |
 
 ## Overall Progress
 
-- 89%
+- 98%
 
 ## Completion Criteria
 
@@ -167,7 +169,7 @@ Completion mode는 `remediation`이다. 이미 설치된 Codex integration의 �
 2. `docker compose --env-file .env.example config` passes.
 3. MCP adapter framing smoke returns the implemented tool list.
 4. A new Codex session can see `mcp__local_rag__rag_search` or the documented blocker is captured with fallback instructions.
-5. `rag_search` works for `worknote`, `personal-core`, `crypto-bot`, and `local-rag-system`.
+5. `rag_search` works for `local-rag-system` and any user-managed project ids returned by the active registry.
 6. Unknown `projectId` returns a 400-level response, not a 500.
 7. `rag_get_document` behavior matches advertised tools.
 8. `doctor` or equivalent smoke script is documented for new-machine and operation-zone installs.
@@ -210,13 +212,13 @@ Evidence that is not sufficient alone:
 
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| G1 | In Progress | `node integrations/codex/smoke-local-rag.mjs --adapter-only` passed with 7 advertised tools | Active Codex session/new-session tool visibility still requires install/restart verification after operation deploy |
+| G1 | In Progress | `local-rag codex-smoke` passed adapter framing with 7 advertised tools after operation install | Active Codex Desktop session/new-session tool visibility still requires app restart verification; REST and adapter fallback are documented |
 | G2 | Done | `SearchRequestTests`, adapter `tools/list`, and docs align on `hybrid`, `vector`, `keyword`; legacy `bm25` normalizes to `keyword` | Runtime mode smoke waits for operation deploy |
 | G3 | Done | `DocumentFetchServiceTests` passed; `rag_get_document` is exposed by MCP adapter, mcp-bridge, gateway, and indexer with source-root checks | Source-safe implementation chosen instead of removal |
 | G4 | Done | `RetrievalServiceTests` passed for unknown project 400 and unsupported mode 400 before search execution | Runtime unknown-project smoke is included in `smoke-local-rag.mjs` |
-| G5 | In Progress | `.env.example`, `docker-compose.yml`, and `config/source-registry.local.example.yaml` include `local-rag-system.docs` | Actual index/search citation smoke waits for operation deploy/restart |
+| G5 | Done | `~/Services/bin/local-rag force-scan local-rag-system` completed with no errors; `/api/search` returned citations from `local-rag-system.docs` | Operation source points to `~/Services/local-rag-system/code/docs` |
 | G6 | Done | `integrations/codex/skill/SKILL.md` documents RAG-first use, freshness/index status, REST fallback, `rag_get_document`, and citation rule | Machine-local installed skill should be refreshed during operation deploy/install |
-| G7 | Done | `integrations/codex/smoke-local-rag.mjs`, `ops/service/local-rag codex-smoke`, and install guide updates | Full runtime smoke should be run after deployment without `--allow-empty-search` |
+| G7 | Done | `~/Services/bin/local-rag codex-smoke` passed gateway health, registry, index status, search, document fetch, and unknown-project 400 checks | Full runtime smoke now runs without `--allow-empty-search` |
 
 ## Completion Guardrails
 
@@ -238,3 +240,6 @@ Evidence that is not sufficient alone:
 - 2026-05-25: task 문서 생성. Current audit shows the RAG service and adapter are healthy, but the active Codex session does not expose local RAG MCP tools directly; REST fallback remains usable.
 - 2026-05-25: implementation hardening completed in the development zone: source-safe `rag_get_document`, mode normalization, unknown-project 400 handling, `local-rag-system.docs` example registration, Codex skill hardening, and repeatable smoke script. Validation passed for docs validators, Maven tests, compose config, Node syntax, and MCP adapter framing. Operation-zone deploy/restart and live runtime smoke remain pending by instruction.
 - 2026-05-29: user requested operation deployment under `~/Services`; operation script defaults and install guide are being updated from the prior `~/Service` location.
+- 2026-05-29: operation deployment completed under `~/Services/local-rag-system`. Installed `~/Services/bin/local-rag`, synced this checkout to the operation code directory, initialized local config, started Docker, enabled host Ollama with `brew services start ollama`, pulled `qwen3-embedding:4b`, configured `qwen3.5:4b` for chat, recreated the Compose stack, installed Codex MCP/skill integration, force-scanned `local-rag-system`, and passed `local-rag codex-smoke`. Active Codex Desktop MCP visibility still requires an application restart/new-session check.
+- 2026-05-29: user-managed source slots were added through generic Compose mounts and untracked local registry/config guidance, without committing machine-local host paths or private project names.
+- 2026-05-29: initial user-managed sources were verified in the operation registry through live search smoke and `local-rag codex-smoke`; committed docs now keep the source identities generic for portability across machines.

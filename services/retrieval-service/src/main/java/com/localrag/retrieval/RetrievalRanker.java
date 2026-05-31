@@ -19,7 +19,7 @@ final class RetrievalRanker {
     private static final int TOP_WINDOW_FOR_DOCUMENT_CAP = 5;
     private static final int MAX_CHUNKS_PER_DOCUMENT_IN_TOP_WINDOW = 2;
     private static final Pattern TOKEN_PATTERN = Pattern.compile("[\\p{L}\\p{N}]+");
-    private static final Pattern TASK_ID_PATTERN = Pattern.compile("\\bT\\d{4}\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TASK_ID_PATTERN = Pattern.compile("T\\d{4}", Pattern.CASE_INSENSITIVE);
 
     private RetrievalRanker() {
     }
@@ -58,8 +58,9 @@ final class RetrievalRanker {
         double sourceWeight = sourceWeight(request, context, item);
         double pathWeight = pathWeight(request.query(), item);
         double matchWeight = matchWeight(queryTerms, item);
+        double governanceWeight = governanceWeight(request, item);
         double rawRankTieBreak = Math.max(0.0, 0.02 - (candidate.rawRank() * 0.0005));
-        double rerankScore = baseScore + sourceWeight + pathWeight + matchWeight + rawRankTieBreak;
+        double rerankScore = baseScore + sourceWeight + pathWeight + matchWeight + governanceWeight + rawRankTieBreak;
         return new WeightedCandidate(
                 candidate,
                 rerankScore,
@@ -67,6 +68,7 @@ final class RetrievalRanker {
                 sourceWeight,
                 pathWeight,
                 matchWeight,
+                governanceWeight,
                 rawCandidateCount
         );
     }
@@ -131,6 +133,10 @@ final class RetrievalRanker {
         if (hasAny(lowerQuery, "design", "architecture", "설계", "아키텍처") && path.startsWith("design/")) {
             weight += 0.20;
         }
+        if (hasAny(lowerQuery, "retrieval quality", "검색 품질", "품질", "evaluation", "평가", "harness", "하네스", "rerank")
+                && path.contains("retrieval-quality")) {
+            weight += 0.14;
+        }
         if (hasAny(lowerQuery, "task", "hardening", "t000", "작업", "강화") && path.startsWith("tasks/")) {
             weight += 0.18;
         }
@@ -162,6 +168,86 @@ final class RetrievalRanker {
             }
         }
         return Math.min(0.35, overlap * 0.05);
+    }
+
+    private static double governanceWeight(SearchRequest request, SearchResultItem item) {
+        Map<String, Object> metadata = item.metadata() == null ? Map.of() : item.metadata();
+        String status = metadataText(metadata, "frontmatterStatus");
+        String authority = metadataText(metadata, "authority");
+        boolean superseded = !metadataList(metadata, "supersededBy").isEmpty();
+        boolean historicalAllowed = historicalAllowed(request);
+
+        double weight = 0.0;
+        if ("canonical".equals(authority)) {
+            weight += 0.22;
+        } else if ("accepted".equals(authority)) {
+            weight += 0.16;
+        } else if ("reference".equals(authority)) {
+            weight -= historicalAllowed ? 0.0 : 0.08;
+        } else if ("raw".equals(authority)) {
+            weight -= historicalAllowed ? 0.0 : 0.30;
+        }
+
+        if ("current".equals(status) || "active".equals(status)) {
+            weight += 0.14;
+        } else if ("done".equals(status) || "accepted".equals(status)) {
+            weight += 0.08;
+        } else if ("draft".equals(status)) {
+            weight -= historicalAllowed ? 0.0 : 0.12;
+        }
+
+        if (!historicalAllowed) {
+            if ("deprecated".equals(status)) {
+                weight -= 1.25;
+            }
+            if ("superseded".equals(status) || superseded) {
+                weight -= 1.10;
+            }
+        }
+        return weight;
+    }
+
+    private static boolean historicalAllowed(SearchRequest request) {
+        if (request == null) {
+            return false;
+        }
+        if (truthyFilter(request.filters(), "includeHistorical") || truthyFilter(request.filters(), "historical")) {
+            return true;
+        }
+        String query = request.query() == null ? "" : request.query().toLowerCase(Locale.ROOT);
+        return hasAny(query, "historical", "history", "archive", "deprecated", "superseded", "migration", "이력", "과거", "폐기", "대체", "마이그레이션");
+    }
+
+    private static boolean truthyFilter(Map<String, List<String>> filters, String key) {
+        if (filters == null || !filters.containsKey(key)) {
+            return false;
+        }
+        return filters.get(key).stream()
+                .filter(value -> value != null)
+                .map(value -> value.trim().toLowerCase(Locale.ROOT))
+                .anyMatch(value -> Set.of("true", "yes", "1", "include", "on").contains(value));
+    }
+
+    private static String metadataText(Map<String, Object> metadata, String key) {
+        Object value = metadata.get(key);
+        if (value == null) {
+            return "";
+        }
+        return String.valueOf(value).trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static List<String> metadataList(Map<String, Object> metadata, String key) {
+        Object value = metadata.get(key);
+        if (value instanceof List<?> list) {
+            return list.stream()
+                    .map(String::valueOf)
+                    .filter(item -> !item.isBlank())
+                    .toList();
+        }
+        if (value == null || String.valueOf(value).isBlank()) {
+            return List.of();
+        }
+        return List.of(String.valueOf(value));
     }
 
     private static boolean hasAny(String haystack, String... needles) {
@@ -234,8 +320,11 @@ final class RetrievalRanker {
         aliases.put("강화", new String[]{"hardening"});
         aliases.put("에러", new String[]{"error"});
         aliases.put("전략", new String[]{"strategy"});
-        aliases.put("실버스톤", new String[]{"personal"});
         aliases.put("노트", new String[]{"notes"});
+        aliases.put("검색", new String[]{"search", "retrieval"});
+        aliases.put("품질", new String[]{"quality"});
+        aliases.put("평가", new String[]{"evaluation"});
+        aliases.put("하네스", new String[]{"harness"});
 
         aliases.forEach((korean, mappedTerms) -> {
             if (query.contains(korean)) {
@@ -310,6 +399,7 @@ final class RetrievalRanker {
             double sourceWeight,
             double pathWeight,
             double matchWeight,
+            double governanceWeight,
             int rawCandidateCount
     ) {
         String documentKey() {
@@ -336,6 +426,7 @@ final class RetrievalRanker {
             score.put("sourceWeight", sourceWeight);
             score.put("pathWeight", pathWeight);
             score.put("matchWeight", matchWeight);
+            score.put("governanceWeight", governanceWeight);
             score.put("rerankScore", rerankScore);
             score.put("rawRank", candidate.rawRank());
             score.put("rawCandidateCount", rawCandidateCount);
@@ -350,6 +441,7 @@ final class RetrievalRanker {
                     item.headingPath(),
                     item.citation(),
                     item.snippet(),
+                    item.metadata(),
                     score
             );
         }

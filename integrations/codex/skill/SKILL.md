@@ -17,7 +17,7 @@ Use it especially for:
 - project-specific questions where local docs are more authoritative than model memory
 - code changes that should respect project design/task documents
 - checking stale assumptions before summarizing a project
-- questions about registered worknote, `personal-core`, `crypto-bot`, and `local-rag-system` project documents when those sources are present in the registry
+- questions about any project or note source currently returned by `rag_list_projects` and `rag_list_sources`
 
 Do not use Local RAG for general internet facts, current news, package docs, prices, schedules, or other external facts. Use web or official docs for those.
 

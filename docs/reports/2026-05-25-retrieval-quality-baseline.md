@@ -97,8 +97,8 @@ tags:
 Baseline runtime inputs:
 
 - gateway: `http://127.0.0.1:42120`
-- registered projects: `worknote`, `personal-core`, `crypto-bot`, `local-rag-system`, `qr-service-mvp`
-- registered sources: `worknote.wiki`, `personal-core.docs`, `crypto-bot.docs`, `local-rag-system.docs`, `qr-service-mvp.docs`
+- registered projects: `support-notes`, `project-a`, `project-b`, `local-rag-system`, `project-c`
+- registered sources: `support-notes.wiki`, `project-a.docs`, `project-b.docs`, `local-rag-system.docs`, `project-c.docs`
 - embedding model: `qwen3-embedding:4b`
 - retrieval engine: Weaviate `LocalRagChunk`
 - default public search modes: `hybrid`, `keyword`, `vector`
@@ -115,11 +115,11 @@ Source distribution:
 
 | Source | Indexed Documents | Chunks |
 | --- | ---: | ---: |
-| `worknote.wiki` | 147 | 452 |
-| `personal-core.docs` | 341 | 2422 |
-| `crypto-bot.docs` | 135 | 717 |
+| `support-notes.wiki` | 147 | 452 |
+| `project-a.docs` | 341 | 2422 |
+| `project-b.docs` | 135 | 717 |
 | `local-rag-system.docs` | 50 | 196 |
-| `qr-service-mvp.docs` | 42 | 183 |
+| `project-c.docs` | 42 | 183 |
 
 Implementation facts used in this report:
 
@@ -137,7 +137,7 @@ The baseline used small labeled query sets, not a production benchmark.
 English / filename-heavy set:
 
 - 15 queries
-- 3 queries each for `worknote`, `personal-core`, `crypto-bot`, `local-rag-system`, and `qr-service-mvp`
+- 3 queries each for `support-notes`, `project-a`, `project-b`, `local-rag-system`, and `project-c`
 - Queries intentionally included file names, task ids, design names, or domain phrases.
 
 Korean natural language set:
@@ -201,7 +201,7 @@ When `projectId` is present, the system searches the primary project source plus
 
 Observed result:
 
-- `worknote.wiki` lint or compiled pages can appear above project docs.
+- `support-notes.wiki` lint or compiled pages can appear above project docs.
 - support context is sometimes useful evidence, but it should rarely displace project current truth in top rank.
 
 This directly affects Codex behavior because Codex may overfit to a synthesis/lint note instead of the repo `docs/` source of record.
@@ -228,11 +228,11 @@ For retrieval quality hardening, audit should record enough phase timing and sou
 
 | Source | Observation |
 | --- | --- |
-| `worknote.wiki` | Useful compiled support layer. Can outrank project docs when included as default context. Needs lower support-context weight in project-scoped search. |
-| `personal-core.docs` | Large corpus. Related tasks and reports often compete with design docs. Needs current-truth/source-role weighting and document diversity. |
-| `crypto-bot.docs` | Similar terms across reports, tasks, and legacy material create ranking ambiguity. Korean query quality depends heavily on vector search. |
+| `support-notes.wiki` | Useful compiled support layer. Can outrank project docs when included as default context. Needs lower support-context weight in project-scoped search. |
+| `project-a.docs` | Large corpus. Related tasks and reports often compete with design docs. Needs current-truth/source-role weighting and document diversity. |
+| `project-b.docs` | Similar terms across reports, tasks, and legacy material create ranking ambiguity. Korean query quality depends heavily on vector search. |
 | `local-rag-system.docs` | Strong enough for self-querying, but task docs can outrank design docs where source-registry current truth is expected. |
-| `qr-service-mvp.docs` | Small corpus performs well. It is a good smoke source for regression checks because expected documents are clear. |
+| `project-c.docs` | Small corpus performs well. It is a good smoke source for regression checks because expected documents are clear. |
 
 ## Recommendations
 

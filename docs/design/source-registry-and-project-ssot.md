@@ -169,6 +169,7 @@ sources:
     exclude:
       - "**/.git/**"
       - "**/.rag_index/**"
+      - "**/_templates/**"
       - "**/node_modules/**"
       - "**/build/**"
       - "**/dist/**"

@@ -11,8 +11,7 @@
 
 ## Active
 
-- [`T0013-retrieval-chunking-and-document-authority-hardening.md`](T0013-retrieval-chunking-and-document-authority-hardening.md): P0002 첫 critical path로 Markdown/frontmatter-aware chunking과 document authority metadata indexing을 준비. Updated: 2026-05-29.
-- [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): Codex RAG utilization hardening 구현은 개발존에서 완료됐고, `~/Services` 운영존 deploy/restart 및 live runtime smoke를 진행 중. Updated: 2026-05-29.
+- [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): `~/Services` 운영존 generic user-managed source slots와 live smoke 완료; Codex Desktop 새 세션 MCP visibility 확인만 남음. Updated: 2026-05-29.
 
 ## Blocked
 
@@ -20,6 +19,11 @@
 
 ## Done
 
+- [`T0017-local-reranker-evaluation.md`](T0017-local-reranker-evaluation.md): P0002 P2 local reranker deployment decision을 닫고, 별도 model reranker 없이 deterministic governance ranking으로 배포 가능함을 확인. Updated: 2026-05-31.
+- [`T0015-answer-quality-and-staleness-evaluation.md`](T0015-answer-quality-and-staleness-evaluation.md): P0002 P1 retrieval evaluation을 must-use, must-not-use, citation usefulness, staleness error, and Korean task-id suffix regression checks까지 확장. Updated: 2026-05-30.
+- [`T0014-search-filter-and-answer-context-governance.md`](T0014-search-filter-and-answer-context-governance.md): P0002 P1 metadata filters, stale-source demotion, historical opt-in, answer source priority cues를 구현. Updated: 2026-05-30.
+- [`T0013-retrieval-chunking-and-document-authority-hardening.md`](T0013-retrieval-chunking-and-document-authority-hardening.md): P0002 P0 metadata-aware chunking, document authority metadata indexing, reindex, and search result exposure를 완료. Updated: 2026-05-30.
+- [`T0016-retrieval-audit-observability-expansion.md`](T0016-retrieval-audit-observability-expansion.md): P0002 P2 search audit schema/runtime observability를 candidate counts, phase latency, source distribution, top result, and score JSON까지 확장. Updated: 2026-05-30.
 - [`T0012-portable-ollama-endpoint-failover.md`](T0012-portable-ollama-endpoint-failover.md): notebook-local Ollama and optional Mac mini Ollama can be configured as ordered local/LAN endpoints with failover. Updated: 2026-05-29.
 - [`T0011-retrieval-quality-hardening.md`](T0011-retrieval-quality-hardening.md): retrieval evaluation harness, primary source weighting, deterministic rerank, diversity control, and evaluation-output observability를 구현. Updated: 2026-05-25.
 - [`T0009-host-local-ollama-rag-configuration.md`](T0009-host-local-ollama-rag-configuration.md): host-local Ollama answer runtime, portable source slots, global registration, indexing, search, and answer smoke를 완료. Updated: 2026-05-25.

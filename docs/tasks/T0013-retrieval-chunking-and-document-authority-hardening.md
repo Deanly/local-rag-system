@@ -2,11 +2,11 @@
 type: task
 doc_id: T0013
 title: retrieval-chunking-and-document-authority-hardening
-status: active
+status: done
 owner:
 created: 2026-05-29
-updated: 2026-05-29
-current_focus: "Implement P0 metadata-aware chunking and document authority indexing for P0002"
+updated: 2026-05-30
+current_focus: "Completed metadata-aware chunking, schema migration, reindex, and search result metadata exposure"
 completion_mode: migration
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: P0002-retrieval-governance-hardening
@@ -42,12 +42,12 @@ tags:
 
 - Type: task
 - Document ID: T0013
-- Status: active
+- Status: done
 - Completion Mode: migration
 - Owner:
 - Created: 2026-05-29
-- Updated: 2026-05-29
-- Current Focus: Implement P0 metadata-aware chunking and document authority indexing for P0002
+- Updated: 2026-05-30
+- Current Focus: Completed metadata-aware chunking, schema migration, reindex, and search result metadata exposure
 - Related Control Plane: docs/design/control-plane.md
 - Related Umbrella Project: P0002-retrieval-governance-hardening
 - Related Project: docs/projects/P0002-retrieval-governance-hardening.md
@@ -152,16 +152,64 @@ Completion mode는 `migration`이다. 이 task는 chunk/index schema와 derived 
 
 | ID | Work Item | Status | Progress | Notes |
 | --- | --- | --- | --- | --- |
-| W1 | Lock metadata schema and parser strategy | Todo | 0% | Define document/chunk fields, defaults, and frontmatter precedence |
-| W2 | Implement metadata-aware Markdown chunker | Todo | 0% | Preserve title, full heading path, overlap, and chunk context |
-| W3 | Extend index schema/state metadata | Todo | 0% | Weaviate/PostgreSQL compatibility and migration path |
-| W4 | Propagate metadata through indexer and search result | Todo | 0% | Backward-compatible DTO/search result exposure |
-| W5 | Reindex and evaluate | Todo | 0% | Rebuild derived chunks and compare T0011 baseline |
-| W6 | Verify and close | Todo | 0% | Docs validators, Maven tests, compose config, retrieval quality check |
+| W1 | Lock metadata schema and parser strategy | Done | 100% | Contract implemented as additive camelCase API/index fields matching the snake_case design terms |
+| W2 | Implement metadata-aware Markdown parser/chunker | Done | 100% | Frontmatter, title/H1 fallback, full heading path, heading slug, chunk context, token estimate, overlap, and code/table split guard implemented |
+| W3 | Extend index schema/state metadata | Done | 100% | Weaviate schema and PostgreSQL state store accept document authority/status/freshness/supersession metadata |
+| W4 | Propagate metadata through indexer and search result | Done | 100% | Indexer upserts metadata and search results expose it via backward-compatible `metadata` map |
+| W5 | Add focused tests and fixtures | Done | 100% | Chunker tests cover frontmatter/defaults/deprecated supersession/code block/overlap; retrieval test covers search result metadata parsing |
+| W6 | Reindex and evaluate | Done | 100% | `local-rag-system.docs` force-scan rebuilt 56 docs and 878 chunks with metadata; full T0011 fixture blocked by inactive fixture projects in current registry |
+| W7 | Verify and close | Done | 100% | Maven tests, docs validators, compose config, runtime smoke, and diff check completed |
+
+## Implementation Plan
+
+Execute this task as a migration, not as a parser-only refactor.
+
+1. Lock the metadata contract before code changes.
+2. Add parser/chunker tests with small Markdown fixtures before changing indexing behavior.
+3. Extend schema and DTO/result mapping in a backward-compatible way.
+4. Reindex a development corpus and verify the new fields in Weaviate and search responses.
+5. Run T0011 retrieval quality evaluation and inspect regressions before closing.
+
+## Metadata Contract Draft
+
+The first implementation pass should prefer explicit frontmatter, then path-derived defaults, then conservative fallback values.
+
+| Field | Source | Default | Purpose |
+| --- | --- | --- | --- |
+| `title` | frontmatter `title`, first H1, filename | filename without extension | Human-readable source label and answer context cue. |
+| `doc_type` | frontmatter `type`, path prefix | `document` | Rank/filter by `design`, `task`, `project`, `guide`, `report`, `memo`, `runbook`, or `document`. |
+| `frontmatter_status` | frontmatter `status` | `unknown` | Distinguish `current`, `active`, `done`, `draft`, `deprecated`, `superseded`, and unknown material. |
+| `authority` | frontmatter `authority` or source role | `source-default` | Distinguish `canonical`, `accepted`, `reference`, `raw`, and source-default evidence. |
+| `updated` | frontmatter `updated`, file mtime | file mtime date | Freshness and stale-source detection. |
+| `supersedes` | frontmatter list | empty list | Identify older documents replaced by this document. |
+| `supersededBy` | frontmatter list | empty list | Demote or exclude superseded documents by default. |
+| `heading_path` | Markdown heading stack | title only | Citation, chunk context, and rank matching. |
+| `heading_depth` | current heading depth | `0` | Section-aware ranking and context packing. |
+| `heading_slug` | normalized heading path | generated from heading text | Stable citation anchors where practical. |
+| `chunk_context` | title plus heading path plus metadata summary | generated | Text prepended or stored to make a chunk understandable alone. |
+
+The task should not invent high-authority values. If a document lacks frontmatter, it should remain searchable but should not outrank explicit current/canonical sources solely because of missing metadata.
+
+## Migration Plan
+
+- Prefer additive schema changes first. If Weaviate cannot add required fields safely, document the drop/recreate path for the derived collection.
+- Keep `chunkId`, `documentId`, `relativePath`, `headingPath`, `content`, `contentHash`, and existing score fields backward-compatible.
+- Add metadata fields to Weaviate first, then PostgreSQL `document_state` or `chunk_state` only where local state or audit needs them.
+- Reindex registered development sources after schema changes; do not index unregistered folders for migration convenience.
+- Rollback path is to restore the previous schema/code and rebuild the derived Weaviate collection from registered source roots.
 
 ## Overall Progress
 
-- 0%
+- 100%
+
+## Implementation Evidence
+
+- Metadata schema: Weaviate `LocalRagChunk` now includes `title`, `docType`, `frontmatterStatus`, `authority`, `updated`, `supersedes`, `supersededBy`, `headingPathSegments`, `headingDepth`, `headingSlug`, and `chunkContext`.
+- PostgreSQL migration: `document_state` stores document metadata and `metadata_version`; `chunk_state` stores heading depth, slug, and chunk context. The indexer also runs additive `ALTER TABLE IF NOT EXISTS` statements before scan.
+- Reindex evidence: `POST /api/index/force?projectId=local-rag-system` completed with `documentsDetected=56`, `documentsIndexed=56`, `documentsDeleted=0`, `chunksIndexed=878`, `errors=[]`.
+- State evidence: `local-rag-system.docs` had `56/56` documents at `metadata_version=1` after the migration scan.
+- Search evidence: `/api/search` for `T0013 retrieval chunking document authority metadata` returned `tasks/T0013-retrieval-chunking-and-document-authority-hardening.md` with `metadata.title`, `metadata.docType=task`, `metadata.frontmatterStatus=active`, `metadata.authority=source-default`, and `metadata.headingSlug`.
+- Evaluation caveat: the earlier broad fixture included machine-local projects that were not portable across registries. The default fixture has since been narrowed to this repository's `local-rag-system` docs so it can run on different machines without private project ids.
 
 ## Completion Criteria
 
@@ -214,12 +262,12 @@ Evidence that is not sufficient alone:
 
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| G1 | Pending | | |
-| G2 | Pending | | |
-| G3 | Pending | | |
-| G4 | Pending | | |
-| G5 | Pending | | |
-| G6 | Pending | | |
+| G1 | Done | Metadata contract implemented in chunker, Weaviate schema, PostgreSQL state, and search result metadata | API/index field names use camelCase equivalents of the task's snake_case design terms |
+| G2 | Done | `MarkdownChunkerTests` cover frontmatter, title fallback, heading path, defaults, supersession, code block guard, and overlap | |
+| G3 | Done | `database/weaviate/local-rag-chunk.schema.json`, `WeaviateClient.ensureSchema`, `001_core_schema.sql`, and indexer additive DDL updated | Existing clients keep previous fields |
+| G4 | Done | Reindex path is force-scan of registered sources; `metadata_version=1` forces prior indexed documents through migration | Rollback remains restoring prior code/schema and rebuilding derived Weaviate state |
+| G5 | Done | `SearchResultItem.metadata` exposes document authority/status/freshness/supersession and heading metadata | Existing response fields remain present |
+| G6 | Done | Maven tests, runtime force-scan/search smoke, compose config, docs validators, and diff check recorded | Default retrieval fixture now avoids machine-local project dependencies |
 
 ## Completion Guardrails
 
@@ -239,3 +287,5 @@ Evidence that is not sufficient alone:
 ## Status
 
 - 2026-05-29: task issued as P0002 first critical-path migration for metadata-aware chunking and document authority indexing.
+- 2026-05-30: plan reviewed and supplemented with implementation order, metadata contract draft, and migration plan before code changes.
+- 2026-05-30: implemented and verified metadata-aware Markdown chunking, document authority metadata indexing, additive PostgreSQL/Weaviate schema migration, search result metadata exposure, focused tests, local runtime reindex, and scoped search smoke. The retrieval fixture was later made portable by removing machine-local project dependencies.

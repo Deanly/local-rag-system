@@ -37,7 +37,7 @@
 | [`local-rag-system-development-direction.md`](local-rag-system-development-direction.md) | domain design | `domain-current` | Local RAG architecture, MVP scope, indexing/search/Codex boundary를 판단할 때 | 하네스 운영 규칙만 확인할 때 | medium | local-rag-system | `docs/projects/P0001-local-rag-system.md` |
 | [`source-registry-and-project-ssot.md`](source-registry-and-project-ssot.md) | domain design | `domain-current` | 장비별 source registry, project SSOT registration, Codex/RAG skill scope를 구현할 때 | 일반 RAG 개념만 확인할 때 | medium | source-registry | `docs/tasks/T0001-source-registry-project-ssot-registration.md` |
 | [`msa-runtime-and-storage.md`](msa-runtime-and-storage.md) | runtime design | `domain-current` | MSA service boundary, Docker Compose, PostgreSQL DDL, Weaviate schema, source mount contract를 구현할 때 | 순수 검색 ranking 알고리즘만 확인할 때 | medium | runtime/storage | `docs/tasks/T0002-msa-runtime-baseline.md`, `docs/tasks/T0009-host-local-ollama-rag-configuration.md` |
-| [`retrieval-quality-improvement-design.md`](retrieval-quality-improvement-design.md) | domain design | `domain-current` | 검색 품질, evaluation harness, primary source weighting, rerank, chunking 개선을 구현할 때 | source registry 등록이나 Compose mount contract만 확인할 때 | medium | retrieval-quality | `docs/projects/P0002-retrieval-governance-hardening.md`, `docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md` |
+| [`retrieval-quality-improvement-design.md`](retrieval-quality-improvement-design.md) | domain design | `domain-current` | 검색 품질, evaluation harness, primary source weighting, rerank, chunking 개선을 구현할 때 | source registry 등록이나 Compose mount contract만 확인할 때 | medium | retrieval-quality | `docs/projects/P0002-retrieval-governance-hardening.md`, `docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md`, `docs/tasks/T0014-search-filter-and-answer-context-governance.md`, `docs/tasks/T0015-answer-quality-and-staleness-evaluation.md`, `docs/tasks/T0016-retrieval-audit-observability-expansion.md`, `docs/tasks/T0017-local-reranker-evaluation.md` |
 
 ## Change Log
 
@@ -48,3 +48,7 @@
 - 2026-05-25: Retrieval quality improvement design surface 추가.
 - 2026-05-29: MSA runtime and Local RAG design surfaces updated for ordered local/LAN Ollama endpoint failover.
 - 2026-05-29: Retrieval quality design surface linked to P0002 and T0013 for governed Hybrid RAG hardening.
+- 2026-05-30: Retrieval quality and storage design surfaces updated for T0013 metadata-aware chunking, document authority indexing, and metadata reindex contract.
+- 2026-05-30: Retrieval quality design surface updated for T0014/T0015 metadata filter, answer context, staleness, source-use, and citation evaluation governance.
+- 2026-05-30: Retrieval quality design surface updated for T0016 search audit observability expansion.
+- 2026-05-31: Retrieval quality design surface updated for T0017 local reranker deployment decision and P0002 closeout.

@@ -5,7 +5,7 @@ status: current
 domain: retrieval-quality
 owner:
 created: 2026-05-25
-updated: 2026-05-29
+updated: 2026-05-31
 retrieval_class:
   - domain-current
 context:
@@ -18,8 +18,13 @@ referenced_by:
   - docs/projects/P0002-retrieval-governance-hardening.md
   - docs/tasks/T0011-retrieval-quality-hardening.md
   - docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md
+  - docs/tasks/T0014-search-filter-and-answer-context-governance.md
+  - docs/tasks/T0015-answer-quality-and-staleness-evaluation.md
+  - docs/tasks/T0016-retrieval-audit-observability-expansion.md
+  - docs/tasks/T0017-local-reranker-evaluation.md
 source_refs:
   - docs/reports/2026-05-25-retrieval-quality-baseline.md
+  - docs/reports/2026-05-31-local-reranker-evaluation-decision.md
   - docs/design/local-rag-system-development-direction.md
   - docs/design/source-registry-and-project-ssot.md
   - docs/design/msa-runtime-and-storage.md
@@ -40,12 +45,16 @@ tags:
 - Domain: retrieval-quality
 - Owner:
 - Created: 2026-05-25
-- Updated: 2026-05-29
+- Updated: 2026-05-31
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/projects/P0002-retrieval-governance-hardening.md`
   - `docs/tasks/T0011-retrieval-quality-hardening.md`
   - `docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md`
+  - `docs/tasks/T0014-search-filter-and-answer-context-governance.md`
+  - `docs/tasks/T0015-answer-quality-and-staleness-evaluation.md`
+  - `docs/tasks/T0016-retrieval-audit-observability-expansion.md`
+  - `docs/tasks/T0017-local-reranker-evaluation.md`
 
 ## Context
 
@@ -61,7 +70,7 @@ Local RAG의 functional baseline은 완성되어 있다. 현재 시스템은 등
 - project-scoped search에서 default context가 primary project source보다 앞서는 경우가 있다.
 - reranker, source weighting, document-level diversity, 정식 evaluation harness가 없다.
 
-이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-29 기준 Markdown AST/frontmatter chunking and document authority metadata work is active in `P0002` / `T0013`.
+이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-31 기준 `P0002`의 `T0013`-`T0017`이 metadata-aware chunking, document authority metadata, metadata filters, stale-source demotion, answer source priority cues, staleness/citation evaluation checks, search audit observability, and local reranker deployment decision을 완료했다.
 
 ## Whole-System Role
 
@@ -283,7 +292,7 @@ Initial deterministic policy:
 
 The implementation should preserve recall by retrieving from all resolved sources, then adjust ranking before final result selection.
 
-Do not implement source boosting by removing `worknote.wiki` from default context. The support layer is useful; the problem is equal-rank competition with project current truth.
+Do not implement source boosting by removing compiled support sources from default context. The support layer is useful; the problem is equal-rank competition with project current truth.
 
 Current implementation:
 
@@ -319,13 +328,19 @@ This stage must avoid re-embedding every candidate on every request. It should p
 
 ### Stage 3: Local Cross-Encoder Rerank
 
-Use a local reranker model if an operationally acceptable model is selected. This may run as:
+Use a local reranker model only if an expanded portable fixture shows default-mode ranking regressions that deterministic governance ranking cannot fix, and an operationally acceptable model is selected. This may run as:
 
 - a library inside `retrieval-service` only if Java runtime support is simple,
 - a sidecar service if model runtime dependency would pollute the Spring Boot service,
 - a local HTTP service bound to `127.0.0.1` or Docker internal network.
 
 Cross-encoder rerank should operate on top N candidates, not the whole corpus.
+
+Current decision:
+
+- `T0017` decided not to ship a separate local model reranker in the P0002 deployment path.
+- The portable fixture reached 100% hit@1 for `hybrid` and `vector`; the only top1 misses were Korean natural-language `keyword` cases where the expected document was rank 2.
+- Future model reranker work needs a new task, local-only runtime proof, and an expanded fixture showing repeated `hybrid` or `vector` top1/source/staleness regressions.
 
 ### Stage 4: Local LLM Judge Rerank
 
@@ -359,6 +374,15 @@ updated
 source_priority
 source_role
 ```
+
+Current implementation:
+
+- `indexer-service` parses YAML frontmatter for title, type, status, authority, updated, supersedes, supersededBy, and tags.
+- Missing frontmatter uses conservative defaults: first H1 or filename for title, path-derived document type where possible, `unknown` status, and `source-default` authority unless source role is clearly archive/raw.
+- Chunk content is prepended with generated `chunkContext` containing title, document metadata, and full heading path, so a retrieved chunk carries enough context to stand alone.
+- `headingPath`, `headingPathSegments`, `headingDepth`, and `headingSlug` are stored in Weaviate and exposed through search result metadata.
+- PostgreSQL `document_state.metadata_version=1` forces previously indexed documents through the metadata migration on the next registered-source scan.
+- Search results expose the new fields under a backward-compatible `metadata` map while preserving the existing result fields.
 
 ## Duplicate And Diversity Control
 
@@ -417,9 +441,10 @@ Evaluation run output should not depend only on `search_audit`, but audit should
 
 Current implementation:
 
-- `docs/bin/validate-retrieval-quality.sh` reports top result source/path, sources searched, result counts, measured client latency, and miss list.
-- Search result score maps include `baseScore`, `sourceWeight`, `pathWeight`, `matchWeight`, `rerankScore`, `rawRank`, `rawCandidateCount`, and `finalResultCount`.
-- PostgreSQL audit schema was not changed in `T0011`; phase-level latency fields remain a follow-up because they require a migration and compatibility plan.
+- `docs/bin/validate-retrieval-quality.sh` reports top result source/path, sources searched, result counts, measured client latency, miss list, must-use pass rate, must-not-use pass rate, citation usefulness, staleness error count, and optional unknown-project skips.
+- Search result score maps include `baseScore`, `sourceWeight`, `pathWeight`, `matchWeight`, `governanceWeight`, `rerankScore`, `rawRank`, `rawCandidateCount`, and `finalResultCount`.
+- `T0016` expanded PostgreSQL `search_audit` with `candidate_limit`, raw/final counts, embedding/Weaviate/weighting/total latency, source distribution, top source/path, and top score JSON. The retrieval service applies this schema additively at runtime before the first audit write.
+- `T0017` added `top1_misses` to the retrieval quality runner output and fixed a Korean retrieval-quality query drift with deterministic query expansion/path weighting before deciding against a separate local model reranker.
 
 ## Artifact Contracts
 
@@ -430,13 +455,18 @@ Authoritative artifacts:
 - `docs/projects/P0002-retrieval-governance-hardening.md`
 - `docs/tasks/T0011-retrieval-quality-hardening.md`
 - `docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md`
+- `docs/tasks/T0014-search-filter-and-answer-context-governance.md`
+- `docs/tasks/T0015-answer-quality-and-staleness-evaluation.md`
+- `docs/tasks/T0016-retrieval-audit-observability-expansion.md`
+- `docs/tasks/T0017-local-reranker-evaluation.md`
+- `docs/reports/2026-05-31-local-reranker-evaluation-decision.md`
 - `docs/evaluation/retrieval-quality-cases.yaml`
 - `docs/bin/validate-retrieval-quality.sh`
 
 Expected future artifacts:
 
 - generated local report paths for evaluation runs.
-- follow-up tasks for search filter/answer context governance, staleness evaluation, audit expansion, and optional local reranker evaluation.
+- future local model reranker task only if expanded default-mode regression evidence justifies it.
 
 ## Quality Axes
 
@@ -456,6 +486,7 @@ Expected future artifacts:
 | Add evaluation harness before ranking changes. | Without hit/MRR baseline, quality work becomes anecdotal. |
 | Implement deterministic source weighting before model rerank. | It directly addresses primary-source drift and is easy to test locally. |
 | Keep reranker local-only and optional. | Private source content must not leave local/network-local infrastructure. |
+| Do not ship a separate local model reranker in P0002. | T0017 evidence shows current default hybrid/vector quality is deployable, while model rerank would add memory/latency surface. |
 | Improve chunking incrementally. | Reindexing all sources is acceptable, but chunk schema changes should be measurable and reversible. |
 | Defer PostgreSQL audit schema expansion after evaluation-output observability exists. | It avoids a migration before the exact phase timing fields are proven useful. |
 
@@ -465,22 +496,26 @@ Expected future artifacts:
 2. Done: Record baseline metrics on current runtime.
 3. Done: Implement deterministic source weighting and diversity control behind current search API.
 4. Done: Re-run evaluation and compare metrics.
-5. Active: `T0013` adds chunk metadata parsing, document authority metadata, and reindex validation.
-6. Next: Add search filters and answer context source-priority governance.
-7. Next: Expand evaluation for stale/deprecated misuse and answer faithfulness.
-8. Later: Expand audit fields once ranking phases exist.
-9. Later: Evaluate local reranker model only after deterministic improvements plateau.
+5. Done: `T0013` added chunk metadata parsing, document authority metadata, additive schema migration, reindex validation, and search result metadata exposure.
+6. Done: Add search filters and answer context source-priority governance.
+7. Done: Expand evaluation for stale/deprecated misuse, source-use checks, citation usefulness, and bounded local-only answer faithfulness substitutes.
+8. Done: Expand audit fields once ranking phases exist.
+9. Done: Evaluate local reranker deployment decision after deterministic improvements plateau; do not add separate model reranker to P0002.
 
 ## Open Questions
 
 - How should committed baseline reports relate to generated local JSON reports from the runner?
 - Should evaluation results be committed as reports or generated locally only?
-- Which local cross-encoder reranker is acceptable on the target Mac mini without destabilizing Ollama memory usage?
+- Which local cross-encoder reranker is acceptable remains a future question only if expanded default-mode evaluation shows a measurable need.
 - Should source weighting remain code-defined from registry metadata, or become a registry/config policy?
-- Should `worknote.wiki` demotion stay default-context-only, or become intent-aware for explicit wiki/synthesis queries?
+- Should compiled support-source demotion stay default-context-only, or become intent-aware for explicit wiki/synthesis queries?
 
 ## Change Log
 
 - 2026-05-25: design created from retrieval quality baseline. It locks evaluation-first retrieval improvement, primary source weighting, local-only rerank, chunking improvement, duplicate control, and audit expansion as the next quality path.
 - 2026-05-25: `T0011` implemented the evaluation runner, deterministic primary-source/source-role/path rerank, and document diversity control. Chunking and audit schema expansion remain follow-up work.
 - 2026-05-29: `P0002` and `T0013` added as the active retrieval governance hardening path for Markdown/frontmatter-aware chunking, document authority metadata, and reindex validation.
+- 2026-05-30: `T0013` completed metadata-aware Markdown chunking, document authority metadata indexing, schema migration, reindex, and search result metadata exposure.
+- 2026-05-30: `T0014` and `T0015` completed metadata filter enforcement, stale-source demotion, answer source priority cues, and deterministic staleness/source-use/citation evaluation expansion.
+- 2026-05-30: `T0016` completed PostgreSQL search audit and runtime observability expansion for retrieval debugging.
+- 2026-05-31: `T0017` completed the local reranker deployment decision. P0002 ships deterministic governance ranking and defers separate local model reranker work until expanded default-mode regression evidence exists.

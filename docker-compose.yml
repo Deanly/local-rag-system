@@ -58,6 +58,9 @@ services:
       LOCAL_RAG_SOURCE_PROJECT_ALPHA_DOCS: ${LOCAL_RAG_SOURCE_PROJECT_ALPHA_DOCS:-/source/project-alpha-docs}
       LOCAL_RAG_SOURCE_PROJECT_BETA_DOCS: ${LOCAL_RAG_SOURCE_PROJECT_BETA_DOCS:-/source/project-beta-docs}
       LOCAL_RAG_SOURCE_LOCAL_RAG_SYSTEM_DOCS: ${LOCAL_RAG_SOURCE_LOCAL_RAG_SYSTEM_DOCS:-/sources/source-04}
+      LOCAL_RAG_SOURCE_EXTRA_06: ${LOCAL_RAG_SOURCE_EXTRA_06:-/sources/source-06}
+      LOCAL_RAG_SOURCE_EXTRA_07: ${LOCAL_RAG_SOURCE_EXTRA_07:-/sources/source-07}
+      LOCAL_RAG_SOURCE_EXTRA_08: ${LOCAL_RAG_SOURCE_EXTRA_08:-/sources/source-08}
       LOCAL_RAG_REGISTRY_REQUIRE_PATHS: "true"
     volumes:
       - "${LOCAL_RAG_CONFIG_DIR:-./config}:/config:ro"
@@ -67,6 +70,9 @@ services:
       - "${LOCAL_RAG_HOST_SOURCE_03:-./data/sample/personal-notes}:/sources/source-03:ro"
       - "${LOCAL_RAG_HOST_SOURCE_04:-./data/sample/project-alpha-docs}:/sources/source-04:ro"
       - "${LOCAL_RAG_HOST_SOURCE_05:-./data/sample/personal-notes}:/sources/source-05:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_06:-./data/sample/project-alpha-docs}:/sources/source-06:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_07:-./data/sample/project-beta-docs}:/sources/source-07:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_08:-./data/sample/personal-notes}:/sources/source-08:ro"
     depends_on:
       postgres:
         condition: service_healthy
@@ -94,6 +100,9 @@ services:
       LOCAL_RAG_SOURCE_PROJECT_ALPHA_DOCS: ${LOCAL_RAG_SOURCE_PROJECT_ALPHA_DOCS:-/source/project-alpha-docs}
       LOCAL_RAG_SOURCE_PROJECT_BETA_DOCS: ${LOCAL_RAG_SOURCE_PROJECT_BETA_DOCS:-/source/project-beta-docs}
       LOCAL_RAG_SOURCE_LOCAL_RAG_SYSTEM_DOCS: ${LOCAL_RAG_SOURCE_LOCAL_RAG_SYSTEM_DOCS:-/sources/source-04}
+      LOCAL_RAG_SOURCE_EXTRA_06: ${LOCAL_RAG_SOURCE_EXTRA_06:-/sources/source-06}
+      LOCAL_RAG_SOURCE_EXTRA_07: ${LOCAL_RAG_SOURCE_EXTRA_07:-/sources/source-07}
+      LOCAL_RAG_SOURCE_EXTRA_08: ${LOCAL_RAG_SOURCE_EXTRA_08:-/sources/source-08}
       LOCAL_RAG_INDEXER_REGISTRY_REQUIRE_PATHS: "true"
       LOCAL_RAG_INDEXER_EMBEDDING_FALLBACK_ENABLED: ${LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED:-false}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/local_rag
@@ -107,6 +116,9 @@ services:
       - "${LOCAL_RAG_HOST_SOURCE_03:-./data/sample/personal-notes}:/sources/source-03:ro"
       - "${LOCAL_RAG_HOST_SOURCE_04:-./data/sample/project-alpha-docs}:/sources/source-04:ro"
       - "${LOCAL_RAG_HOST_SOURCE_05:-./data/sample/personal-notes}:/sources/source-05:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_06:-./data/sample/project-alpha-docs}:/sources/source-06:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_07:-./data/sample/project-beta-docs}:/sources/source-07:ro"
+      - "${LOCAL_RAG_HOST_SOURCE_08:-./data/sample/personal-notes}:/sources/source-08:ro"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

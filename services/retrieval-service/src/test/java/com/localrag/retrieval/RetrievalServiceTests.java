@@ -1,6 +1,8 @@
 package com.localrag.retrieval;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.localrag.common.dto.SearchRequest;
+import com.localrag.common.dto.SearchResultItem;
 import com.localrag.common.embedding.EmbeddingClient;
 import com.localrag.common.ollama.OllamaChatClient;
 import com.localrag.common.weaviate.WeaviateClient;
@@ -8,6 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,6 +23,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class RetrievalServiceTests {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final EmbeddingClient embeddingClient = mock(EmbeddingClient.class);
     private final OllamaChatClient ollamaChatClient = mock(OllamaChatClient.class);
     private final WeaviateClient weaviateClient = mock(WeaviateClient.class);
@@ -67,5 +74,164 @@ class RetrievalServiceTests {
                 });
 
         verifyNoInteractions(embeddingClient, weaviateClient);
+    }
+
+    @Test
+    void parsesDocumentAuthorityMetadataFromWeaviateRows() throws Exception {
+        var response = OBJECT_MAPPER.readTree("""
+                {
+                  "data": {
+                    "Get": {
+                      "LocalRagChunk": [
+                        {
+                          "chunkId": "chunk-1",
+                          "documentId": "doc-1",
+                          "projectId": "local-rag-system",
+                          "sourceId": "local-rag-system.docs",
+                          "sourceType": "project-docs",
+                          "ssotRole": "project-current-truth",
+                          "relativePath": "design/retrieval-quality-improvement-design.md",
+                          "fileName": "retrieval-quality-improvement-design.md",
+                          "folder": "design",
+                          "extension": "md",
+                          "title": "retrieval-quality-improvement-design",
+                          "docType": "design",
+                          "frontmatterStatus": "current",
+                          "authority": "canonical",
+                          "updated": "2026-05-30T00:00:00Z",
+                          "supersedes": ["old-design.md"],
+                          "supersededBy": [],
+                          "headingPath": "retrieval-quality-improvement-design > Chunking Improvement",
+                          "headingPathSegments": ["retrieval-quality-improvement-design", "Chunking Improvement"],
+                          "headingDepth": 2,
+                          "headingSlug": "retrieval-quality-improvement-design-chunking-improvement",
+                          "chunkContext": "Title: retrieval-quality-improvement-design",
+                          "contentHash": "hash-1",
+                          "sensitivity": "private",
+                          "tags": ["retrieval-quality"],
+                          "links": ["docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md"],
+                          "content": "Title: retrieval-quality-improvement-design\\n\\nChunk text",
+                          "_additional": {"score": "0.8"}
+                        }
+                      ]
+                    }
+                  }
+                }
+                """);
+
+        List<RetrievalRanker.RankCandidate> candidates = RetrievalService.parseCandidates(response);
+
+        assertThat(candidates).hasSize(1);
+        SearchResultItem item = candidates.get(0).item();
+        assertThat(item.citation()).isEqualTo("design/retrieval-quality-improvement-design.md#retrieval-quality-improvement-design-chunking-improvement");
+        assertThat(item.metadata())
+                .containsEntry("title", "retrieval-quality-improvement-design")
+                .containsEntry("docType", "design")
+                .containsEntry("frontmatterStatus", "current")
+                .containsEntry("authority", "canonical")
+                .containsEntry("headingDepth", 2);
+        assertThat(item.metadata())
+                .containsEntry("supersedes", List.of("old-design.md"))
+                .containsEntry("headingPathSegments", List.of("retrieval-quality-improvement-design", "Chunking Improvement"));
+    }
+
+    @Test
+    void buildsWhereClauseWithSupportedMetadataFilters() {
+        SearchRequest request = new SearchRequest(
+                "local-rag-system",
+                "query",
+                5,
+                "hybrid",
+                null,
+                null,
+                Map.of(
+                        "status", List.of("current", "active"),
+                        "authority", List.of("canonical"),
+                        "docType", List.of("design"),
+                        "includeHistorical", List.of("true"),
+                        "unknownFilter", List.of("ignored")
+                )
+        );
+
+        String where = RetrievalService.buildWhere(request, List.of("local-rag-system.docs"));
+
+        assertThat(where).contains("path:[\"sourceId\"]", "local-rag-system.docs");
+        assertThat(where).contains("path:[\"frontmatterStatus\"]", "current", "active");
+        assertThat(where).contains("path:[\"authority\"]", "canonical");
+        assertThat(where).contains("path:[\"docType\"]", "design");
+        assertThat(where).doesNotContain("includeHistorical", "unknownFilter");
+    }
+
+    @Test
+    void retrievalQuerySeparatesTaskIdFromKoreanSuffix() {
+        assertThat(RetrievalService.retrievalQuery("T0014의 목적은 무엇인가?"))
+                .isEqualTo("T0014 의 목적은 무엇인가?");
+    }
+
+    @Test
+    void answerPromptIncludesSourcePriorityMetadata() {
+        SearchResultItem result = new SearchResultItem(
+                "chunk-1",
+                "doc-1",
+                "local-rag-system",
+                "local-rag-system.docs",
+                "project-current-truth",
+                "tasks/T0014-search-filter-and-answer-context-governance.md",
+                "T0014 > Purpose",
+                "tasks/T0014-search-filter-and-answer-context-governance.md#purpose",
+                "Filters should use metadata.",
+                Map.of(
+                        "title", "search-filter-and-answer-context-governance",
+                        "docType", "task",
+                        "frontmatterStatus", "active",
+                        "authority", "canonical",
+                        "updated", "2026-05-30T00:00:00Z",
+                        "supersededBy", List.of()
+                ),
+                Map.of()
+        );
+
+        String prompt = RetrievalService.answerPrompt("How should filters work?", List.of(result));
+
+        assertThat(prompt).contains(
+                "Source priority:",
+                "title=search-filter-and-answer-context-governance",
+                "sourceId=local-rag-system.docs",
+                "ssotRole=project-current-truth",
+                "docType=task",
+                "status=active",
+                "authority=canonical",
+                "updated=2026-05-30T00:00:00Z",
+                "Snippet: Filters should use metadata."
+        );
+    }
+
+    @Test
+    void sourceDistributionCountsFinalResultsBySourceId() {
+        List<SearchResultItem> results = List.of(
+                resultFrom("local-rag-system.docs", "tasks/T0016-retrieval-audit-observability-expansion.md"),
+                resultFrom("local-rag-system.docs", "docs/design/retrieval-quality-improvement-design.md"),
+                resultFrom("support-notes.wiki", "knowledge.md")
+        );
+
+        assertThat(RetrievalService.sourceDistribution(results))
+                .containsEntry("local-rag-system.docs", 2)
+                .containsEntry("support-notes.wiki", 1);
+    }
+
+    private static SearchResultItem resultFrom(String sourceId, String relativePath) {
+        return new SearchResultItem(
+                sourceId + ":" + relativePath,
+                sourceId + ":doc",
+                "local-rag-system",
+                sourceId,
+                "project-current-truth",
+                relativePath,
+                "",
+                relativePath,
+                "",
+                Map.of(),
+                Map.of("rerankScore", 1.0)
+        );
     }
 }
