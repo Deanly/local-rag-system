@@ -89,8 +89,8 @@ The smoke run used `LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED=true` so the system rem
 
 Observed Ollama status:
 
-- `http://local-llm-host:11434/api/tags` is reachable.
-- `http://alternate-llm-host:11434` is not reachable from this machine.
-- `bge-m3` is not installed on `local-llm-host`; `/api/embeddings` returns `model "bge-m3" not found`.
+- The operator-local Ollama endpoint was reachable.
+- The alternate operator-local endpoint was not reachable from that machine.
+- `bge-m3` was not installed on the operator-local endpoint; `/api/embeddings` returned `model "bge-m3" not found`.
 
-This was the first functional smoke state. The later deployment baseline was updated to `qwen3-embedding:4b` on `local-llm-host` with fallback disabled after the embedding model became available.
+This was the first functional smoke state. The later deployment baseline was updated to `qwen3-embedding:4b` on the operator-local Ollama endpoint with fallback disabled after the embedding model became available. The endpoint names from that run are intentionally omitted because they were local-only.

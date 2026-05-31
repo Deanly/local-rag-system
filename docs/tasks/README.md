@@ -27,7 +27,7 @@
 - [`T0012-portable-ollama-endpoint-failover.md`](T0012-portable-ollama-endpoint-failover.md): notebook-local Ollama and optional Mac mini Ollama can be configured as ordered local/LAN endpoints with failover. Updated: 2026-05-29.
 - [`T0011-retrieval-quality-hardening.md`](T0011-retrieval-quality-hardening.md): retrieval evaluation harness, primary source weighting, deterministic rerank, diversity control, and evaluation-output observability를 구현. Updated: 2026-05-25.
 - [`T0009-host-local-ollama-rag-configuration.md`](T0009-host-local-ollama-rag-configuration.md): host-local Ollama answer runtime, portable source slots, global registration, indexing, search, and answer smoke를 완료. Updated: 2026-05-25.
-- [`T0008-portable-ops-zone-deployment.md`](T0008-portable-ops-zone-deployment.md): tracked defaults를 portable하게 조정하고 `~/Service` 운영 zone 배포를 구성. Updated: 2026-05-24.
+- [`T0008-portable-ops-zone-deployment.md`](T0008-portable-ops-zone-deployment.md): tracked defaults를 portable하게 조정하고 configurable operation zone 배포를 구성. Updated: 2026-05-24.
 - [`T0007-codex-global-rag-integration.md`](T0007-codex-global-rag-integration.md): Codex global MCP adapter, skill, installer, and `rag_answer`를 이 장비에 설치. Updated: 2026-05-25.
 - [`T0006-local-device-application-baseline.md`](T0006-local-device-application-baseline.md): 이 장비의 실제 source folders에 `qwen3-embedding:4b` baseline을 적용하고 full indexing/search smoke를 수행. Updated: 2026-05-24.
 - [`T0001-source-registry-project-ssot-registration.md`](T0001-source-registry-project-ssot-registration.md): Source registry runtime contract, project scope resolution, metadata propagation을 구현. Updated: 2026-05-24.

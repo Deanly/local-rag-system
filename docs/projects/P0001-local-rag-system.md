@@ -162,10 +162,10 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 실제 로컬
 | T0003 | Spring Boot MSA skeleton | Done | 100% | Maven multi-module, five service health endpoints, Compose smoke |
 | T0001 | Source registry and project SSOT registration | Done | 100% | registry validation, project scope resolution, metadata propagation |
 | T0004 | Local RAG functional baseline | Done | 100% | watcher/scanner, Markdown indexing, Weaviate hybrid search, MCP REST bridge smoke |
-| T0005 | Multi-source application hardening | Done | 100% | Personal Notes wiki, Project Alpha docs, Project Beta docs source contract; glob enforcement; default context resolution |
+| T0005 | Multi-source application hardening | Done | 100% | placeholder multi-source contract, glob enforcement, default context resolution |
 | T0006 | Local device application baseline | Done | 100% | qwen3-embedding:4b production baseline and actual local source indexing completed |
 | T0007 | Codex global RAG integration | Done | 100% | installable stdio MCP adapter and global Codex skill |
-| T0008 | Portable ops zone deployment | Done | 100% | portable localhost defaults and `~/Service` operation zone |
+| T0008 | Portable ops zone deployment | Done | 100% | portable localhost defaults and configurable operation zone |
 | T0009 | Host-local Ollama RAG configuration | Done | 100% | portable source slots, answer endpoint, global integration refresh, indexing/search/answer smoke |
 | T0010 | Codex RAG utilization hardening | Follow-up | 86% | non-blocking post-baseline operation-zone deploy/restart and live runtime smoke remain pending by instruction |
 | T0011 | Retrieval quality hardening | Done | 100% | evaluation harness, baseline/post-change metrics, deterministic source/path rerank, primary source weighting, and diversity control implemented |
@@ -208,11 +208,11 @@ Completion mode는 `functional`이다. 이 project가 닫히려면 실제 로컬
 - Weaviate upsert/delete/search smoke 결과
 - `/api/index/status`와 `/api/search` 응답 예시
 - Codex MCP 또는 REST bridge 호출 증빙
-- Actual local device application: 612 documents and 3463 chunks indexed from `personal-notes`, `project-alpha.docs`, and `project-beta.docs` with `qwen3-embedding:4b` and fallback disabled.
+- Historical single-device application: 612 documents and 3463 chunks indexed from operator-local registered sources with `qwen3-embedding:4b` and fallback disabled. Source names and host paths are not portable project resources.
 - Codex global integration: `integrations/codex/install-codex-local-rag.sh` installs `mcp_servers.local_rag` and the `local-rag` skill.
-- Operation zone: `~/Service/bin/local-rag` manages the stack from `~/Service/code/local-rag-system` using untracked config under `~/Service/config/local-rag-system`.
+- Operation zone: `ops/service/local-rag` manages the stack from a configured operation root using untracked local config. Current defaults are documented in `README.md` and `docs/guide/installing-on-a-new-machine.md`.
 - Portable Ollama endpoints: `LOCAL_RAG_OLLAMA_BASE_URLS` supports ordered local/LAN endpoints so the Mac mini can be preferred at a desk while the notebook-local endpoint remains available when traveling.
-- Official version baseline: P0001 functional baseline starts as `1.0.0`; Maven parent/module versions and service Dockerfile jar paths now use `1.0.0`.
+- Official version baseline: P0001 functional baseline starts as `1.0.0`; later release versions, such as P0002 `1.1.0`, may advance Maven parent/module versions and service Dockerfile jar paths.
 
 문서만 작성된 상태는 G1의 증빙일 수 있지만 project 전체 `done` evidence로는 부족하다.
 
@@ -229,8 +229,7 @@ Closeout 판단:
 Version 판단:
 
 - P0001 결과를 official `1.0.0` functional baseline으로 정한다.
-- Maven parent/module versions, service Dockerfile jar paths, and runtime docs now use `1.0.0`.
-- Git tag creation and push are still separate operator actions, if desired.
+- The `v1.0.0` tag preserves that baseline. Later project releases may advance runtime artifact versions without reopening P0001.
 
 ## Outputs / Handoff
 
@@ -280,10 +279,10 @@ Version 판단:
 - 2026-05-24: source registry와 project SSOT registration 결정을 umbrella goal, WBS, milestone, handoff에 반영.
 - 2026-05-24: SDLC automation goal, critical path, T0003 first implementation gate를 반영. T0002는 done, T0001은 T0003 전까지 blocked로 정렬.
 - 2026-05-24: SDLC core automation unavailable, so implementation was completed directly in this Codex session. T0001, T0003, and T0004 are done. Functional baseline smoke passed for registry, watcher/scanner, indexing, deletion cleanup, hybrid search, and MCP REST bridge. Initial smoke used fallback embeddings before a production embedding model was available.
-- 2026-05-24: T0006 completed actual local device application with `qwen3-embedding:4b`. The stack indexed 612 documents and 3463 chunks from the registered local source folders, verified source-scoped hybrid search for all three source classes, and confirmed stable Ollama memory behavior on `local-llm-host`.
+- 2026-05-24: T0006 completed actual single-device application with `qwen3-embedding:4b`. The stack indexed 612 documents and 3463 chunks from registered local source folders, verified source-scoped hybrid search for all three source classes, and confirmed stable Ollama memory behavior on an operator-local endpoint.
 - 2026-05-24: T0005 completed the pre-application hardening for the local target sources: multi-source Compose mounts, local registry example, scanner glob enforcement, default context source resolution, and inactive source retirement.
 - 2026-05-24: T0007 added and installed the Codex global integration: project-owned installer, stdio MCP adapter, and global `local-rag` skill.
-- 2026-05-24: T0008 separated portable defaults from this device's direct-network config and moved operation to `~/Service`.
+- 2026-05-24: T0008 separated portable defaults from device-specific direct-network config and moved operation to a configurable local operation zone.
 - 2026-05-25: T0009 added host-local Ollama configuration, implemented `/api/answer`, kept source selection in ignored local registry state, and refreshed the Codex integration with registry-driven MCP descriptions.
 - 2026-05-25: T0009 blocker resolved. The missing images were pulled, the Compose stack started, the current machine-local registry was indexed, and search/MCP search/local answer smoke passed after disabling Ollama thinking output for bounded answer generation.
 - 2026-05-25: T0010 issued as a post-baseline remediation task after audit showed the runtime and adapter are healthy but the active Codex session does not expose local RAG MCP tools directly, and several API/tool contract gaps remain.

@@ -12,7 +12,7 @@ related_design:
   - docs/design/control-plane.md
   - docs/design/ubiquitous-language.md
 source_refs:
-  - ../project-alpha/docs/reports/2026-05-16-document-taxonomy-context-window-analysis.md
+  - source:historical-document-taxonomy-context-window-analysis
 tags:
   - docs/guide
   - context-window

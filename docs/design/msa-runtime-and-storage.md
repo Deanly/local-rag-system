@@ -98,7 +98,7 @@ flowchart LR
 All service directories are Spring Boot Maven subprojects. The current Dockerfiles define the artifact convention:
 
 ```text
-services/<service>/target/<service>-1.0.0.jar
+services/<service>/target/<service>-1.1.0.jar
 ```
 
 ## Infrastructure Services
