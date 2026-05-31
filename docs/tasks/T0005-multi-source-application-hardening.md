@@ -6,7 +6,7 @@ status: done
 owner:
 created: 2026-05-24
 updated: 2026-05-24
-current_focus: "Completed multi-source local application hardening for Personal Notes, Project Alpha, and Project Beta docs"
+current_focus: "Completed multi-source local application hardening for placeholder source ids"
 completion_mode: functional
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: P0001-local-rag-system
@@ -38,7 +38,7 @@ tags:
 - Owner:
 - Created: 2026-05-24
 - Updated: 2026-05-24
-- Current Focus: Completed multi-source local application hardening for Personal Notes, Project Alpha, and Project Beta docs
+- Current Focus: Completed multi-source local application hardening for placeholder source ids
 - Related Control Plane: docs/design/control-plane.md
 - Related Umbrella Project: P0001-local-rag-system
 - Related Project: docs/projects/P0001-local-rag-system.md
@@ -48,9 +48,9 @@ tags:
 
 ## Purpose
 
-이 task는 Khoj 제거 후 `local-rag-system`을 실제 로컬 문서 소스에 적용하기 전 필요한 안전 보완을 닫는다.
+이 task는 Khoj 제거 후 `local-rag-system`을 장비별 로컬 문서 소스에 적용하기 전 필요한 안전 보완을 닫는다.
 
-대상은 `personal-notes`의 compiled wiki layer, `project-alpha/docs`, `project-beta/docs`이며, 이번 작업은 배포가 아니라 코드/설정/문서 기준선을 정리하고 커밋 가능한 상태로 만드는 것이다.
+대상 source id는 `personal-notes`, `project-alpha.docs`, `project-beta.docs` 같은 sample/local registry keys로 표현한다. 이 이름들은 committed example contract를 설명하기 위한 placeholder이며, 실제 장비의 source names와 host paths는 ignored local registry/env에만 둔다. 이번 작업은 배포가 아니라 코드/설정/문서 기준선을 정리하고 커밋 가능한 상태로 만드는 것이다.
 
 ## Task Placement Check
 
@@ -74,8 +74,8 @@ tags:
 
 이 task가 `done`일 때 가능해야 하는 것:
 
-- Compose가 세 source root를 별도 read-only mount로 표현한다.
-- local registry example이 Personal Notes wiki, Project Alpha docs, Project Beta docs를 등록한다.
+- Compose가 sample source roots를 별도 read-only mount로 표현한다.
+- local registry example이 placeholder source ids를 등록한다.
 - scanner가 include/exclude glob을 통과한 supported file만 indexing한다.
 - retrieval이 `primary_source_id`, `default_context`, project-local active sources 순서로 source scope를 만든다.
 - registry에서 사라진 project/source는 PostgreSQL에서 inactive가 된다.
@@ -111,8 +111,8 @@ tags:
 
 | ID | Work Item | Status | Progress | Notes |
 | --- | --- | --- | --- | --- |
-| W1 | Multi-source Compose contract | Done | 100% | three read-only source mounts |
-| W2 | Local registry example | Done | 100% | personal-notes wiki, project-alpha docs, project-beta docs |
+| W1 | Multi-source Compose contract | Done | 100% | sample read-only source mounts |
+| W2 | Local registry example | Done | 100% | placeholder source ids only; real names stay local |
 | W3 | Source glob enforcement | Done | 100% | include/exclude filters run before indexing |
 | W4 | Default context retrieval | Done | 100% | cross-project support source ids are resolved before query |
 | W5 | Registry retirement behavior | Done | 100% | missing project/source rows become inactive |
@@ -121,7 +121,7 @@ tags:
 ## Completion Criteria
 
 1. `.env.example` and Compose render a valid multi-source configuration.
-2. `config/source-registry.local.example.yaml` registers the three target source ids.
+2. `config/source-registry.local.example.yaml` registers portable placeholder source ids.
 3. `SourcePathFilter` is tested for root-level `**/*.md` includes and root/nested directory excludes.
 4. Retrieval source resolution honors active primary/default-context/project sources.
 5. Registry synchronizer deactivates missing rows.
@@ -142,7 +142,7 @@ tags:
 - `config/source-registry.local.example.yaml` as the target local registry example.
 - Scanner glob enforcement and focused tests.
 - Retrieval source scope resolution aligned with `default_context`.
-- Next operator step: install/confirm the Ollama embedding model on `local-llm-host`, then run an actual local indexing smoke with fallback disabled.
+- Next operator step: install/confirm the Ollama embedding model on the configured local/LAN Ollama endpoint, then run an actual local indexing smoke with fallback disabled.
 
 ## Quality Axes In Scope
 

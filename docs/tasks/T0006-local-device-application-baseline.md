@@ -6,7 +6,7 @@ status: done
 owner:
 created: 2026-05-24
 updated: 2026-05-24
-current_focus: "Completed local device application baseline with qwen3-embedding:4b and actual registered source indexing"
+current_focus: "Completed single-device baseline with qwen3-embedding:4b and registered source indexing"
 completion_mode: functional
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: P0001-local-rag-system
@@ -37,7 +37,7 @@ tags:
 - Owner:
 - Created: 2026-05-24
 - Updated: 2026-05-24
-- Current Focus: Completed local device application baseline with qwen3-embedding:4b and actual registered source indexing
+- Current Focus: Completed single-device baseline with qwen3-embedding:4b and registered source indexing
 - Related Control Plane: docs/design/control-plane.md
 - Related Umbrella Project: P0001-local-rag-system
 - Related Project: docs/projects/P0001-local-rag-system.md
@@ -47,9 +47,9 @@ tags:
 
 ## Purpose
 
-이 task는 `local-rag-system`을 이 장비의 실제 registered source folders에 적용 가능한 상태로 고정한다.
+이 task는 `local-rag-system`을 한 운영 장비의 registered source folders에 적용 가능한 상태로 고정한다.
 
-결정된 production embedding baseline은 `qwen3-embedding:4b` on Ollama `local-llm-host:11434`이며, fallback embedding은 꺼진다. 답변 생성 후보는 oMLX `qwen3.6-35b-a3b-oq4-fp16-mtp`지만, 현재 구현 범위는 retrieval/indexing baseline까지다.
+결정된 production embedding baseline은 local/LAN-local Ollama의 `qwen3-embedding:4b`이며, fallback embedding은 꺼진다. 실제 hostname, IP, SSH user, source names, and host paths는 ignored local env/registry에만 둔다. 답변 생성 후보는 local-only model이지만, 현재 구현 범위는 retrieval/indexing baseline까지다.
 
 ## Task Placement Check
 
@@ -74,7 +74,7 @@ tags:
 이 task가 `done`일 때 가능해야 하는 것:
 
 - tracked defaults are pinned to `qwen3-embedding:4b`.
-- ignored local `.env` and `config/source-registry.local.yaml` are present for this machine.
+- ignored local `.env` and `config/source-registry.local.yaml` are present for the operator machine.
 - Docker Compose validates with local source paths.
 - stack starts with fallback disabled.
 - actual registered sources are indexed without embedding errors.
@@ -136,18 +136,17 @@ tags:
 
 ## Completion Evidence
 
+Portability note: the bullets below are historical evidence from one operator-local run. They are not a reusable resource inventory, and their source ids/counts should not be copied into another machine except as placeholders.
+
 - `docker compose --env-file .env config` passed with real local source mounts.
 - `docker compose --env-file .env up -d --build --force-recreate` started the stack with fallback disabled.
 - `POST /api/index/force` completed on 2026-05-24 with `sourcesScanned=3`, `documentsDetected=612`, `documentsIndexed=612`, `documentsDeleted=0`, `chunksIndexed=3463`, `errors=[]`.
 - `GET /api/index/status` returned `documents=612`, `chunks=3463`, `documentsByStatus.indexed=612`.
-- Source counts after indexing: `personal-notes=147`, `project-alpha.docs=332`, `project-beta.docs=133`.
-- `POST /api/search` returned citation-bearing hybrid results for `project-alpha`, `project-beta`, and `personal-notes`.
-- Source-scoped searches returned citations from each source:
-  - `project-alpha.docs`: `projects/P0011-general-lobby-teacher-channel-delivery.md#Requirement Traceability Matrix`
-  - `project-beta.docs`: `tasks/T0218-paper-trading-pre-promotion-gate.md#Task Placement Check`
-  - `personal-notes`: `queries/rag-ssot-strategy.md`
+- Source counts after indexing were captured for three operator-local registered sources.
+- `POST /api/search` returned citation-bearing hybrid results for each configured source class.
+- Source-scoped searches returned citations from the project-docs and compiled-wiki source classes; exact citation paths are omitted because they were operator-local content.
 - `POST /api/mcp/rag_search` returned a citation-bearing response through the REST bridge.
-- SSH monitoring on `local-llm-user@local-llm-host` showed only `qwen3-embedding:4b` resident in Ollama for indexing, with `size_vram=11653994016` and `Pages throttled=0`.
+- Local/LAN Ollama monitoring showed only `qwen3-embedding:4b` resident for indexing, with no memory throttling observed.
 - Service logs after the final verification window had no `error`, `exception`, `failed`, or `warn` entries.
 
 ## Outputs / Handoff
@@ -177,11 +176,11 @@ tags:
 | --- | --- | --- | --- |
 | G1 | Done | `.env.example`, `docker-compose.yml`, service defaults | `qwen3-embedding:4b`; fallback disabled |
 | G2 | Done | ignored `.env`, `config/source-registry.local.yaml` | machine-local files are not tracked |
-| G3 | Done | force scan indexed 612 documents and 3463 chunks with `errors=[]` | real registered sources |
-| G4 | Done | hybrid searches returned citations from `project-alpha.docs`, `project-beta.docs`, and `personal-notes` | project and source scope verified |
+| G3 | Done | force scan indexed 612 documents and 3463 chunks with `errors=[]` | operator-local registered sources |
+| G4 | Done | hybrid searches returned citations from each configured source class | project and source scope verified |
 | G5 | Done | Maven tests, docs validators, compose config, SSH monitoring, service log check | closeout evidence captured |
 
 ## Status
 
 - 2026-05-24: task issued after selecting `qwen3-embedding:4b` as the performance/memory balanced embedding baseline.
-- 2026-05-24: completed local device application. Indexed 612 documents and 3463 chunks from `personal-notes`, `project-alpha.docs`, and `project-beta.docs` using `qwen3-embedding:4b` with fallback disabled. Representative hybrid and MCP bridge searches returned citation-bearing results.
+- 2026-05-24: completed single-device application. Indexed 612 documents and 3463 chunks from operator-local registered sources using `qwen3-embedding:4b` with fallback disabled. Representative hybrid and MCP bridge searches returned citation-bearing results.

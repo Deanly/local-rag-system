@@ -6,7 +6,7 @@ status: done
 owner:
 created: 2026-05-24
 updated: 2026-05-24
-current_focus: "Separate portable defaults from this device's Service operation zone"
+current_focus: "Separate portable defaults from operator-local operation-zone config"
 completion_mode: functional
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: P0001-local-rag-system
@@ -37,13 +37,13 @@ tags:
 - Owner:
 - Created: 2026-05-24
 - Updated: 2026-05-24
-- Current Focus: Separate portable defaults from this device's Service operation zone
+- Current Focus: Separate portable defaults from operator-local operation-zone config
 - Related Control Plane: docs/design/control-plane.md
 - Related Project: docs/projects/P0001-local-rag-system.md
 
 ## Purpose
 
-이 task는 dev zone인 `Workspace/local-rag-dev`와 operation zone인 `~/Service`를 분리하고, tracked defaults에서 이 장비 전용 direct-network endpoint를 제거한다.
+이 task는 development checkout과 operator-local operation zone을 분리하고, tracked defaults에서 장비 전용 direct-network endpoint를 제거한다. Current install docs use the configurable `ops/service/local-rag` command; older operation roots from this historical task are not portable instructions.
 
 ## Task Placement Check
 
@@ -53,31 +53,31 @@ tags:
 
 ## Whole-System Anchor
 
-이 task가 보존하는 전체 목표는 local RAG가 다른 장비에도 설치 가능한 기본값을 가지면서, 이 장비에서는 `~/Service` 운영 규칙에 따라 관리되는 것이다.
+이 task가 보존하는 전체 목표는 local RAG가 다른 장비에도 설치 가능한 기본값을 가지면서, 운영 장비별 env/registry는 ignored local config로 관리되는 것이다.
 
 깨면 안 되는 invariant:
 
-- committed defaults must not require `local-llm-host`.
-- direct-network endpoint stays in untracked Service env only.
-- operation code lives under `~/Service/code/local-rag-system`.
-- operational scripts live under `~/Service/bin`.
-- source docs for operational indexing come from operation-zone checkouts where available.
+- committed defaults must not require a device-specific LLM endpoint.
+- direct-network endpoint stays in untracked operation env only.
+- operation code lives under the configured `LOCAL_RAG_SERVICE_ROOT`.
+- operational scripts live under the configured operation bin directory.
+- source docs for operational indexing come from registered local sources only.
 
 ## Committed Outcome
 
 - Docker defaults use `http://host.docker.internal:11434`; direct-network endpoints remain untracked local overrides.
 - Compose accepts an external config mount via `LOCAL_RAG_CONFIG_DIR`.
 - `ops/service/local-rag` provides the operator command.
-- This device can run the stack from `~/Service/code/local-rag-system` using `~/Service/config/local-rag-system/local.env`.
+- The operator can run the stack from the configured operation checkout using an ignored operation env file.
 
 ## Goal Inventory
 
 | Goal ID | Locked Goal | Done When |
 | --- | --- | --- |
 | G1 | Remove device endpoint hardcoding | tracked defaults use localhost or empty optional endpoint |
-| G2 | Add Service operation command | `ops/service/local-rag` exists and is installed to `~/Service/bin/local-rag` |
-| G3 | Move running operation to Service code zone | service runs from `~/Service/code/local-rag-system` |
-| G4 | Keep this device's direct endpoint as local config | `~/Service/config/local-rag-system/local.env` contains device-only overrides |
+| G2 | Add operation command | `ops/service/local-rag` exists and can be installed under the configured operation bin directory |
+| G3 | Move running operation to the operation code zone | service runs from the configured operation checkout |
+| G4 | Keep device-specific endpoints as local config | ignored operation env contains device-only overrides |
 | G5 | Verify runtime after migration | health, registry, index status, and search smoke pass |
 
 ## Scope
@@ -103,7 +103,7 @@ tags:
 | W1 | Portable defaults | Done | 100% | Ollama default is localhost |
 | W2 | External config support | Done | 100% | `LOCAL_RAG_CONFIG_DIR` mount |
 | W3 | Operator script | Done | 100% | `ops/service/local-rag` |
-| W4 | Service operation checkout | Done | 100% | `~/Service/code/local-rag-system` |
+| W4 | Operation checkout | Done | 100% | checkout path is configured by operation env |
 | W5 | Runtime migration | Done | 100% | stack recreated from operation zone |
 | W6 | Verification | Done | 100% | service smoke passed |
 
@@ -113,33 +113,32 @@ tags:
 
 ## Completion Criteria
 
-1. `docker compose --env-file .env.example config` passes without `local-llm-host`.
+1. `docker compose --env-file .env.example config` passes without a device-specific LLM endpoint.
 2. `ops/service/local-rag` passes shell syntax check.
-3. The operator script is installed at `~/Service/bin/local-rag`.
-4. Operation checkout exists at `~/Service/code/local-rag-system`.
+3. The operator script is installed under the configured operation bin directory.
+4. Operation checkout exists under the configured operation code directory.
 5. Running containers use the operation checkout config path.
 6. Health, index status, and representative search are successful after migration.
 
 ## Completion Evidence
 
-- `docker compose --env-file .env.example config` passed and rendered no `local-llm-host` endpoint.
+- `docker compose --env-file .env.example config` passed and rendered no device-specific LLM endpoint.
 - `bash -n ops/service/local-rag` passed.
-- `~/Service/bin/local-rag` installed and reports operation paths under `~/Service`.
-- `~/Service/code/local-rag-system` cloned from the configured private GitHub remote.
-- `~/Service/code/project-beta` cloned from the project's GitHub remote for operation-zone source indexing.
-- `~/Service/config/local-rag-system/local.env` stores this device's `local-llm-host` Ollama/oMLX overrides and operation source paths.
-- `~/Service/config/local-rag-system/source-registry.local.yaml` registers operation-zone source roots.
-- `local-rag deploy` rebuilt/recreated the stack from `~/Service/code/local-rag-system` and reinstalled Codex integration from the operation checkout.
+- The operator command installed and reported operation paths under the configured service root.
+- The operation checkout was created from the configured repository remote.
+- Device-specific Ollama and source path overrides were stored only in the ignored operation env.
+- The ignored operation registry registered operation-zone source roots.
+- `local-rag deploy` rebuilt/recreated the stack from the operation checkout and reinstalled Codex integration.
 - Post-migration force scan returned `sourcesScanned=3`, `documentsDetected=609`, `documentsIndexed=14`, `documentsDeleted=3`, `chunksIndexed=193`, `errors=[]`.
 - Post-migration index status returned `documents=612`, `chunks=3432`, `documentsByStatus.indexed=609`, `documentsByStatus.removed=3`.
-- Source-scoped hybrid searches returned citations for `project-alpha.docs` and `project-beta.docs`.
+- Source-scoped hybrid searches returned citations for the registered project-docs source classes.
 
 ## Outputs / Handoff
 
-- Operator command: `~/Service/bin/local-rag`
-- Operation checkout: `~/Service/code/local-rag-system`
-- Operation config: `~/Service/config/local-rag-system/local.env`
-- Operation data: `~/Service/runtime/local-rag-system`
+- Operator command: `ops/service/local-rag`, installed under the configured operation bin directory.
+- Operation checkout: configured by `LOCAL_RAG_CODE_DIR`.
+- Operation config: configured by `LOCAL_RAG_CONFIG_DIR` and `LOCAL_RAG_ENV_FILE`.
+- Operation data: configured by `LOCAL_RAG_DATA_DIR`.
 
 ## Quality Axes In Scope
 
@@ -161,12 +160,12 @@ tags:
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
 | G1 | Done | `.env.example`, `docker-compose.yml`, Java settings | device endpoint removed from defaults |
-| G2 | Done | `ops/service/local-rag`, `~/Service/bin/local-rag` | operator command installed |
-| G3 | Done | `~/Service/code/local-rag-system` | operation checkout created from GitHub |
-| G4 | Done | `~/Service/config/local-rag-system/local.env` | local-only override |
+| G2 | Done | `ops/service/local-rag` and installed command | operator command installed |
+| G3 | Done | configured operation checkout | operation checkout created from Git remote |
+| G4 | Done | ignored operation env | local-only override |
 | G5 | Done | health/index/search smoke | runtime verified after migration |
 
 ## Status
 
-- 2026-05-24: Issued after clarifying that `local-llm-host` is a device-only direct network endpoint and that operation must run from `~/Service`.
-- 2026-05-24: Completed migration. The running stack now uses operation checkout/config mounts under `~/Service`; tracked defaults remain portable and localhost-based.
+- 2026-05-24: Issued after clarifying that direct network endpoints are device-only and operation must run from an ignored local operation zone.
+- 2026-05-24: Completed migration. The running stack used operation checkout/config mounts under the configured service root; tracked defaults remained portable and localhost-based.

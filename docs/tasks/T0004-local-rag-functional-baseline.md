@@ -202,7 +202,7 @@ Downstream tasks:
 | G3 | Done | Modification/create/delete smoke passed | Watcher is best-effort; periodic scan remains fallback |
 | G4 | Done | Hybrid search returned `knowledge.md#Local RAG Notes` | Results include citation, snippet, score, source metadata |
 | G5 | Done | Gateway `/api/mcp/rag_search` returned same result shape | REST bridge, not true MCP transport |
-| G6 | Done | Smoke report records the initial missing embedding-model state on `local-llm-host`; later deployment baseline pins `qwen3-embedding:4b` | Production run should keep fallback disabled |
+| G6 | Done | Smoke report records the initial missing embedding-model state on an operator-local Ollama endpoint; later deployment baseline pins `qwen3-embedding:4b` | Production run should keep fallback disabled |
 
 ## Status
 

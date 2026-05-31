@@ -14,9 +14,10 @@ The earlier Python BM25 scaffold has been removed from the active runtime surfac
 
 ## Current Status
 
-The functional baseline is implemented and smoke-tested:
+The functional baseline is implemented and smoke-tested. The current formal release is `1.1.0` for the P0002 retrieval governance hardening work:
 
 - official baseline version `1.0.0`
+- official P0002 release version `1.1.0`
 - source registry validation and project-scoped source resolution
 - file watcher plus periodic scan fallback
 - Markdown/plain text chunk indexing

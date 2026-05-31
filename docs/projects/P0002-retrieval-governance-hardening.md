@@ -3,6 +3,7 @@ type: project
 doc_id: P0002
 title: retrieval-governance-hardening
 status: done
+release_version: 1.1.0
 project_role: exception-branch
 umbrella_initiative: local-rag-system-retrieval-governance
 parent_umbrella_project: P0001-local-rag-system
@@ -43,6 +44,7 @@ tags:
 - Type: project
 - Document ID: P0002
 - Status: done
+- Release Version: 1.1.0
 - Project Role: exception-branch
 - Umbrella Initiative: local-rag-system-retrieval-governance
 - Parent Umbrella Project: P0001-local-rag-system
@@ -236,6 +238,7 @@ Evidence that is not sufficient alone:
 - P0002 owns the post-P0001 retrieval governance delivery boundary.
 - The completed tasks preserve `docs/evaluation/retrieval-quality-cases.yaml` and extend it rather than replacing the T0011 baseline.
 - P0002 ships with deterministic governance ranking; future model reranker work needs a new task and expanded default-mode regression evidence.
+- P0002 is the official `1.1.0` release line. It is backward-compatible with the P0001 `1.0.0` functional baseline and advances runtime artifact versions to `1.1.0`.
 - P0001 remains the official `1.0.0` functional runtime baseline.
 
 ## Quality Axes In Scope
@@ -271,7 +274,7 @@ Evidence that is not sufficient alone:
 
 ## Risks / Open Questions
 
-- Git tagging/pushing `v1.0.0` is a separate operator action if a repository tag is desired.
+- The formal P0002 release should be marked by the `v1.1.0` Git tag.
 - Evaluation fixtures can become stale as docs change; maintenance rules need to be part of the evaluation task.
 - A future larger fixture may justify local model reranker work, but it is not a P0002 deployment blocker.
 
@@ -286,3 +289,4 @@ Evidence that is not sufficient alone:
 - 2026-05-30: `T0016` completed search audit and runtime observability expansion. P0002 now moves to `T0017` local reranker evaluation decision.
 - 2026-05-31: `T0017` completed the local reranker deployment decision. P0002 is closed as deployable with deterministic governance ranking, metadata-aware retrieval, source-priority answer context, staleness/citation evaluation, audit observability, and no separate local model reranker in the release path.
 - 2026-05-31: Test deployment verification completed for `local-rag-system`. The operation registry now excludes `docs/_templates/**` from the project docs source; a forced project scan detected 55 active documents and removed 6 template documents. The deployed retrieval fixture passed with overall hit@1 95.8%, hit@5 100.0%, MRR 0.979, must-use 100.0%, must-not-use 100.0%, citation usefulness 100.0%, and staleness errors 0.
+- 2026-05-31: P0002 formal release version set to `1.1.0`; Maven parent/module versions, service Dockerfile jar paths, and runtime artifact docs were advanced from `1.0.0` to `1.1.0` before tagging.
