@@ -26,6 +26,7 @@ referenced_by:
   - docs/tasks/T0021-scoregate-offline-selector-experiment.md
   - docs/tasks/T0022-scoregate-offline-evaluation-fixture.md
   - docs/tasks/T0023-local-cross-encoder-score-source.md
+  - docs/tasks/T0024-local-cross-encoder-sidecar-proof.md
 source_refs:
   - https://arxiv.org/abs/2606.14269
   - ~/Workspace/personal-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md
@@ -39,11 +40,20 @@ source_refs:
   - docs/tasks/T0022-scoregate-offline-evaluation-fixture.md
   - docs/reports/2026-06-16-scoregate-offline-snapshot-evaluation.md
   - docs/tasks/T0023-local-cross-encoder-score-source.md
+  - docs/tasks/T0024-local-cross-encoder-sidecar-proof.md
   - docs/reports/2026-06-16-scoregate-runtime-no-ship-decision.md
+  - docs/reports/2026-06-16-scoregate-before-after-comparison.md
+  - docs/reports/2026-06-16-scoregate-sidecar-proof-smoke.md
   - docs/evaluation/scoregate-offline-cases.json
+  - docs/evaluation/scoregate-runtime-probes.json
   - docs/bin/validate-scoregate-offline.sh
+  - docs/bin/collect-scoregate-runtime-snapshot.py
   - services/retrieval-service/src/main/java/com/localrag/retrieval/RetrievalService.java
   - services/retrieval-service/src/main/java/com/localrag/retrieval/ScoreGateCandidateSelector.java
+  - services/retrieval-service/src/main/java/com/localrag/retrieval/LocalRerankerClient.java
+  - services/retrieval-service/src/main/java/com/localrag/retrieval/HttpLocalRerankerClient.java
+  - services/reranker-sidecar/README.md
+  - services/reranker-sidecar/app/main.py
   - services/retrieval-service/src/test/java/com/localrag/retrieval/ScoreGateCandidateSelectorTests.java
   - services/retrieval-service/src/test/java/com/localrag/retrieval/ScoreGateOfflineEvaluationTests.java
   - services/indexer-service/src/main/java/com/localrag/indexer/MarkdownChunker.java
@@ -76,6 +86,7 @@ tags:
   - `docs/tasks/T0021-scoregate-offline-selector-experiment.md`
   - `docs/tasks/T0022-scoregate-offline-evaluation-fixture.md`
   - `docs/tasks/T0023-local-cross-encoder-score-source.md`
+  - `docs/tasks/T0024-local-cross-encoder-sidecar-proof.md`
 
 ## Context
 
@@ -91,7 +102,7 @@ Local RAG의 functional baseline은 완성되어 있다. 현재 시스템은 등
 - project-scoped search에서 default context가 primary project source보다 앞서는 경우가 있다.
 - reranker, source weighting, document-level diversity, 정식 evaluation harness가 없다.
 
-이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-31 기준 `P0002`의 `T0013`-`T0017`이 metadata-aware chunking, document authority metadata, metadata filters, stale-source demotion, answer source priority cues, staleness/citation evaluation checks, search audit observability, and local reranker deployment decision을 완료했다. 2026-06-16 기준 `P0003`는 ScoreGate를 final context selection 개선 후보로 검토했고 selector/evaluator artifact를 남겼지만, 현재 profile에 true local cross-encoder `r_i` score source가 없어 runtime rollout은 no-ship으로 닫았다.
+이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-31 기준 `P0002`의 `T0013`-`T0017`이 metadata-aware chunking, document authority metadata, metadata filters, stale-source demotion, answer source priority cues, staleness/citation evaluation checks, search audit observability, and local reranker deployment decision을 완료했다. 2026-06-16 기준 `P0003`는 ScoreGate를 final context selection 개선 후보로 검토했고 selector/evaluator artifact를 남겼지만, 현재 profile에 true local cross-encoder `r_i` score source가 없어 default runtime rollout은 no-ship으로 닫았다. 이후 `T0024`는 local reranker sidecar와 explicit debug/opt-in proof path를 추가했으며, default `rag_search` promotion은 real `r_i` snapshot calibration 전까지 보류한다.
 
 ## Whole-System Role
 
@@ -402,16 +413,19 @@ Current implementation:
 - Focused tests cover bucket classification, B3 rescue, disagreement thresholds, MAX-K cap, and normalized-score validation.
 - `T0022` added an offline snapshot fixture and validator that use the actual Java selector to report hit@1, hit@5, MRR, source accuracy@1, fixed top-K miss rescue, retained token estimate, B3 rescue count, and multi-hop coverage.
 - `T0023` checked the current profile for local cross-encoder score sourcing and closed runtime ScoreGate as no-ship because no true local `r_i` source is available.
+- `T0024` adds the proof substrate for the no-ship blocker: optional local reranker sidecar, retrieval-service timeout/fallback client, request-level `filters.scoreGate=debug|on`, runtime probes, and a snapshot collector.
 - No `rag_search` public contract or default runtime behavior changed in `T0021`.
 - No `rag_search` public contract or default runtime behavior changed in `T0022`.
 - No `rag_search` public contract or default runtime behavior changed in `T0023`.
+- No default `rag_search` behavior changes in `T0024`; ScoreGate remains explicit opt-in/debug only until real sidecar snapshots and calibration evidence justify promotion.
 
 Runtime decision:
 
 - Keep the selector and offline evaluator as reusable artifacts.
-- Do not add ScoreGate debug/audit mode, opt-in runtime mode, or default behavior in P0003.
+- P0003 remains no-ship for default runtime ScoreGate.
+- T0024 may provide explicit debug/opt-in runtime proof paths, but only with local/LAN-local cross-encoder score sourcing and fallback.
 - Do not use deterministic `RetrievalRanker.rerankScore` as `r_i`.
-- Reopen with a new sidecar/library proof only if a local cross-encoder score source is explicitly added and measured.
+- Do not promote ScoreGate to default until local cross-encoder snapshots, latency, retained-token, source accuracy, Korean false-negative, stale-demotion, and multi-hop coverage evidence are documented.
 
 Offline experiment requirements before runtime use:
 
@@ -542,14 +556,23 @@ Authoritative artifacts:
 - `docs/tasks/T0021-scoregate-offline-selector-experiment.md`
 - `docs/tasks/T0022-scoregate-offline-evaluation-fixture.md`
 - `docs/tasks/T0023-local-cross-encoder-score-source.md`
+- `docs/tasks/T0024-local-cross-encoder-sidecar-proof.md`
 - `docs/reports/2026-06-16-scoregate-offline-snapshot-evaluation.md`
 - `docs/reports/2026-06-16-scoregate-runtime-no-ship-decision.md`
+- `docs/reports/2026-06-16-scoregate-before-after-comparison.md`
+- `docs/reports/2026-06-16-scoregate-sidecar-proof-smoke.md`
 - `docs/reports/2026-05-31-local-reranker-evaluation-decision.md`
 - `docs/evaluation/retrieval-quality-cases.yaml`
 - `docs/evaluation/scoregate-offline-cases.json`
+- `docs/evaluation/scoregate-runtime-probes.json`
 - `docs/bin/validate-retrieval-quality.sh`
 - `docs/bin/validate-scoregate-offline.sh`
+- `docs/bin/collect-scoregate-runtime-snapshot.py`
+- `services/reranker-sidecar/README.md`
+- `services/reranker-sidecar/app/main.py`
 - `services/retrieval-service/src/main/java/com/localrag/retrieval/ScoreGateCandidateSelector.java`
+- `services/retrieval-service/src/main/java/com/localrag/retrieval/LocalRerankerClient.java`
+- `services/retrieval-service/src/main/java/com/localrag/retrieval/HttpLocalRerankerClient.java`
 - `services/retrieval-service/src/test/java/com/localrag/retrieval/ScoreGateCandidateSelectorTests.java`
 - `services/retrieval-service/src/test/java/com/localrag/retrieval/ScoreGateOfflineEvaluationTests.java`
 
@@ -577,7 +600,7 @@ Expected future artifacts:
 | Implement deterministic source weighting before model rerank. | It directly addresses primary-source drift and is easy to test locally. |
 | Keep reranker local-only and optional. | Private source content must not leave local/network-local infrastructure. |
 | Do not ship a separate local model reranker in P0002. | T0017 evidence shows current default hybrid/vector quality is deployable, while model rerank would add memory/latency surface. |
-| Treat ScoreGate as offline-first context selection in P0003. | It requires real normalized `s_i` and local cross-encoder `r_i`; current deterministic composite scores are not sufficient evidence for production behavior. |
+| Treat ScoreGate as offline-first context selection in P0003 and explicit proof-only in T0024. | It requires real normalized `s_i` and local cross-encoder `r_i`; current deterministic composite scores are not sufficient evidence for production behavior. |
 | Improve chunking incrementally. | Reindexing all sources is acceptable, but chunk schema changes should be measurable and reversible. |
 | Defer PostgreSQL audit schema expansion after evaluation-output observability exists. | It avoids a migration before the exact phase timing fields are proven useful. |
 
@@ -593,13 +616,14 @@ Expected future artifacts:
 8. Done: Expand audit fields once ranking phases exist.
 9. Done: Evaluate local reranker deployment decision after deterministic improvements plateau; do not add separate model reranker to P0002.
 10. Done: P0003 evaluated ScoreGate as offline-first adaptive context selection. T0021 implemented the pure selector, T0022 added the offline snapshot fixture/validator, and T0023 closed runtime rollout as no-ship for the current profile because no true local cross-encoder `r_i` source exists.
+11. In progress: T0024 adds the local reranker sidecar and explicit debug/opt-in proof path needed to collect real `r_i` snapshots without changing default `rag_search`.
 
 ## Open Questions
 
 - How should committed baseline reports relate to generated local JSON reports from the runner?
 - Should evaluation results be committed as reports or generated locally only?
 - Which normalized `s_i` source is stable across Weaviate `hybrid`, `keyword`, and `vector` modes for ScoreGate calibration?
-- Which local cross-encoder can provide `r_i` with acceptable latency/resource cost remains future work; current profile has no score source.
+- Whether `BAAI/bge-reranker-v2-m3` on this machine can provide `r_i` with acceptable latency/resource cost remains to be measured through the T0024 sidecar.
 - What ScoreGate threshold set preserves multi-hop coverage while reducing retained chunks?
 - Should source weighting remain code-defined from registry metadata, or become a registry/config policy?
 - Should compiled support-source demotion stay default-context-only, or become intent-aware for explicit wiki/synthesis queries?
@@ -614,3 +638,4 @@ Expected future artifacts:
 - 2026-05-30: `T0016` completed PostgreSQL search audit and runtime observability expansion for retrieval debugging.
 - 2026-05-31: `T0017` completed the local reranker deployment decision. P0002 ships deterministic governance ranking and defers separate local model reranker work until expanded default-mode regression evidence exists.
 - 2026-06-16: `P0003`, `T0021`, `T0022`, and `T0023` evaluated ScoreGate as an offline-first adaptive context selection path. `ScoreGateCandidateSelector` and the offline snapshot validator are implemented and tested; runtime ScoreGate is no-ship for the current profile because no true local cross-encoder `r_i` source exists.
+- 2026-06-16: `T0024` added the local cross-encoder sidecar proof substrate, retrieval-service reranker client with fallback, explicit ScoreGate debug/opt-in request mode, runtime probes, and snapshot collection script. Default runtime behavior remains unchanged pending real sidecar calibration evidence.

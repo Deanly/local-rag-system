@@ -49,18 +49,24 @@ public class RetrievalService {
     private final OllamaChatClient ollamaChatClient;
     private final WeaviateClient weaviateClient;
     private final JdbcTemplate jdbcTemplate;
+    private final RetrievalSettings settings;
+    private final LocalRerankerClient localRerankerClient;
     private volatile boolean auditSchemaReady;
 
     public RetrievalService(
             EmbeddingClient embeddingClient,
             OllamaChatClient ollamaChatClient,
             WeaviateClient weaviateClient,
-            JdbcTemplate jdbcTemplate
+            JdbcTemplate jdbcTemplate,
+            RetrievalSettings settings,
+            LocalRerankerClient localRerankerClient
     ) {
         this.embeddingClient = embeddingClient;
         this.ollamaChatClient = ollamaChatClient;
         this.weaviateClient = weaviateClient;
         this.jdbcTemplate = jdbcTemplate;
+        this.settings = settings;
+        this.localRerankerClient = localRerankerClient == null ? LocalRerankerClient.disabled() : localRerankerClient;
     }
 
     public SearchResponse search(SearchRequest request) {
@@ -82,6 +88,7 @@ public class RetrievalService {
         List<String> sourceIds = searchScope.sourceIds();
         int requestedLimit = normalizedRequest.effectiveLimit();
         int candidateLimit = candidateLimit(requestedLimit);
+        ScoreGateMode scoreGateMode = scoreGateMode(normalizedRequest);
         String retrievalQuery = retrievalQuery(normalizedRequest.query());
         long embeddingStarted = System.currentTimeMillis();
         List<Double> vector = searchVector(mode, retrievalQuery);
@@ -92,13 +99,21 @@ public class RetrievalService {
         int weaviateLatencyMs = (int) (System.currentTimeMillis() - weaviateStarted);
         List<RetrievalRanker.RankCandidate> candidates = parseCandidates(response);
         long weightingStarted = System.currentTimeMillis();
-        List<SearchResultItem> results = RetrievalRanker.rank(
+        int rankLimit = scoreGateMode == ScoreGateMode.OFF ? requestedLimit : candidateLimit;
+        List<SearchResultItem> rankedResults = RetrievalRanker.rank(
                 normalizedRequest,
                 searchScope.rankContext(),
                 candidates,
-                requestedLimit
+                rankLimit
         );
         int weightingLatencyMs = (int) (System.currentTimeMillis() - weightingStarted);
+        ScoreGateSelection scoreGateSelection = applyScoreGate(
+                normalizedRequest,
+                scoreGateMode,
+                rankedResults,
+                requestedLimit
+        );
+        List<SearchResultItem> results = scoreGateSelection.results();
         audit(new SearchAuditRecord(
                 projectId,
                 normalizedRequest.query(),
@@ -112,7 +127,7 @@ public class RetrievalService {
                 embeddingLatencyMs,
                 weaviateLatencyMs,
                 weightingLatencyMs,
-                0,
+                scoreGateSelection.rerankLatencyMs(),
                 (int) (Instant.now().toEpochMilli() - started.toEpochMilli()),
                 sourceDistribution(results),
                 results.isEmpty() ? null : results.get(0).sourceId(),
@@ -135,6 +150,256 @@ public class RetrievalService {
                 search.results().stream().map(SearchResultItem::citation).distinct().toList(),
                 search.results()
         );
+    }
+
+    private ScoreGateSelection applyScoreGate(
+            SearchRequest request,
+            ScoreGateMode mode,
+            List<SearchResultItem> rankedResults,
+            int requestedLimit
+    ) {
+        if (mode == ScoreGateMode.OFF || rankedResults.isEmpty()) {
+            return new ScoreGateSelection(rankedResults.stream().limit(requestedLimit).toList(), 0);
+        }
+
+        List<LocalRerankerClient.CandidateText> candidateTexts = rankedResults.stream()
+                .map(item -> new LocalRerankerClient.CandidateText(item.chunkId(), rerankerText(item)))
+                .toList();
+        LocalRerankerClient.RerankOutcome outcome = localRerankerClient.rerank(request.query(), candidateTexts);
+        if (!outcome.successful()) {
+            return new ScoreGateSelection(
+                    rankedResults.stream()
+                            .limit(requestedLimit)
+                            .map(item -> withScoreGateFallback(item, mode, outcome))
+                            .toList(),
+                    outcome.latencyMs()
+            );
+        }
+
+        List<ScoreGateCandidateSelector.Candidate> selectorCandidates = new ArrayList<>();
+        Map<String, SearchResultItem> itemsById = new LinkedHashMap<>();
+        for (int index = 0; index < rankedResults.size(); index++) {
+            SearchResultItem item = rankedResults.get(index);
+            Double rerankerScore = outcome.scores().get(item.chunkId());
+            if (rerankerScore == null) {
+                continue;
+            }
+            itemsById.put(item.chunkId(), item);
+            selectorCandidates.add(new ScoreGateCandidateSelector.Candidate(
+                    item.chunkId(),
+                    normalizedSimilarityScore(item.score()),
+                    rerankerScore,
+                    index,
+                    selectorMetadata(item)
+            ));
+        }
+        if (selectorCandidates.isEmpty()) {
+            LocalRerankerClient.RerankOutcome emptyOutcome = LocalRerankerClient.RerankOutcome.failure(
+                    "reranker-response-contained-no-matching-candidate-ids",
+                    outcome.latencyMs()
+            );
+            return new ScoreGateSelection(
+                    rankedResults.stream()
+                            .limit(requestedLimit)
+                            .map(item -> withScoreGateFallback(item, mode, emptyOutcome))
+                            .toList(),
+                    outcome.latencyMs()
+            );
+        }
+
+        ScoreGateCandidateSelector.Result result = ScoreGateCandidateSelector.select(
+                selectorCandidates,
+                scoreGateConfig(requestedLimit)
+        );
+        Map<String, ScoreGateCandidateSelector.Decision> decisionsById = new LinkedHashMap<>();
+        for (ScoreGateCandidateSelector.Decision decision : result.decisions()) {
+            decisionsById.put(decision.candidate().id(), decision);
+        }
+
+        if (mode == ScoreGateMode.DEBUG) {
+            return new ScoreGateSelection(
+                    rankedResults.stream()
+                            .limit(requestedLimit)
+                            .map(item -> {
+                                ScoreGateCandidateSelector.Decision decision = decisionsById.get(item.chunkId());
+                                return decision == null
+                                        ? withScoreGateFallback(item, mode, outcome)
+                                        : withScoreGateDecision(item, decision, mode, outcome);
+                            })
+                            .toList(),
+                    outcome.latencyMs()
+            );
+        }
+
+        List<SearchResultItem> selected = result.retained().stream()
+                .limit(requestedLimit)
+                .map(decision -> withScoreGateDecision(itemsById.get(decision.candidate().id()), decision, mode, outcome))
+                .toList();
+        return new ScoreGateSelection(selected, outcome.latencyMs());
+    }
+
+    private ScoreGateCandidateSelector.Config scoreGateConfig(int requestedLimit) {
+        return new ScoreGateCandidateSelector.Config(
+                settings.scoreGateSimilarityThreshold(),
+                settings.scoreGateRerankerThreshold(),
+                settings.scoreGateSimilarityWeight(),
+                settings.scoreGateBucket2Threshold(),
+                settings.scoreGateBucket3Threshold(),
+                Math.max(1, Math.min(settings.scoreGateMaxK(), requestedLimit))
+        );
+    }
+
+    private ScoreGateMode scoreGateMode(SearchRequest request) {
+        List<String> values = scoreGateFilterValues(request.filters());
+        for (String value : values) {
+            String normalized = value.trim().toLowerCase(Locale.ROOT);
+            if (Set.of("debug", "audit", "explain").contains(normalized)) {
+                return ScoreGateMode.DEBUG;
+            }
+            if (Set.of("on", "true", "yes", "1", "enabled", "apply").contains(normalized)) {
+                return ScoreGateMode.ON;
+            }
+            if (Set.of("off", "false", "no", "0", "disabled").contains(normalized)) {
+                return ScoreGateMode.OFF;
+            }
+        }
+        return settings.scoreGateEnabled() ? ScoreGateMode.ON : ScoreGateMode.OFF;
+    }
+
+    private static List<String> scoreGateFilterValues(Map<String, List<String>> filters) {
+        if (filters == null || filters.isEmpty()) {
+            return List.of();
+        }
+        List<String> values = new ArrayList<>();
+        for (String key : List.of("scoreGate", "scoregate", "score_gate")) {
+            List<String> keyValues = filters.get(key);
+            if (keyValues != null) {
+                values.addAll(keyValues);
+            }
+        }
+        return values.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .toList();
+    }
+
+    private static String rerankerText(SearchResultItem item) {
+        Map<String, Object> metadata = item.metadata() == null ? Map.of() : item.metadata();
+        return List.of(
+                        item.relativePath(),
+                        item.headingPath(),
+                        String.valueOf(metadata.getOrDefault("title", "")),
+                        String.valueOf(metadata.getOrDefault("chunkContext", "")),
+                        item.snippet()
+                ).stream()
+                .filter(value -> value != null && !value.isBlank())
+                .distinct()
+                .collect(Collectors.joining("\n"));
+    }
+
+    private static Map<String, Object> selectorMetadata(SearchResultItem item) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        if (item.metadata() != null) {
+            metadata.putAll(item.metadata());
+        }
+        metadata.put("sourceId", item.sourceId());
+        metadata.put("relativePath", item.relativePath());
+        metadata.put("headingPath", item.headingPath());
+        return metadata;
+    }
+
+    private static SearchResultItem withScoreGateDecision(
+            SearchResultItem item,
+            ScoreGateCandidateSelector.Decision decision,
+            ScoreGateMode mode,
+            LocalRerankerClient.RerankOutcome outcome
+    ) {
+        Map<String, Object> score = new LinkedHashMap<>();
+        if (item.score() != null) {
+            score.putAll(item.score());
+        }
+        score.put("scoreGateMode", mode.name().toLowerCase(Locale.ROOT));
+        score.put("scoreGateApplied", true);
+        score.put("similarityScore", decision.candidate().similarityScore());
+        score.put("crossEncoderScore", decision.candidate().rerankerScore());
+        score.put("scoreGateBucket", decision.bucket().name());
+        score.put("scoreGateFusionScore", decision.fusionScore());
+        score.put("scoreGateRetained", decision.retained());
+        score.put("scoreGateDecisionReason", decision.reason());
+        score.put("scoreGateRerankLatencyMs", outcome.latencyMs());
+        if (outcome.model() != null && !outcome.model().isBlank()) {
+            score.put("scoreGateModel", outcome.model());
+        }
+        return copyWithScore(item, score);
+    }
+
+    private static SearchResultItem withScoreGateFallback(
+            SearchResultItem item,
+            ScoreGateMode mode,
+            LocalRerankerClient.RerankOutcome outcome
+    ) {
+        Map<String, Object> score = new LinkedHashMap<>();
+        if (item.score() != null) {
+            score.putAll(item.score());
+        }
+        score.put("scoreGateMode", mode.name().toLowerCase(Locale.ROOT));
+        score.put("scoreGateApplied", false);
+        score.put("scoreGateRerankAttempted", outcome.attempted());
+        score.put("scoreGateRerankLatencyMs", outcome.latencyMs());
+        score.put("scoreGateFallbackReason", outcome.fallbackReason());
+        return copyWithScore(item, score);
+    }
+
+    private static SearchResultItem copyWithScore(SearchResultItem item, Map<String, Object> score) {
+        return new SearchResultItem(
+                item.chunkId(),
+                item.documentId(),
+                item.projectId(),
+                item.sourceId(),
+                item.ssotRole(),
+                item.relativePath(),
+                item.headingPath(),
+                item.citation(),
+                item.snippet(),
+                item.metadata(),
+                score
+        );
+    }
+
+    private static double normalizedSimilarityScore(Map<String, Object> score) {
+        if (score == null) {
+            return 0.0;
+        }
+        Double rawScore = scoreNumber(score.get("score"));
+        if (rawScore != null) {
+            return clampProbability(rawScore);
+        }
+        Double distance = scoreNumber(score.get("distance"));
+        if (distance != null) {
+            return clampProbability(1.0 / (1.0 + Math.max(0.0, distance)));
+        }
+        Double baseScore = scoreNumber(score.get("baseScore"));
+        return baseScore == null ? 0.0 : clampProbability(baseScore);
+    }
+
+    private static Double scoreNumber(Object value) {
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        if (value == null || String.valueOf(value).isBlank()) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(String.valueOf(value));
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private static double clampProbability(double value) {
+        if (!Double.isFinite(value)) {
+            return 0.0;
+        }
+        return Math.max(0.0, Math.min(1.0, value));
     }
 
     private SearchScope resolveSearchScope(SearchRequest request) {
@@ -691,6 +956,18 @@ public class RetrievalService {
     }
 
     private record SearchScope(List<String> sourceIds, RetrievalRanker.RankContext rankContext) {
+    }
+
+    private enum ScoreGateMode {
+        OFF,
+        DEBUG,
+        ON
+    }
+
+    private record ScoreGateSelection(List<SearchResultItem> results, int rerankLatencyMs) {
+        private ScoreGateSelection {
+            results = results == null ? List.of() : List.copyOf(results);
+        }
     }
 
     private record SearchAuditRecord(
