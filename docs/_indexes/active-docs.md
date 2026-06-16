@@ -14,6 +14,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 
 | ID | Title | Status | Parent / Reference Project | Related Design | Updated |
 | --- | --- | --- | --- | --- | --- |
+| T0024 | local-cross-encoder-sidecar-proof | active | `P0003` | `retrieval-quality-improvement-design` | 2026-06-16 |
 | T0010 | codex-rag-utilization-hardening | active | `P0001` | `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-29 |
 
 ## Draft Tasks
@@ -97,3 +98,6 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-06-16: `T0022` completed ScoreGate offline snapshot fixture and validator; P0003 remains active pending local cross-encoder score source and rollout decision.
 - 2026-06-16: `T0023` closed P0003 as runtime no-ship for the current profile because no true local cross-encoder `r_i` score source exists.
 - 2026-06-16: `T0020` closed during P0003 release prep by aligning service artifact documentation with `1.2.0` Maven/Docker artifact naming.
+- 2026-06-16: `T0024` issued as the P0003 follow-up proof task for a local-only cross-encoder score source and ScoreGate opt-in path.
+- 2026-06-16: `T0024` implementation substrate added optional reranker sidecar, retrieval-service ScoreGate debug/opt-in path, runtime probes, and snapshot collector while keeping default search behavior unchanged.
+- 2026-06-16: `T0024` sidecar proof smoke built the CPU reranker image and confirmed direct normalized `r_i` scoring; live `rag_search` runtime snapshots remain pending controlled restart/deploy.

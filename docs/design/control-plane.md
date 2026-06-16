@@ -135,7 +135,7 @@ tags:
 | Surface | Purpose | Status | Notes |
 | --- | --- | --- | --- |
 | `docs/projects/README.md` | active project 입구 | Active | no active project; `P0001`, `P0002`, and `P0003` done |
-| `docs/tasks/README.md` | active task 입구 | Active | `T0010` operation-zone follow-up active; P0002 tasks done |
+| `docs/tasks/README.md` | active task 입구 | Active | `T0024` ScoreGate sidecar proof and `T0010` operation-zone follow-up active |
 | `docs/guide/sdlc-automation.md` | SDLC 자동화 목표, critical path, gate, verification ladder | Active | implementation session entry guide |
 | `docs/reports/README.md` | active report 입구 | Active | 현재 active report 없음 |
 | `docs/design/README.md` | design retrieval 입구 | Active | domain design 포함 |
@@ -203,3 +203,4 @@ tags:
 - 2026-05-29: `P0002`를 P0001 functional baseline 이후 active retrieval governance hardening exception branch로 추가했다. `T0013`은 metadata-aware chunking and document authority indexing의 첫 critical-path task다.
 - 2026-05-31: `P0002`를 done으로 닫았다. Metadata-aware chunking, governance ranking, answer context, staleness/citation evaluation, search audit, and local reranker deployment decision이 완료됐다.
 - 2026-06-16: `P0003`를 ScoreGate adaptive context selection exception branch로 열고 닫았다. T0021/T0022는 selector와 offline snapshot evaluator를 완료했고, T0023은 current profile에 true local cross-encoder `r_i` source가 없어 runtime no-ship으로 결정했다.
+- 2026-06-16: `T0024`를 active execution surface로 추가했다. Local reranker sidecar proof, ScoreGate debug/opt-in path, runtime probes, and snapshot collection are tracked as a follow-up task while P0003 remains default runtime no-ship.

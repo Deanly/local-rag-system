@@ -25,3 +25,4 @@ This is a compact design selection map derived from `docs/design/README.md`.
 - 2026-05-30: Retrieval quality design updated for T0016 search audit observability expansion.
 - 2026-05-31: Retrieval quality design updated for T0017 local reranker deployment decision and P0002 closeout.
 - 2026-06-16: Retrieval quality design updated for P0003 ScoreGate adaptive context selection, T0021 offline selector substrate, T0022 offline snapshot evaluator, and T0023 runtime no-ship decision.
+- 2026-06-16: Retrieval quality design updated for T0024 local cross-encoder sidecar proof and ScoreGate runtime snapshot path.

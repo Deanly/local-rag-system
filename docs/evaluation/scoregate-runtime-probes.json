@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "description": "Runtime probe requests for collecting real ScoreGate cross-encoder snapshots. These probes do not mutate indexed data.",
+  "defaultScoreGateMode": "debug",
+  "probes": [
+    {
+      "id": "rt-ko-release-location",
+      "intent": "Korean lexical mismatch release note location",
+      "expectedRelativePaths": [
+        "design/retrieval-quality-improvement-design.md"
+      ],
+      "request": {
+        "projectId": "local-rag-system",
+        "query": "배포 릴리즈 기록 어디 남기지?",
+        "limit": 10,
+        "mode": "hybrid"
+      }
+    },
+    {
+      "id": "rt-en-task-id",
+      "intent": "English task-id lookup",
+      "expectedRelativePaths": [
+        "tasks/T0010-codex-rag-utilization-hardening.md"
+      ],
+      "request": {
+        "projectId": "local-rag-system",
+        "query": "T0010 codex rag utilization hardening unknown project error",
+        "limit": 10,
+        "mode": "hybrid"
+      }
+    },
+    {
+      "id": "rt-source-registry-ssot",
+      "intent": "Project-scoped primary source preference",
+      "expectedRelativePaths": [
+        "design/source-registry-and-project-ssot.md"
+      ],
+      "request": {
+        "projectId": "local-rag-system",
+        "query": "source registry project ssot registered source root write policy",
+        "limit": 10,
+        "mode": "hybrid"
+      }
+    },
+    {
+      "id": "rt-stale-demotion",
+      "intent": "Current source preference over stale material",
+      "expectedRelativePaths": [
+        "design/retrieval-quality-improvement-design.md"
+      ],
+      "request": {
+        "projectId": "local-rag-system",
+        "query": "retrieval governance current policy deprecated superseded source demotion",
+        "limit": 10,
+        "mode": "hybrid"
+      }
+    },
+    {
+      "id": "rt-broad-scoregate-baseline",
+      "intent": "Broad multi-document ScoreGate and baseline coverage",
+      "expectedRelativePaths": [
+        "design/retrieval-quality-improvement-design.md",
+        "reports/2026-05-25-retrieval-quality-baseline.md"
+      ],
+      "request": {
+        "projectId": "local-rag-system",
+        "query": "ScoreGate 적용 전후 검색 품질 baseline report와 설계 문서를 같이 찾아줘",
+        "limit": 10,
+        "mode": "hybrid"
+      }
+    }
+  ]
+}

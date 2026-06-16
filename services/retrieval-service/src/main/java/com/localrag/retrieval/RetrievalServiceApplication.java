@@ -38,4 +38,9 @@ public class RetrievalServiceApplication {
     WeaviateClient weaviateClient(RetrievalSettings settings) {
         return new WeaviateClient(settings.weaviateUrl());
     }
+
+    @Bean
+    LocalRerankerClient localRerankerClient(RetrievalSettings settings) {
+        return new HttpLocalRerankerClient(settings);
+    }
 }

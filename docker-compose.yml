@@ -145,6 +145,17 @@ services:
       RAG_CHAT_MODEL: ${LOCAL_RAG_CHAT_MODEL:-}
       RAG_OMLX_BASE_URL: ${LOCAL_RAG_OMLX_BASE_URL:-}
       RAG_WEAVIATE_URL: http://weaviate:8080
+      RAG_RERANKER_ENABLED: ${LOCAL_RAG_RERANKER_ENABLED:-false}
+      RAG_RERANKER_BASE_URL: ${LOCAL_RAG_RERANKER_BASE_URL:-}
+      RAG_RERANKER_CONNECT_TIMEOUT_MILLIS: ${LOCAL_RAG_RERANKER_CONNECT_TIMEOUT_MILLIS:-500}
+      RAG_RERANKER_READ_TIMEOUT_MILLIS: ${LOCAL_RAG_RERANKER_READ_TIMEOUT_MILLIS:-5000}
+      RAG_SCOREGATE_ENABLED: ${LOCAL_RAG_SCOREGATE_ENABLED:-false}
+      RAG_SCOREGATE_MAX_K: ${LOCAL_RAG_SCOREGATE_MAX_K:-10}
+      RAG_SCOREGATE_SIMILARITY_THRESHOLD: ${LOCAL_RAG_SCOREGATE_SIMILARITY_THRESHOLD:-0.70}
+      RAG_SCOREGATE_RERANKER_THRESHOLD: ${LOCAL_RAG_SCOREGATE_RERANKER_THRESHOLD:-0.08}
+      RAG_SCOREGATE_SIMILARITY_WEIGHT: ${LOCAL_RAG_SCOREGATE_SIMILARITY_WEIGHT:-0.30}
+      RAG_SCOREGATE_BUCKET2_THRESHOLD: ${LOCAL_RAG_SCOREGATE_BUCKET2_THRESHOLD:-0.255}
+      RAG_SCOREGATE_BUCKET3_THRESHOLD: ${LOCAL_RAG_SCOREGATE_BUCKET3_THRESHOLD:-0.15}
       LOCAL_RAG_RETRIEVAL_EMBEDDING_FALLBACK_ENABLED: ${LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED:-false}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/local_rag
       SPRING_DATASOURCE_USERNAME: local_rag
@@ -156,6 +167,27 @@ services:
         condition: service_healthy
       weaviate:
         condition: service_healthy
+
+  reranker-sidecar:
+    profiles: ["scoregate"]
+    build:
+      context: .
+      dockerfile: services/reranker-sidecar/Dockerfile
+    container_name: local-rag-reranker
+    restart: unless-stopped
+    environment:
+      LOCAL_RAG_RERANKER_MODEL: ${LOCAL_RAG_RERANKER_MODEL:-BAAI/bge-reranker-v2-m3}
+      LOCAL_RAG_RERANKER_MAX_LENGTH: ${LOCAL_RAG_RERANKER_MAX_LENGTH:-1024}
+      LOCAL_RAG_RERANKER_USE_FP16: ${LOCAL_RAG_RERANKER_USE_FP16:-false}
+    ports:
+      - "127.0.0.1:42145:42145"
+    volumes:
+      - "${LOCAL_RAG_DATA_DIR:-./.runtime}/huggingface:/root/.cache/huggingface"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:42145/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   mcp-bridge:
     build:

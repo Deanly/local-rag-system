@@ -23,8 +23,11 @@ source_refs:
   - docs/tasks/T0021-scoregate-offline-selector-experiment.md
   - docs/tasks/T0022-scoregate-offline-evaluation-fixture.md
   - docs/tasks/T0023-local-cross-encoder-score-source.md
+  - docs/tasks/T0024-local-cross-encoder-sidecar-proof.md
   - docs/reports/2026-06-16-scoregate-offline-snapshot-evaluation.md
   - docs/reports/2026-06-16-scoregate-runtime-no-ship-decision.md
+  - docs/reports/2026-06-16-scoregate-before-after-comparison.md
+  - docs/reports/2026-06-16-scoregate-sidecar-proof-smoke.md
   - docs/evaluation/scoregate-offline-cases.json
   - docs/bin/validate-scoregate-offline.sh
   - services/retrieval-service/src/main/java/com/localrag/retrieval/ScoreGateCandidateSelector.java
@@ -139,8 +142,11 @@ P0003 is the official `1.2.0` release line. It is backward-compatible with P0002
 - `docs/tasks/T0021-scoregate-offline-selector-experiment.md`
 - `docs/tasks/T0022-scoregate-offline-evaluation-fixture.md`
 - `docs/tasks/T0023-local-cross-encoder-score-source.md`
+- `docs/tasks/T0024-local-cross-encoder-sidecar-proof.md`
 - `docs/reports/2026-06-16-scoregate-offline-snapshot-evaluation.md`
 - `docs/reports/2026-06-16-scoregate-runtime-no-ship-decision.md`
+- `docs/reports/2026-06-16-scoregate-before-after-comparison.md`
+- `docs/reports/2026-06-16-scoregate-sidecar-proof-smoke.md`
 
 ## WBS
 
@@ -152,7 +158,7 @@ P0003 is the official `1.2.0` release line. It is backward-compatible with P0002
 
 ## Future Task Candidates
 
-- `T0024-local-cross-encoder-sidecar-proof`: Introduce a local-only cross-encoder score service or library, collect real `r_i` snapshots, and re-run ScoreGate offline evaluation before any runtime opt-in.
+- `T0024-local-cross-encoder-sidecar-proof`: Issued on 2026-06-16 and now provides the local-only sidecar/debug proof substrate. It remains outside P0003 default rollout and must still collect real sidecar snapshots before promotion.
 
 ## Overall Progress
 
@@ -214,3 +220,6 @@ P0003 is the official `1.2.0` release line. It is backward-compatible with P0002
 - 2026-06-16: T0022 completed offline snapshot fixture and validator. P0003 remains active because real local cross-encoder score sourcing, threshold calibration, and runtime rollout decision remain pending.
 - 2026-06-16: T0023 found no true local cross-encoder `r_i` source in the current profile. P0003 closed as runtime no-ship while keeping selector and offline evaluator artifacts.
 - 2026-06-16: Formal P0003 release version set to `1.2.0`; Maven parent/module versions, service Dockerfile jar paths, and artifact docs were advanced from `1.1.0` to `1.2.0` before tagging.
+- 2026-06-16: T0024 issued as a follow-up proof task after before/after review confirmed positive offline selector evidence but no live ScoreGate runtime behavior.
+- 2026-06-16: T0024 added the sidecar/debug proof substrate after P0003 closeout. P0003 remains no-ship for default runtime ScoreGate until real `r_i` snapshots and calibration evidence exist.
+- 2026-06-16: T0024 sidecar smoke confirmed direct `BAAI/bge-reranker-v2-m3` normalized scoring works locally, but CPU latency keeps the rollout posture at debug/proof-only.
