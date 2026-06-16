@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SERVICE_ROOT="${LOCAL_RAG_SERVICE_ROOT:-${HOME}/Services/local-rag-system}"
-CODE_DIR="${LOCAL_RAG_CODE_DIR:-${SERVICE_ROOT}/code}"
+SERVICE_ROOT="${LOCAL_RAG_SERVICE_ROOT:-${HOME}/Service}"
+CODE_DIR="${LOCAL_RAG_CODE_DIR:-${SERVICE_ROOT}/code/local-rag-system}"
 REPO_URL="${LOCAL_RAG_REPO_URL:-https://github.com/Deanly/local-rag-system.git}"
-CONFIG_DIR="${LOCAL_RAG_CONFIG_DIR:-${SERVICE_ROOT}/config}"
+CONFIG_DIR="${LOCAL_RAG_CONFIG_DIR:-${SERVICE_ROOT}/config/local-rag-system}"
 ENV_FILE="${LOCAL_RAG_ENV_FILE:-${CONFIG_DIR}/local.env}"
 BASE_URL="${LOCAL_RAG_BASE_URL:-http://127.0.0.1:42120}"
 BIN_DIR="${LOCAL_RAG_BIN_DIR:-${SERVICE_ROOT}/bin}"
@@ -16,8 +16,8 @@ Usage: local-rag <command> [args]
 
 Commands:
   config              Print operational paths.
-  install-command     Install this command under ~/Services.
-  init-dirs           Create Services directories.
+  install-command     Install this command under ~/Service.
+  init-dirs           Create Service directories.
   init-config         Create an operational checkout and sample local config.
   sync-local [path]   Copy a local checkout into the operational code dir.
   doctor              Check local prerequisites and operational files.
@@ -40,22 +40,24 @@ Commands:
   codex-smoke [args]  Run Codex MCP adapter and REST smoke checks.
 
 Environment:
-  LOCAL_RAG_SERVICE_ROOT default: ~/Services/local-rag-system
-  LOCAL_RAG_CODE_DIR     default: ~/Services/local-rag-system/code
-  LOCAL_RAG_CONFIG_DIR   default: ~/Services/local-rag-system/config
-  LOCAL_RAG_ENV_FILE     default: ~/Services/local-rag-system/config/local.env
+  LOCAL_RAG_SERVICE_ROOT default: ~/Service
+  LOCAL_RAG_CODE_DIR     default: ~/Service/code/local-rag-system
+  LOCAL_RAG_CONFIG_DIR   default: ~/Service/config/local-rag-system
+  LOCAL_RAG_ENV_FILE     default: ~/Service/config/local-rag-system/local.env
   LOCAL_RAG_REPO_URL     default: https://github.com/Deanly/local-rag-system.git
   LOCAL_RAG_BASE_URL     default: http://127.0.0.1:42120
   LOCAL_RAG_SOURCE_CHECKOUT optional local checkout to sync instead of git pull
+  BRANCH                 Git branch used for main-latest deploys; default: main
+  DEPLOY_VERSION         Optional tag to deploy, usually set by deploy authority
 
 Optional operation-zone files:
-  ~/Services/local-rag-system/config/docker-compose.override.yaml
+  ~/Service/config/local-rag-system/docker-compose.override.yaml
                          read automatically when present
 USAGE
 }
 
 init_dirs() {
-  mkdir -p "${CODE_DIR}" "${CONFIG_DIR}" "${SERVICE_ROOT}/runtime" "${SERVICE_ROOT}/logs" "${BIN_DIR}"
+  mkdir -p "${CODE_DIR}" "${CONFIG_DIR}" "${SERVICE_ROOT}/runtime/local-rag-system" "${SERVICE_ROOT}/logs/local-rag-system" "${BIN_DIR}"
 }
 
 code_ready() {
@@ -68,6 +70,44 @@ resolve_source_checkout() {
   elif [[ -f "${SOURCE_CHECKOUT_FILE}" ]]; then
     sed -n '1p' "${SOURCE_CHECKOUT_FILE}"
   fi
+}
+
+trim() {
+  local value="${1:-}"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+reset_git_checkout() {
+  local deploy_version branch ref label
+  deploy_version="$(trim "${DEPLOY_VERSION:-${DEPLOY_TAG:-}}")"
+  branch="$(trim "${BRANCH:-main}")"
+
+  git -C "${CODE_DIR}" fetch --all --prune --tags
+  if [[ -n "${deploy_version}" ]]; then
+    if ! git -C "${CODE_DIR}" rev-parse -q --verify "refs/tags/${deploy_version}^{commit}" >/dev/null; then
+      echo "Deploy tag not found: ${deploy_version}" >&2
+      exit 66
+    fi
+    ref="refs/tags/${deploy_version}^{commit}"
+    label="tag ${deploy_version}"
+  else
+    if [[ -z "${branch}" ]]; then
+      echo "Missing deploy branch." >&2
+      exit 66
+    fi
+    if ! git -C "${CODE_DIR}" rev-parse -q --verify "refs/remotes/origin/${branch}^{commit}" >/dev/null; then
+      echo "Deploy branch not found: origin/${branch}" >&2
+      exit 66
+    fi
+    ref="origin/${branch}"
+    label="origin/${branch}"
+  fi
+
+  echo "Resetting ${CODE_DIR} to ${label}"
+  git -C "${CODE_DIR}" reset --hard "${ref}"
+  git -C "${CODE_DIR}" clean -fdx
 }
 
 sync_code_from_checkout() {
@@ -100,10 +140,7 @@ sync_code_from_checkout() {
 install_command() {
   init_dirs
   install -m 0755 "$0" "${BIN_DIR}/local-rag"
-  mkdir -p "${HOME}/Services/bin"
-  ln -sf "${BIN_DIR}/local-rag" "${HOME}/Services/bin/local-rag"
   echo "Installed command: ${BIN_DIR}/local-rag"
-  echo "Convenience symlink: ${HOME}/Services/bin/local-rag"
 }
 
 ensure_code() {
@@ -123,8 +160,9 @@ ensure_code() {
       fi
     fi
     git clone "${REPO_URL}" "${CODE_DIR}"
+    reset_git_checkout
   else
-    git -C "${CODE_DIR}" pull --ff-only
+    reset_git_checkout
   fi
 }
 
@@ -154,7 +192,7 @@ init_config() {
     cat > "${ENV_FILE}" <<EOF
 LOCAL_RAG_SOURCE_REGISTRY=/config/source-registry.local.yaml
 LOCAL_RAG_CONFIG_DIR=${CONFIG_DIR}
-LOCAL_RAG_DATA_DIR=${SERVICE_ROOT}/runtime
+LOCAL_RAG_DATA_DIR=${SERVICE_ROOT}/runtime/local-rag-system
 LOCAL_RAG_POSTGRES_PASSWORD=local-rag-dev
 LOCAL_RAG_OLLAMA_BASE_URL=http://host.docker.internal:11434
 LOCAL_RAG_OLLAMA_BASE_URLS=http://host.docker.internal:11434
