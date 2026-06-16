@@ -5,6 +5,7 @@
 ## Rules
 
 - `Status: active` 인 문서를 먼저 적고, blocked 문서는 별도 섹션에 둡니다.
+- 구현 착수 전 발급/triage 상태의 문서는 Draft 섹션에 둡니다.
 - 가능하면 각 task가 어느 umbrella project에 속하는지 함께 적습니다.
 - 각 항목은 링크, 한 줄 설명, `Updated` 날짜만 남깁니다.
 - 문서를 닫으면 이 목록에서 제거하고 본문 `Status` 이력에 종료 근거를 남깁니다.
@@ -13,12 +14,21 @@
 
 - [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): `~/Services` 운영존 generic user-managed source slots와 live smoke 완료; Codex Desktop 새 세션 MCP visibility 확인만 남음. Updated: 2026-05-29.
 
+## Draft
+
+- [`T0018-source-root-symlink-boundary-hardening.md`](T0018-source-root-symlink-boundary-hardening.md): registered source root 밖 파일이 symlink/real-path escape로 indexing 또는 document fetch에 들어오는 보안 경계 문제를 닫는 remediation task. Updated: 2026-06-16.
+- [`T0019-indexer-failure-job-state-persistence.md`](T0019-indexer-failure-job-state-persistence.md): `index_job`/`failure_record` DDL과 실제 indexer failure persistence 사이의 운영 증거 gap을 닫는 remediation task. Updated: 2026-06-16.
+
 ## Blocked
 
 - _none_
 
 ## Done
 
+- [`T0020-service-artifact-version-doc-drift.md`](T0020-service-artifact-version-doc-drift.md): `services/README.md` artifact convention과 `1.2.0` Maven/Docker artifact naming을 맞춤. Updated: 2026-06-16.
+- [`T0023-local-cross-encoder-score-source.md`](T0023-local-cross-encoder-score-source.md): 현재 프로파일에서 true local cross-encoder `r_i` source가 없어 P0003 runtime ScoreGate를 no-ship으로 결정. Updated: 2026-06-16.
+- [`T0022-scoregate-offline-evaluation-fixture.md`](T0022-scoregate-offline-evaluation-fixture.md): P0003 offline snapshot fixture, validator, and selector-level ScoreGate metric report를 추가함. Updated: 2026-06-16.
+- [`T0021-scoregate-offline-selector-experiment.md`](T0021-scoregate-offline-selector-experiment.md): P0003 첫 구현 slice로 pure ScoreGate selector와 focused tests를 추가하고 runtime default behavior는 변경하지 않음. Updated: 2026-06-16.
 - [`T0017-local-reranker-evaluation.md`](T0017-local-reranker-evaluation.md): P0002 P2 local reranker deployment decision을 닫고, 별도 model reranker 없이 deterministic governance ranking으로 배포 가능함을 확인. Updated: 2026-05-31.
 - [`T0015-answer-quality-and-staleness-evaluation.md`](T0015-answer-quality-and-staleness-evaluation.md): P0002 P1 retrieval evaluation을 must-use, must-not-use, citation usefulness, staleness error, and Korean task-id suffix regression checks까지 확장. Updated: 2026-05-30.
 - [`T0014-search-filter-and-answer-context-governance.md`](T0014-search-filter-and-answer-context-governance.md): P0002 P1 metadata filters, stale-source demotion, historical opt-in, answer source priority cues를 구현. Updated: 2026-05-30.

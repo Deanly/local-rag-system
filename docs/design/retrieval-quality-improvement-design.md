@@ -5,7 +5,7 @@ status: current
 domain: retrieval-quality
 owner:
 created: 2026-05-25
-updated: 2026-05-31
+updated: 2026-06-16
 retrieval_class:
   - domain-current
 context:
@@ -22,13 +22,30 @@ referenced_by:
   - docs/tasks/T0015-answer-quality-and-staleness-evaluation.md
   - docs/tasks/T0016-retrieval-audit-observability-expansion.md
   - docs/tasks/T0017-local-reranker-evaluation.md
+  - docs/projects/P0003-scoregate-adaptive-context-selection.md
+  - docs/tasks/T0021-scoregate-offline-selector-experiment.md
+  - docs/tasks/T0022-scoregate-offline-evaluation-fixture.md
+  - docs/tasks/T0023-local-cross-encoder-score-source.md
 source_refs:
+  - https://arxiv.org/abs/2606.14269
+  - ~/Workspace/personal-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md
   - docs/reports/2026-05-25-retrieval-quality-baseline.md
   - docs/reports/2026-05-31-local-reranker-evaluation-decision.md
   - docs/design/local-rag-system-development-direction.md
   - docs/design/source-registry-and-project-ssot.md
   - docs/design/msa-runtime-and-storage.md
+  - docs/projects/P0003-scoregate-adaptive-context-selection.md
+  - docs/tasks/T0021-scoregate-offline-selector-experiment.md
+  - docs/tasks/T0022-scoregate-offline-evaluation-fixture.md
+  - docs/reports/2026-06-16-scoregate-offline-snapshot-evaluation.md
+  - docs/tasks/T0023-local-cross-encoder-score-source.md
+  - docs/reports/2026-06-16-scoregate-runtime-no-ship-decision.md
+  - docs/evaluation/scoregate-offline-cases.json
+  - docs/bin/validate-scoregate-offline.sh
   - services/retrieval-service/src/main/java/com/localrag/retrieval/RetrievalService.java
+  - services/retrieval-service/src/main/java/com/localrag/retrieval/ScoreGateCandidateSelector.java
+  - services/retrieval-service/src/test/java/com/localrag/retrieval/ScoreGateCandidateSelectorTests.java
+  - services/retrieval-service/src/test/java/com/localrag/retrieval/ScoreGateOfflineEvaluationTests.java
   - services/indexer-service/src/main/java/com/localrag/indexer/MarkdownChunker.java
   - services/indexer-service/src/main/java/com/localrag/indexer/IndexerService.java
 tags:
@@ -45,7 +62,7 @@ tags:
 - Domain: retrieval-quality
 - Owner:
 - Created: 2026-05-25
-- Updated: 2026-05-31
+- Updated: 2026-06-16
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/projects/P0002-retrieval-governance-hardening.md`
@@ -55,6 +72,10 @@ tags:
   - `docs/tasks/T0015-answer-quality-and-staleness-evaluation.md`
   - `docs/tasks/T0016-retrieval-audit-observability-expansion.md`
   - `docs/tasks/T0017-local-reranker-evaluation.md`
+  - `docs/projects/P0003-scoregate-adaptive-context-selection.md`
+  - `docs/tasks/T0021-scoregate-offline-selector-experiment.md`
+  - `docs/tasks/T0022-scoregate-offline-evaluation-fixture.md`
+  - `docs/tasks/T0023-local-cross-encoder-score-source.md`
 
 ## Context
 
@@ -70,7 +91,7 @@ Local RAG의 functional baseline은 완성되어 있다. 현재 시스템은 등
 - project-scoped search에서 default context가 primary project source보다 앞서는 경우가 있다.
 - reranker, source weighting, document-level diversity, 정식 evaluation harness가 없다.
 
-이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-31 기준 `P0002`의 `T0013`-`T0017`이 metadata-aware chunking, document authority metadata, metadata filters, stale-source demotion, answer source priority cues, staleness/citation evaluation checks, search audit observability, and local reranker deployment decision을 완료했다.
+이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-31 기준 `P0002`의 `T0013`-`T0017`이 metadata-aware chunking, document authority metadata, metadata filters, stale-source demotion, answer source priority cues, staleness/citation evaluation checks, search audit observability, and local reranker deployment decision을 완료했다. 2026-06-16 기준 `P0003`는 ScoreGate를 final context selection 개선 후보로 검토했고 selector/evaluator artifact를 남겼지만, 현재 profile에 true local cross-encoder `r_i` score source가 없어 runtime rollout은 no-ship으로 닫았다.
 
 ## Whole-System Role
 
@@ -124,6 +145,8 @@ Local RAG의 functional baseline은 완성되어 있다. 현재 시스템은 등
 - `RetrievalCandidate`: Weaviate first-stage result.
 - `WeightedCandidate`: source/role/path/metadata boost가 적용된 candidate.
 - `RerankedCandidate`: local reranker 결과가 적용된 candidate.
+- `ScoreGateCandidate`: normalized bi-encoder similarity `s_i`, normalized local cross-encoder reranker score `r_i`, and metadata를 가진 adaptive selection candidate.
+- `ScoreGateDecision`: bucket, fusion score, retained flag, and decision reason을 가진 final context selection decision.
 - `FinalSearchResult`: diversity and duplicate suppression 후 API로 반환되는 result.
 - `SourceWeightPolicy`: primary source, default context, archive, compiled wiki의 rank weight.
 - `ChunkMetadata`: title, frontmatter status, heading hierarchy, document type, updated date.
@@ -146,6 +169,7 @@ query
   -> first-stage retrieval from Weaviate
   -> source/role/path weighting
   -> optional local rerank
+  -> optional adaptive context selection
   -> duplicate and diversity control
   -> citation/snippet finalization
   -> audit and evaluation metrics
@@ -342,6 +366,61 @@ Current decision:
 - The portable fixture reached 100% hit@1 for `hybrid` and `vector`; the only top1 misses were Korean natural-language `keyword` cases where the expected document was rank 2.
 - Future model reranker work needs a new task, local-only runtime proof, and an expanded fixture showing repeated `hybrid` or `vector` top1/source/staleness regressions.
 
+### ScoreGate Adaptive Context Selection
+
+ScoreGate is a final context selection strategy after first-stage retrieval and local reranker scoring. It is not a replacement for deterministic source/path/governance ranking, and the current `RetrievalRanker.rerankScore` is not a valid cross-encoder `r_i`.
+
+Required score contract:
+
+| Score | Meaning | Local RAG Requirement |
+| --- | --- | --- |
+| `s_i` | normalized bi-encoder or first-stage semantic similarity | Must be a normalized similarity score in `[0, 1]`, not a raw Weaviate score shape that changes by mode. |
+| `r_i` | normalized local cross-encoder relevance score | Must come from a true local reranker that jointly reads query and chunk, or the runtime integration must remain disabled. |
+| source/path/governance score | deterministic project/source authority signal | Must remain separate metadata, not fused as `r_i`. |
+
+Bucket policy:
+
+| Bucket | Condition | Decision |
+| --- | --- | --- |
+| B1 | high `s_i`, high `r_i` | retain |
+| B2 | high `s_i`, low `r_i` | retain only when fusion crosses the stricter B2 threshold |
+| B3 | low `s_i`, high `r_i` | rescue when fusion crosses the lower B3 threshold |
+| B4 | low `s_i`, low `r_i` | discard |
+
+Reference formula:
+
+```text
+f_i = alpha * s_i + (1 - alpha) * r_i
+```
+
+The paper reference example uses `alpha=0.3`, `tau_s=0.70`, `tau_r=0.08`, `theta_B2=0.255`, `theta_B3=0.15`, and `MAX-K=10`. These are reference defaults only. Local RAG must calibrate thresholds against its own corpus, `qwen3-embedding:4b`, Weaviate mode scores, and selected local cross-encoder model.
+
+Current implementation:
+
+- `T0021` added `ScoreGateCandidateSelector` as a package-private pure selector for offline experiments.
+- The selector accepts normalized `s_i`/`r_i`, returns bucket/fusion/retained/reason decisions, and applies MAX-K by fusion score.
+- Focused tests cover bucket classification, B3 rescue, disagreement thresholds, MAX-K cap, and normalized-score validation.
+- `T0022` added an offline snapshot fixture and validator that use the actual Java selector to report hit@1, hit@5, MRR, source accuracy@1, fixed top-K miss rescue, retained token estimate, B3 rescue count, and multi-hop coverage.
+- `T0023` checked the current profile for local cross-encoder score sourcing and closed runtime ScoreGate as no-ship because no true local `r_i` source is available.
+- No `rag_search` public contract or default runtime behavior changed in `T0021`.
+- No `rag_search` public contract or default runtime behavior changed in `T0022`.
+- No `rag_search` public contract or default runtime behavior changed in `T0023`.
+
+Runtime decision:
+
+- Keep the selector and offline evaluator as reusable artifacts.
+- Do not add ScoreGate debug/audit mode, opt-in runtime mode, or default behavior in P0003.
+- Do not use deterministic `RetrievalRanker.rerankScore` as `r_i`.
+- Reopen with a new sidecar/library proof only if a local cross-encoder score source is explicitly added and measured.
+
+Offline experiment requirements before runtime use:
+
+- Extend retrieval-quality fixtures with Korean natural-language queries, English filename/task-id queries, primary-source preference cases, stale/deprecated demotion cases, and broad/multi-hop cases.
+- Retrieve top-N candidates with `candidateLimit=30` or `40`.
+- Keep `s_i`, `r_i`, and deterministic governance/source scores separate in snapshots.
+- Compare hit@1, hit@5, MRR, source accuracy@1, retained chunk count, estimated context tokens, latency, Korean false-negative rate, and multi-hop coverage regression.
+- Only consider runtime opt-in after local-only score sourcing and threshold calibration are documented.
+
 ### Stage 4: Local LLM Judge Rerank
 
 LLM judge rerank is optional and should not be the default baseline because it is slower and less deterministic. It may be useful for answer generation or high-stakes manual query mode.
@@ -459,9 +538,20 @@ Authoritative artifacts:
 - `docs/tasks/T0015-answer-quality-and-staleness-evaluation.md`
 - `docs/tasks/T0016-retrieval-audit-observability-expansion.md`
 - `docs/tasks/T0017-local-reranker-evaluation.md`
+- `docs/projects/P0003-scoregate-adaptive-context-selection.md`
+- `docs/tasks/T0021-scoregate-offline-selector-experiment.md`
+- `docs/tasks/T0022-scoregate-offline-evaluation-fixture.md`
+- `docs/tasks/T0023-local-cross-encoder-score-source.md`
+- `docs/reports/2026-06-16-scoregate-offline-snapshot-evaluation.md`
+- `docs/reports/2026-06-16-scoregate-runtime-no-ship-decision.md`
 - `docs/reports/2026-05-31-local-reranker-evaluation-decision.md`
 - `docs/evaluation/retrieval-quality-cases.yaml`
+- `docs/evaluation/scoregate-offline-cases.json`
 - `docs/bin/validate-retrieval-quality.sh`
+- `docs/bin/validate-scoregate-offline.sh`
+- `services/retrieval-service/src/main/java/com/localrag/retrieval/ScoreGateCandidateSelector.java`
+- `services/retrieval-service/src/test/java/com/localrag/retrieval/ScoreGateCandidateSelectorTests.java`
+- `services/retrieval-service/src/test/java/com/localrag/retrieval/ScoreGateOfflineEvaluationTests.java`
 
 Expected future artifacts:
 
@@ -487,6 +577,7 @@ Expected future artifacts:
 | Implement deterministic source weighting before model rerank. | It directly addresses primary-source drift and is easy to test locally. |
 | Keep reranker local-only and optional. | Private source content must not leave local/network-local infrastructure. |
 | Do not ship a separate local model reranker in P0002. | T0017 evidence shows current default hybrid/vector quality is deployable, while model rerank would add memory/latency surface. |
+| Treat ScoreGate as offline-first context selection in P0003. | It requires real normalized `s_i` and local cross-encoder `r_i`; current deterministic composite scores are not sufficient evidence for production behavior. |
 | Improve chunking incrementally. | Reindexing all sources is acceptable, but chunk schema changes should be measurable and reversible. |
 | Defer PostgreSQL audit schema expansion after evaluation-output observability exists. | It avoids a migration before the exact phase timing fields are proven useful. |
 
@@ -501,12 +592,15 @@ Expected future artifacts:
 7. Done: Expand evaluation for stale/deprecated misuse, source-use checks, citation usefulness, and bounded local-only answer faithfulness substitutes.
 8. Done: Expand audit fields once ranking phases exist.
 9. Done: Evaluate local reranker deployment decision after deterministic improvements plateau; do not add separate model reranker to P0002.
+10. Done: P0003 evaluated ScoreGate as offline-first adaptive context selection. T0021 implemented the pure selector, T0022 added the offline snapshot fixture/validator, and T0023 closed runtime rollout as no-ship for the current profile because no true local cross-encoder `r_i` source exists.
 
 ## Open Questions
 
 - How should committed baseline reports relate to generated local JSON reports from the runner?
 - Should evaluation results be committed as reports or generated locally only?
-- Which local cross-encoder reranker is acceptable remains a future question only if expanded default-mode evaluation shows a measurable need.
+- Which normalized `s_i` source is stable across Weaviate `hybrid`, `keyword`, and `vector` modes for ScoreGate calibration?
+- Which local cross-encoder can provide `r_i` with acceptable latency/resource cost remains future work; current profile has no score source.
+- What ScoreGate threshold set preserves multi-hop coverage while reducing retained chunks?
 - Should source weighting remain code-defined from registry metadata, or become a registry/config policy?
 - Should compiled support-source demotion stay default-context-only, or become intent-aware for explicit wiki/synthesis queries?
 
@@ -519,3 +613,4 @@ Expected future artifacts:
 - 2026-05-30: `T0014` and `T0015` completed metadata filter enforcement, stale-source demotion, answer source priority cues, and deterministic staleness/source-use/citation evaluation expansion.
 - 2026-05-30: `T0016` completed PostgreSQL search audit and runtime observability expansion for retrieval debugging.
 - 2026-05-31: `T0017` completed the local reranker deployment decision. P0002 ships deterministic governance ranking and defers separate local model reranker work until expanded default-mode regression evidence exists.
+- 2026-06-16: `P0003`, `T0021`, `T0022`, and `T0023` evaluated ScoreGate as an offline-first adaptive context selection path. `ScoreGateCandidateSelector` and the offline snapshot validator are implemented and tested; runtime ScoreGate is no-ship for the current profile because no true local cross-encoder `r_i` source exists.

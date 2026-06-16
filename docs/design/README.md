@@ -9,7 +9,7 @@
 - `docs/design/local-rag-system-development-direction.md`는 Local RAG 개발 방향의 current truth입니다.
 - `docs/design/source-registry-and-project-ssot.md`는 장비별 source registry, project id, SSOT source registration, Codex/RAG skill scope의 current truth입니다.
 - `docs/design/msa-runtime-and-storage.md`는 MSA runtime, Docker Compose, PostgreSQL DDL, Weaviate schema의 current truth입니다.
-- `docs/design/retrieval-quality-improvement-design.md`는 검색 품질 evaluation, source weighting, rerank, chunking 개선의 current truth입니다.
+- `docs/design/retrieval-quality-improvement-design.md`는 검색 품질 evaluation, source weighting, rerank, chunking, adaptive context selection 개선의 current truth입니다.
 - 새 domain design 문서를 추가하면 이 index와 `docs/_indexes/design-map.md`도 함께 갱신합니다.
 - 이 index는 design truth를 대체하지 않습니다. 실제 결정은 source design doc에서 합니다.
 
@@ -37,7 +37,7 @@
 | [`local-rag-system-development-direction.md`](local-rag-system-development-direction.md) | domain design | `domain-current` | Local RAG architecture, MVP scope, indexing/search/Codex boundary를 판단할 때 | 하네스 운영 규칙만 확인할 때 | medium | local-rag-system | `docs/projects/P0001-local-rag-system.md` |
 | [`source-registry-and-project-ssot.md`](source-registry-and-project-ssot.md) | domain design | `domain-current` | 장비별 source registry, project SSOT registration, Codex/RAG skill scope를 구현할 때 | 일반 RAG 개념만 확인할 때 | medium | source-registry | `docs/tasks/T0001-source-registry-project-ssot-registration.md` |
 | [`msa-runtime-and-storage.md`](msa-runtime-and-storage.md) | runtime design | `domain-current` | MSA service boundary, Docker Compose, PostgreSQL DDL, Weaviate schema, source mount contract를 구현할 때 | 순수 검색 ranking 알고리즘만 확인할 때 | medium | runtime/storage | `docs/tasks/T0002-msa-runtime-baseline.md`, `docs/tasks/T0009-host-local-ollama-rag-configuration.md` |
-| [`retrieval-quality-improvement-design.md`](retrieval-quality-improvement-design.md) | domain design | `domain-current` | 검색 품질, evaluation harness, primary source weighting, rerank, chunking 개선을 구현할 때 | source registry 등록이나 Compose mount contract만 확인할 때 | medium | retrieval-quality | `docs/projects/P0002-retrieval-governance-hardening.md`, `docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md`, `docs/tasks/T0014-search-filter-and-answer-context-governance.md`, `docs/tasks/T0015-answer-quality-and-staleness-evaluation.md`, `docs/tasks/T0016-retrieval-audit-observability-expansion.md`, `docs/tasks/T0017-local-reranker-evaluation.md` |
+| [`retrieval-quality-improvement-design.md`](retrieval-quality-improvement-design.md) | domain design | `domain-current` | 검색 품질, evaluation harness, primary source weighting, rerank, chunking, adaptive context selection 개선을 구현할 때 | source registry 등록이나 Compose mount contract만 확인할 때 | medium | retrieval-quality | `docs/projects/P0002-retrieval-governance-hardening.md`, `docs/projects/P0003-scoregate-adaptive-context-selection.md`, `docs/tasks/T0013-retrieval-chunking-and-document-authority-hardening.md`, `docs/tasks/T0014-search-filter-and-answer-context-governance.md`, `docs/tasks/T0015-answer-quality-and-staleness-evaluation.md`, `docs/tasks/T0016-retrieval-audit-observability-expansion.md`, `docs/tasks/T0017-local-reranker-evaluation.md`, `docs/tasks/T0021-scoregate-offline-selector-experiment.md`, `docs/tasks/T0022-scoregate-offline-evaluation-fixture.md`, `docs/tasks/T0023-local-cross-encoder-score-source.md` |
 
 ## Change Log
 
@@ -52,3 +52,4 @@
 - 2026-05-30: Retrieval quality design surface updated for T0014/T0015 metadata filter, answer context, staleness, source-use, and citation evaluation governance.
 - 2026-05-30: Retrieval quality design surface updated for T0016 search audit observability expansion.
 - 2026-05-31: Retrieval quality design surface updated for T0017 local reranker deployment decision and P0002 closeout.
+- 2026-06-16: Retrieval quality design surface updated for P0003 ScoreGate adaptive context selection, T0021 offline selector substrate, T0022 offline snapshot evaluator, and T0023 runtime no-ship decision.

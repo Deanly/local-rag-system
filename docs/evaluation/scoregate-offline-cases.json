@@ -1,0 +1,229 @@
+{
+  "version": 1,
+  "description": "Offline ScoreGate decision snapshots for Local RAG. Scores are normalized snapshots for selector validation, not calibrated production thresholds.",
+  "config": {
+    "similarityThreshold": 0.7,
+    "rerankerThreshold": 0.08,
+    "similarityWeight": 0.3,
+    "bucket2FusionThreshold": 0.255,
+    "bucket3FusionThreshold": 0.15,
+    "maxK": 10
+  },
+  "cases": [
+    {
+      "id": "sg-ko-b3-001",
+      "groupId": "korean-lexical-mismatch",
+      "language": "korean",
+      "intent": "release-note-location",
+      "query": "배포 릴리즈 기록 어디 남기지?",
+      "candidateWindowSize": 40,
+      "expectedCandidateId": "release-registry-b3",
+      "expectedSourceId": "local-rag-system.docs",
+      "expectedRelativePath": "design/retrieval-quality-improvement-design.md",
+      "requireB3Rescue": true,
+      "expectFixedTopKMiss": true,
+      "mustDropCandidateIds": [
+        "deployment-topical-b2-drop"
+      ],
+      "candidates": [
+        {
+          "id": "deployment-topical-b2-drop",
+          "sourceId": "local-rag-system.docs",
+          "relativePath": "tasks/T0008-portable-ops-zone-deployment.md",
+          "similarityScore": 0.75,
+          "rerankerScore": 0.03,
+          "rank": 1,
+          "estimatedTokens": 180,
+          "metadata": {
+            "note": "High lexical overlap with deployment terms, but low query-passage relevance."
+          }
+        },
+        {
+          "id": "release-registry-b3",
+          "sourceId": "local-rag-system.docs",
+          "relativePath": "design/retrieval-quality-improvement-design.md",
+          "similarityScore": 0.24,
+          "rerankerScore": 0.82,
+          "rank": 16,
+          "estimatedTokens": 210,
+          "metadata": {
+            "note": "Low vector similarity but high cross-encoder relevance, representing Korean/English operational vocabulary mismatch."
+          }
+        },
+        {
+          "id": "both-low-b4",
+          "sourceId": "worknote.wiki",
+          "relativePath": "inbox/unrelated-note.md",
+          "similarityScore": 0.18,
+          "rerankerScore": 0.02,
+          "rank": 17,
+          "estimatedTokens": 160,
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "sg-en-id-001",
+      "groupId": "english-identifier",
+      "language": "english",
+      "intent": "task-id-lookup",
+      "query": "T0010 codex rag utilization hardening unknown project error",
+      "candidateWindowSize": 40,
+      "expectedCandidateId": "t0010-b1",
+      "expectedSourceId": "local-rag-system.docs",
+      "expectedRelativePath": "tasks/T0010-codex-rag-utilization-hardening.md",
+      "candidates": [
+        {
+          "id": "t0010-b1",
+          "sourceId": "local-rag-system.docs",
+          "relativePath": "tasks/T0010-codex-rag-utilization-hardening.md",
+          "similarityScore": 0.92,
+          "rerankerScore": 0.91,
+          "rank": 0,
+          "estimatedTokens": 240,
+          "metadata": {}
+        },
+        {
+          "id": "nearby-task-b2-drop",
+          "sourceId": "local-rag-system.docs",
+          "relativePath": "tasks/T0011-retrieval-quality-hardening.md",
+          "similarityScore": 0.78,
+          "rerankerScore": 0.02,
+          "rank": 1,
+          "estimatedTokens": 230,
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "sg-gov-001",
+      "groupId": "primary-source-governance",
+      "language": "english",
+      "intent": "primary-source-preference",
+      "query": "source registry project ssot registered source root write policy",
+      "candidateWindowSize": 40,
+      "expectedCandidateId": "source-registry-b1",
+      "expectedSourceId": "local-rag-system.docs",
+      "expectedRelativePath": "design/source-registry-and-project-ssot.md",
+      "mustDropCandidateIds": [
+        "support-wiki-b2-drop"
+      ],
+      "candidates": [
+        {
+          "id": "support-wiki-b2-drop",
+          "sourceId": "worknote.wiki",
+          "relativePath": "lint/source-registry-summary.md",
+          "similarityScore": 0.8,
+          "rerankerScore": 0.01,
+          "rank": 0,
+          "estimatedTokens": 220,
+          "metadata": {
+            "ssotRole": "cross-project-support"
+          }
+        },
+        {
+          "id": "source-registry-b1",
+          "sourceId": "local-rag-system.docs",
+          "relativePath": "design/source-registry-and-project-ssot.md",
+          "similarityScore": 0.82,
+          "rerankerScore": 0.68,
+          "rank": 2,
+          "estimatedTokens": 260,
+          "metadata": {
+            "ssotRole": "project-current-truth"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sg-stale-001",
+      "groupId": "stale-demotion",
+      "language": "english",
+      "intent": "stale-source-demotion",
+      "query": "retrieval governance current policy",
+      "candidateWindowSize": 40,
+      "expectedCandidateId": "current-policy-b1",
+      "expectedSourceId": "local-rag-system.docs",
+      "expectedRelativePath": "guide/current-policy.md",
+      "mustDropCandidateIds": [
+        "deprecated-policy-b2-drop"
+      ],
+      "candidates": [
+        {
+          "id": "deprecated-policy-b2-drop",
+          "sourceId": "local-rag-system.docs",
+          "relativePath": "guide/old-policy.md",
+          "similarityScore": 0.82,
+          "rerankerScore": 0.01,
+          "rank": 0,
+          "estimatedTokens": 190,
+          "metadata": {
+            "frontmatterStatus": "deprecated",
+            "supersededBy": [
+              "guide/current-policy.md"
+            ]
+          }
+        },
+        {
+          "id": "current-policy-b1",
+          "sourceId": "local-rag-system.docs",
+          "relativePath": "guide/current-policy.md",
+          "similarityScore": 0.78,
+          "rerankerScore": 0.72,
+          "rank": 4,
+          "estimatedTokens": 210,
+          "metadata": {
+            "frontmatterStatus": "current"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sg-multi-001",
+      "groupId": "broad-multi-hop",
+      "language": "korean",
+      "intent": "multi-hop-coverage",
+      "query": "검색 품질 기준선과 ScoreGate 도입 판단을 같이 설명해줘",
+      "candidateWindowSize": 40,
+      "expectedCandidateId": "scoregate-design-b3",
+      "expectedSourceId": "local-rag-system.docs",
+      "expectedRelativePath": "design/retrieval-quality-improvement-design.md",
+      "requiredCoverageRelativePaths": [
+        "design/retrieval-quality-improvement-design.md",
+        "reports/2026-05-25-retrieval-quality-baseline.md"
+      ],
+      "candidates": [
+        {
+          "id": "baseline-report-b1",
+          "sourceId": "local-rag-system.docs",
+          "relativePath": "reports/2026-05-25-retrieval-quality-baseline.md",
+          "similarityScore": 0.74,
+          "rerankerScore": 0.63,
+          "rank": 0,
+          "estimatedTokens": 280,
+          "metadata": {}
+        },
+        {
+          "id": "scoregate-design-b3",
+          "sourceId": "local-rag-system.docs",
+          "relativePath": "design/retrieval-quality-improvement-design.md",
+          "similarityScore": 0.44,
+          "rerankerScore": 0.69,
+          "rank": 11,
+          "estimatedTokens": 260,
+          "metadata": {}
+        },
+        {
+          "id": "topical-b4-drop",
+          "sourceId": "worknote.wiki",
+          "relativePath": "inbox/agent-system-paper-scrap.md",
+          "similarityScore": 0.20,
+          "rerankerScore": 0.03,
+          "rank": 12,
+          "estimatedTokens": 250,
+          "metadata": {}
+        }
+      ]
+    }
+  ]
+}
