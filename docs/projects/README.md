@@ -16,5 +16,6 @@
 
 ## Done
 
+- [`P0003-scoregate-adaptive-context-selection.md`](P0003-scoregate-adaptive-context-selection.md): ScoreGate selector와 offline snapshot evaluator는 남기고, current profile의 true local cross-encoder `r_i` 부재로 runtime rollout은 no-ship으로 닫은 exception branch. Official release version: `1.2.0`. Updated: 2026-06-16.
 - [`P0002-retrieval-governance-hardening.md`](P0002-retrieval-governance-hardening.md): P0001 functional baseline 이후 governed Hybrid RAG 검색 거버넌스 hardening exception branch. Official release version: `1.1.0`. Updated: 2026-05-31.
 - [`P0001-local-rag-system.md`](P0001-local-rag-system.md): 장비별 source roots 대상 1인용 local-only RAG functional baseline. Official baseline version: `1.0.0`. Updated: 2026-05-29.

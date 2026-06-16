@@ -16,6 +16,13 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | --- | --- | --- | --- | --- | --- |
 | T0010 | codex-rag-utilization-hardening | active | `P0001` | `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-29 |
 
+## Draft Tasks
+
+| ID | Title | Status | Parent / Reference Project | Related Design | Updated |
+| --- | --- | --- | --- | --- | --- |
+| T0018 | source-root-symlink-boundary-hardening | draft | `P0001` | `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-06-16 |
+| T0019 | indexer-failure-job-state-persistence | draft | `P0001` | `local-rag-system-development-direction`, `msa-runtime-and-storage` | 2026-06-16 |
+
 ## Blocked Tasks
 
 | ID | Title | Status | Parent / Reference Project | Blocked By | Updated |
@@ -28,6 +35,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | --- | --- | --- | --- | --- | --- |
 | P0001 | local-rag-system | done | self | Functional baseline plus portable host-local/LAN Ollama endpoint failover | 2026-05-29 |
 | P0002 | retrieval-governance-hardening | done | `P0001` | Metadata-aware retrieval governance, source-priority answer context, staleness/citation evaluation, search audit observability, and local reranker deployment decision | 2026-05-31 |
+| P0003 | scoregate-adaptive-context-selection | done | `P0001` | ScoreGate selector and offline evaluator completed; runtime rollout closed as no-ship because no true local cross-encoder `r_i` source exists in the current profile | 2026-06-16 |
 | T0001 | source-registry-project-ssot-registration | done | `P0001` | Registry validation and scope resolution smoke | 2026-05-24 |
 | T0002 | msa-runtime-baseline | done | `P0001` | Compose config, DDL smoke, service/storage contracts | 2026-05-24 |
 | T0003 | spring-boot-msa-skeleton | done | `P0001` | Maven tests, Compose build/up, gateway health | 2026-05-24 |
@@ -44,6 +52,10 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | T0015 | answer-quality-and-staleness-evaluation | done | `P0002` | Evaluation runner source-use, citation usefulness, staleness error metrics, unknown-project skip, and Korean task-id regression coverage | 2026-05-30 |
 | T0016 | retrieval-audit-observability-expansion | done | `P0002` | Search audit candidate counts, phase latency, top result, source distribution, and score JSON for retrieval debugging | 2026-05-30 |
 | T0017 | local-reranker-evaluation | done | `P0002` | Local reranker deployment decision; separate model reranker deferred from P0002 release path | 2026-05-31 |
+| T0020 | service-artifact-version-doc-drift | done | `P0001` | Service README artifact convention aligned with `1.2.0` Maven/Docker artifact naming | 2026-06-16 |
+| T0021 | scoregate-offline-selector-experiment | done | `P0003` | Pure ScoreGate selector, B1-B4/fusion/MAX-K decision tests, and no default runtime behavior change | 2026-06-16 |
+| T0022 | scoregate-offline-evaluation-fixture | done | `P0003` | Offline ScoreGate snapshot fixture, selector-backed validator, and snapshot evaluation report | 2026-06-16 |
+| T0023 | local-cross-encoder-score-source | done | `P0003` | Local cross-encoder score-source decision; runtime ScoreGate no-ship for current profile | 2026-06-16 |
 
 ## Active Reports
 
@@ -80,3 +92,8 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-05-30: `T0015` completed. Retrieval evaluation now reports must-use, must-not-use, citation usefulness, and staleness error checks, skips unregistered fixture projects, and covers Korean task-id suffix retrieval.
 - 2026-05-30: `T0016` completed. Search audit now stores candidate limits, raw/final counts, phase latency, top result source/path, source distribution, and score JSON.
 - 2026-05-31: `T0017` and `P0002` completed. Retrieval governance hardening is deployable with deterministic governance ranking and no separate local model reranker in the release path.
+- 2026-06-16: Project review findings were issued as draft remediation tasks: `T0018` source-root symlink boundary hardening, `T0019` indexer failure/job persistence, and `T0020` service artifact version documentation drift.
+- 2026-06-16: `P0003` issued for ScoreGate adaptive context selection; `T0021` completed the pure offline selector substrate without changing runtime defaults.
+- 2026-06-16: `T0022` completed ScoreGate offline snapshot fixture and validator; P0003 remains active pending local cross-encoder score source and rollout decision.
+- 2026-06-16: `T0023` closed P0003 as runtime no-ship for the current profile because no true local cross-encoder `r_i` score source exists.
+- 2026-06-16: `T0020` closed during P0003 release prep by aligning service artifact documentation with `1.2.0` Maven/Docker artifact naming.

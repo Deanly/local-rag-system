@@ -5,6 +5,6 @@ RUN mvn -q -pl services/indexer-service -am -DskipTests package
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
-COPY --from=build /workspace/services/indexer-service/target/indexer-service-1.1.0.jar /app/app.jar
+COPY --from=build /workspace/services/indexer-service/target/indexer-service-1.2.0.jar /app/app.jar
 EXPOSE 42142
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
