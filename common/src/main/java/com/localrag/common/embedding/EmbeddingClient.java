@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 public class EmbeddingClient {
     private static final int FALLBACK_DIMENSIONS = 384;
+    private static final int MAX_EMBED_BATCH_SIZE = 16;
 
     private final List<Endpoint> endpoints;
     private final String model;
@@ -70,6 +71,14 @@ public class EmbeddingClient {
     public List<List<Double>> embedAll(List<String> texts) {
         if (texts.isEmpty()) {
             return List.of();
+        }
+        if (texts.size() > MAX_EMBED_BATCH_SIZE) {
+            List<List<Double>> result = new ArrayList<>(texts.size());
+            for (int start = 0; start < texts.size(); start += MAX_EMBED_BATCH_SIZE) {
+                int end = Math.min(start + MAX_EMBED_BATCH_SIZE, texts.size());
+                result.addAll(embedAll(texts.subList(start, end)));
+            }
+            return result;
         }
         List<RuntimeException> failures = new ArrayList<>();
         for (Endpoint endpoint : endpoints) {
