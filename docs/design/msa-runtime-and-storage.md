@@ -163,7 +163,7 @@ cp .env.example .env
 docker compose --env-file .env up -d --build
 ```
 
-The single-user operation-zone command defaults to `~/Services/local-rag-system`, with code, config, runtime data, logs, and command wrappers kept below that directory. `~/Services/bin/local-rag` is a convenience symlink to the service command. Generated operation env defaults use the notebook-local Ollama endpoint `http://host.docker.internal:11434`; a Mac mini or other LAN-local Ollama endpoint can be placed first in `LOCAL_RAG_OLLAMA_BASE_URLS` without changing committed files.
+The single-user operation-zone command defaults to `~/Service`, with code in `~/Service/code/local-rag-system`, config in `~/Service/config/local-rag-system`, runtime data in `~/Service/runtime/local-rag-system`, logs in `~/Service/logs/local-rag-system`, and the operator command in `~/Service/bin/local-rag`. On Dean's Mac, Service-zone deployments are registered with `~/Service/deploy/bin/personal-deploy`; that authority calls `~/Service/update_local-rag-system.sh`, records release evidence, and passes `BRANCH` or `DEPLOY_VERSION` so the Local RAG operator command can reset the operational checkout to `origin/main` or a validated tag before rebuilding. Generated operation env defaults use the notebook-local Ollama endpoint `http://host.docker.internal:11434`; a Mac mini or other LAN-local Ollama endpoint can be placed first in `LOCAL_RAG_OLLAMA_BASE_URLS` without changing committed files.
 
 The current Compose baseline keeps the legacy sample `/source` mount and also supports generic read-only slots under `/sources` for machine-local RAG corpora:
 
