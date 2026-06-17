@@ -12,6 +12,7 @@
 
 ## Active
 
+- [`T0025-8b-embedding-ab-gate.md`](T0025-8b-embedding-ab-gate.md): P0004 게이트로 운영 4b 불간섭 격리 4b-vs-8b 검색 품질 A/B(`docs/bin/run-8b-embedding-ab.py`)를 작성하고 한가한 Mac mini 시점에 실행 예정. Updated: 2026-06-17.
 - [`T0024-local-cross-encoder-sidecar-proof.md`](T0024-local-cross-encoder-sidecar-proof.md): P0003 후속으로 local-only reranker sidecar, ScoreGate debug/opt-in path, runtime probe/snapshot proof를 개발 중. Updated: 2026-06-16.
 - [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): `~/Services` 운영존 generic user-managed source slots와 live smoke 완료; Codex Desktop 새 세션 MCP visibility 확인만 남음. Updated: 2026-05-29.
 
