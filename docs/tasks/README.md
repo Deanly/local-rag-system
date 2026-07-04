@@ -12,6 +12,7 @@
 
 ## Active
 
+- [`T0025-recontext-context-grounding.md`](T0025-recontext-context-grounding.md): P0001 후속으로 ReContext의 grounded evidence replay 개념을 `/api/answer` prompt context packing에 작게 적용. Updated: 2026-07-04.
 - [`T0024-local-cross-encoder-sidecar-proof.md`](T0024-local-cross-encoder-sidecar-proof.md): P0003 후속으로 local-only reranker sidecar, ScoreGate debug/opt-in path, runtime probe/snapshot proof를 개발 중. Updated: 2026-06-16.
 - [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): `~/Services` 운영존 generic user-managed source slots와 live smoke 완료; Codex Desktop 새 세션 MCP visibility 확인만 남음. Updated: 2026-05-29.
 
