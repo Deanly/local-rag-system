@@ -116,7 +116,7 @@ Completion mode는 `functional`이다. 닫힌 상태는 `/api/answer` prompt가 
 | --- | --- | --- | --- | --- |
 | W1 | Implement `AnswerEvidencePacker` and integrate into `answerPrompt` | Done | 100% | replay-only change; retrieved context block untouched |
 | W2 | Add focused packer unit tests | Done | 100% | 8 tests: ordering, dedupe, budget, oversized-first-keep, fallback, Korean, blank snippets, baseline arm |
-| W3 | Add deterministic baseline-vs-ReContext benchmark harness | Done | 100% | 6 cases, rule-based proxy metrics, report artifact |
+| W3 | Add deterministic baseline-vs-ReContext benchmark harness | Done | 100% | expanded to 14 cases with 5 decision thresholds, rule-based proxy metrics, report artifact |
 | W4 | Record benchmark report and update design/docs harness | Done | 100% | see completion evidence |
 | W5 | Run validators and focused Maven tests | Done | 100% | see completion evidence |
 
@@ -133,8 +133,8 @@ Completion mode는 `functional`이다. 닫힌 상태는 `/api/answer` prompt가 
 
 ## Completion Evidence
 
-- Focused tests: `mvn -pl services/retrieval-service -am test` — common 7/0 failures, retrieval-service 32/0 failures (packer 8, benchmark 2 포함).
-- Benchmark: `mvn -pl services/retrieval-service -am test -Dtest=AnswerGroundingBenchmarkTests` — avg distractor exclusion baseline 0.17 vs recontext 0.96, total replay chars 3368 vs 1771, evidence hit 1.00 유지. 리포트: `services/retrieval-service/target/answer-grounding-benchmark.md`, 고정 사본 `docs/reports/2026-07-04-recontext-answer-grounding-benchmark.md`.
+- Focused tests: `mvn -pl services/retrieval-service -am test` — common 7/0 failures, retrieval-service 34/0 failures (packer 8, benchmark 4 포함).
+- Benchmark: `mvn -pl services/retrieval-service -am test -Dtest=AnswerGroundingBenchmarkTests -Dsurefire.failIfNoSpecifiedTests=false` — 14 cases, macro evidence hit 0.93(threshold 0.90), distractor exclusion 0.14→0.84(threshold +0.30), replay chars 8657→3505(−59.5%, threshold −20%), budget compliance 전 케이스. 의도적 paraphrase-drop regression 케이스 1건은 retrieved-context 보존 mitigation 테스트로 커버. 리포트: `services/retrieval-service/target/answer-grounding-benchmark.md`, 고정 사본 `docs/reports/2026-07-04-recontext-answer-grounding-benchmark.md`.
 - Validators: `./docs/bin/validate-codex-readiness.sh`, `./docs/bin/validate-harness-foundation.sh`, `./docs/bin/validate-doc-retrieval.sh`, `./docs/bin/validate-closeout.sh --all`, `docker compose --env-file .env.example config`, `git diff --check` 결과는 Status에 기록한다.
 - LLM 기반 품질 측정은 이 evidence에 포함되지 않는다. proxy metric은 replay block 구성 품질만 증명한다.
 
@@ -178,3 +178,4 @@ Completion mode는 `functional`이다. 닫힌 상태는 `/api/answer` prompt가 
 - 2026-07-04: task 문서 생성.
 - 2026-07-04: `AnswerEvidencePacker` 구현, `answerPrompt` 통합, packer 단위 테스트 8건 추가.
 - 2026-07-04: baseline-vs-ReContext deterministic benchmark harness와 리포트 추가. focused Maven tests 32/0 통과.
+- 2026-07-04: benchmark를 decision-grade로 확장 — 14 케이스(direct fact, distractor-heavy, multi-evidence, long/noisy, Korean, bilingual, conflicting near-duplicate, no-answer, paraphrase-drop regression, lexical trap 포함), 결정 threshold 5종(T1-T5) 도입 후 전부 PASS. retrieval-service tests 34/0 통과.

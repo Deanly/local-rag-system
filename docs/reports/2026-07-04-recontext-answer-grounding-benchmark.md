@@ -5,7 +5,7 @@ status: done
 owner:
 created: 2026-07-04
 updated: 2026-07-04
-current_focus: "Baseline vs ReContext answer evidence packing benchmark results"
+current_focus: "Decision-grade baseline vs ReContext answer evidence packing benchmark"
 report_type: recontext-answer-grounding-benchmark
 related_project: docs/projects/P0001-local-rag-system.md
 related_task:
@@ -31,13 +31,19 @@ tags:
 - Owner:
 - Created: 2026-07-04
 - Updated: 2026-07-04
-- Current Focus: Baseline vs ReContext answer evidence packing benchmark results
+- Current Focus: Decision-grade baseline vs ReContext answer evidence packing benchmark
 - Report Type: recontext-answer-grounding-benchmark
 - Related Project: docs/projects/P0001-local-rag-system.md
 
 ## Summary
 
-`/api/answer`의 grounded evidence replay block에 대해 baseline(T0025의 replay-everything, retrieval order, budget 없음)과 ReContext packing(T0026의 query-aware selection, char/count budget)을 deterministic rule-based proxy metric으로 비교했다. 6개 대표 케이스 전부에서 evidence hit 1.00을 유지하면서 평균 distractor exclusion이 0.17에서 0.96으로, 총 replay context가 3368 chars에서 1771 chars로 개선됐다. LLM은 채점에 사용하지 않았다.
+`/api/answer`의 grounded evidence replay block에 대해 14개 대표 케이스로 baseline과 ReContext packing을 비교했다. 결론: **모든 결정 threshold PASS** — macro evidence hit 0.93(≥0.90), distractor exclusion 0.14→0.84(+0.70, 기준 +0.30), replay context 8657→3505 chars(−59.5%, 기준 −20%), budget(1600c/6개) 전 케이스 준수. 유일한 의도적 regression 케이스(paraphrase-only evidence)는 replay에서 빠지지만 retrieved context block에 보존됨을 별도 테스트로 확인했다. LLM은 채점에 사용하지 않았다.
+
+식별자:
+
+- Candidate: `feature/recontext-benchmark-grounding` (`AnswerEvidencePacker`, T0026).
+- Baseline arm: T0025 replay-everything(`dc0492f` 동작을 `baselinePack`으로 고정 재현).
+- Pre-candidate production baseline: `origin/main` `6e490ea` — replay block 자체가 없음(replay overhead 0, evidence 강조 없음). 두 arm의 replay chars는 main 대비 순수 additive prompt overhead다.
 
 ## Scope
 
@@ -47,54 +53,73 @@ tags:
 
 ## Inputs
 
-- Benchmark 명령: `mvn -pl services/retrieval-service -am test -Dtest=AnswerGroundingBenchmarkTests`
+- Benchmark 명령: `mvn -pl services/retrieval-service -am test -Dtest=AnswerGroundingBenchmarkTests -Dsurefire.failIfNoSpecifiedTests=false`
 - Runtime artifact: `services/retrieval-service/target/answer-grounding-benchmark.md`
 - ReContext config: `charBudget=1600`, `maxEvidence=6`
 
+## Metric Definitions
+
+- Evidence hit: 케이스별 expected citation 중 replay block에 포함된 비율(expected 없으면 1.0).
+- Distractor exclusion: distractor citation 중 replay block에서 제외된 비율(distractor 없으면 1.0).
+- First evidence pos: replay block에서 첫 expected evidence의 위치(1이 최선, −1은 없음).
+- Selected: replay block에 선택된 evidence 수(count budget proxy).
+- Replay chars: replay snippet 문자 수(token/context-size proxy; origin/main 대비 prompt overhead).
+- Pack us: packing 소요 마이크로초(참고용, 채점·threshold 미사용).
+
+## Case Categories
+
+14 cases: direct fact retrieval / distractor-heavy(10 distractor) / multi-evidence answer / distractor-led ranking / long·noisy context(12 results) / Korean query / bilingual content / near-duplicate dedupe / conflicting near-duplicate evidence / budget overflow / no-answer·insufficient evidence(빈 결과) / no-lexical-overlap fallback / **regression risk: paraphrase drop(의도적 실패 허용)** / regression risk: lexical trap.
+
 ## Findings
 
-Proxy metric 정의:
+2026-07-04 실행 결과 (`services/retrieval-service/target/answer-grounding-benchmark.md`):
 
-- Evidence hit: 케이스별 expected citation 중 replay block에 포함된 비율.
-- Distractor exclusion: distractor citation 중 replay block에서 제외된 비율.
-- First evidence pos: replay block에서 첫 expected evidence의 위치(1이 최선).
-- Replay chars: replay block snippet 문자 수(token/context-size proxy).
-- Pack us: packing 소요 마이크로초(참고용, 채점 미사용).
-
-2026-07-04 실행 결과:
-
-| Case | Arm | Evidence hit | Distractor exclusion | First evidence pos | Selected | Replay chars | Pack us |
+| Case | Category | Arm | Evidence hit | Distractor exclusion | First evidence pos | Selected | Replay chars |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| multi-evidence-long-query | baseline | 1.00 | 0.00 | 2 | 8 | 653 | 941 |
-| multi-evidence-long-query | recontext | 1.00 | 1.00 | 1 | 3 | 303 | 463 |
-| distractor-led-ranking | baseline | 1.00 | 0.00 | 4 | 5 | 448 | 200 |
-| distractor-led-ranking | recontext | 1.00 | 1.00 | 1 | 2 | 216 | 300 |
-| duplicate-evidence | baseline | 1.00 | 0.00 | 1 | 2 | 162 | 110 |
-| duplicate-evidence | recontext | 1.00 | 1.00 | 1 | 1 | 99 | 214 |
-| korean-query | baseline | 1.00 | 0.00 | 2 | 4 | 156 | 279 |
-| korean-query | recontext | 1.00 | 1.00 | 1 | 2 | 99 | 288 |
-| budget-overflow | baseline | 1.00 | 0.00 | 1 | 6 | 1886 | 407 |
-| budget-overflow | recontext | 1.00 | 0.75 | 1 | 3 | 991 | 320 |
-| no-lexical-overlap-fallback | baseline | 1.00 | 1.00 | -1 | 2 | 63 | 111 |
-| no-lexical-overlap-fallback | recontext | 1.00 | 1.00 | -1 | 2 | 63 | 76 |
+| direct-fact | direct fact retrieval | baseline / recontext | 1.00 / 1.00 | 0.00 / 1.00 | 2 / 1 | 4 / 1 | 201 / 52 |
+| distractor-heavy | distractor-heavy retrieval | baseline / recontext | 1.00 / 1.00 | 0.00 / 1.00 | 3 / 1 | 12 / 2 | 726 / 210 |
+| multi-evidence-long-query | multi-evidence answer | baseline / recontext | 1.00 / 1.00 | 0.00 / 1.00 | 2 / 1 | 8 / 3 | 653 / 303 |
+| distractor-led-ranking | distractor-led ranking | baseline / recontext | 1.00 / 1.00 | 0.00 / 1.00 | 4 / 1 | 5 / 2 | 448 / 216 |
+| long-noisy-context | long/noisy context | baseline / recontext | 1.00 / 1.00 | 0.00 / 1.00 | 2 / 1 | 12 / 3 | 3635 / 962 |
+| korean-query | Korean query | baseline / recontext | 1.00 / 1.00 | 0.00 / 1.00 | 2 / 1 | 4 / 2 | 156 / 99 |
+| bilingual-evidence | bilingual content | baseline / recontext | 1.00 / 1.00 | 0.00 / 1.00 | 2 / 1 | 4 / 2 | 198 / 119 |
+| duplicate-evidence | near-duplicate dedupe | baseline / recontext | 1.00 / 1.00 | 0.00 / 1.00 | 1 / 1 | 2 / 1 | 162 / 99 |
+| conflicting-near-duplicate | conflicting evidence | baseline / recontext | 1.00 / 1.00 | 0.00 / 1.00 | 1 / 1 | 3 / 2 | 211 / 150 |
+| budget-overflow | long/noisy (budget) | baseline / recontext | 1.00 / 1.00 | 0.00 / 0.75 | 1 / 1 | 6 / 3 | 1859 / 974 |
+| no-results | insufficient evidence | baseline / recontext | 1.00 / 1.00 | 1.00 / 1.00 | - | 0 / 0 | 0 / 0 |
+| no-lexical-overlap-fallback | fallback safety | baseline / recontext | 1.00 / 1.00 | 1.00 / 1.00 | - | 2 / 2 | 63 / 63 |
+| paraphrase-evidence-regression | regression: paraphrase drop | baseline / recontext | 1.00 / **0.00** | 0.00 / 0.00 | 1 / -1 | 2 / 1 | 152 / 65 |
+| lexical-trap-survival | regression: lexical trap | baseline / recontext | 1.00 / 1.00 | 0.00 / 0.00 | 3 / 1 | 3 / 3 | 193 / 193 |
 
-- 평균 distractor exclusion: baseline 0.17 vs recontext 0.96.
-- 총 replay chars: baseline 3368 vs recontext 1771 (budget-overflow 케이스에서 baseline은 1886 chars로 budget 초과, recontext는 991 chars).
-- Distractor-led ranking 케이스에서 recontext는 true evidence를 replay 1번 위치로 올린다(baseline은 4번).
-- No-overlap 케이스에서 recontext는 dedupe된 retrieval order로 fail-open해 baseline과 동일하게 동작한다.
+Decision thresholds:
 
-해석: replay block이 질문과 겹치는 근거를 앞세우고 무관한 근거와 중복을 제외하므로, 모델이 긴/다중 근거 컨텍스트에서 관련 근거를 더 잘 쓰도록 하는 ReContext의 "grounded span replay" 의도를 prompt packing 수준에서 구현한다. 전체 검색 결과는 retrieved context block에 남아 있어 잘못된 제외의 안전장치가 된다.
+| Threshold | Target | Observed | Pass |
+| --- | --- | --- | --- |
+| T1 non-regression 케이스 evidence hit | 1.00 each | 12/12 non-regression 케이스 1.00 (per-case assert) | PASS |
+| T2 macro recontext hit | >= 0.90 | 0.93 | PASS |
+| T3 exclusion 개선 | >= +0.30 | +0.70 (0.14 → 0.84) | PASS |
+| T4 replay chars 절감 | >= 20% | 59.51% (8657 → 3505) | PASS |
+| T5 budget 준수 (1600c / 6개) | always | 전 케이스 assert | PASS |
 
-한계:
+주요 관찰:
 
-- Lexical overlap은 의미적 관련성의 근사치다. paraphrase-only evidence는 replay에서 빠질 수 있고 fallback/retrieved context로만 보존된다.
-- 한국어는 token containment 기반이라 조사 변형에 약하다(예: `문서를` vs `문서에`).
-- 이 수치는 replay 구성 품질이지 LLM 답변 품질이 아니다. 실제 answer quality A/B는 별도 task가 필요하다.
+- 관련 근거는 모든 non-regression 케이스에서 replay 1번 위치로 올라온다(baseline은 retrieval order 그대로라 distractor가 앞설 수 있음).
+- Conflicting near-duplicate 케이스에서 상충하는 두 근거가 모두 replay되어 모델이 source priority(현행 vs draft)로 판별할 수 있다.
+- No-results/no-overlap 케이스에서 recontext는 baseline과 동일하게 동작(fail-open)하며 "No replayable evidence." fallback이 유지된다.
+- **Known regression**: paraphrase-only evidence(질의와 어휘가 전혀 겹치지 않는 근거)는 spurious 토큰을 가진 distractor가 있으면 replay에서 빠진다(hit 0.00). 별도 테스트로 해당 근거가 retrieved context block에는 항상 남는 것을 검증했다 — 모델 접근성은 origin/main 수준으로 보존되고, 잃는 것은 "강조"뿐이다.
+- Pack 시간은 케이스당 수백 µs 수준으로 answer path의 Ollama 추론 시간 대비 무시 가능.
+
+## Limitations
+
+- Lexical overlap은 의미적 관련성의 근사치다. paraphrase evidence 강조 누락이 구조적 한계다(위 regression 케이스).
+- 한국어는 token containment 기반이라 조사 변형(`문서를` vs `문서에`)에 약하다.
+- 이 수치는 replay block 구성 품질이지 LLM 답변 품질이 아니다. 실제 answer quality A/B는 별도 task가 필요하다.
+- 케이스는 synthetic fixture다. 실 코퍼스 분포와 다를 수 있다.
 
 ## Recommendations
 
-- 후속: packer budget을 `RetrievalSettings`로 노출, 한국어 bigram/형태소 매칭, 실제 LLM answer quality A/B task.
-- Merge 판단 시 이 리포트와 `T0026` completion evidence를 함께 볼 것.
+- Merge 권고: threshold 전부 PASS이고 rollback이 `answerPrompt` 위임 제거 한 줄 수준이므로 candidate branch merge 가능.
+- 후속: packer budget의 `RetrievalSettings` 노출, 한국어 bigram/형태소 매칭, paraphrase 보강(예: 후순위 fallback slot), 실제 LLM answer quality A/B task.
 
 ## Follow-Up Promotion
 
@@ -103,4 +128,5 @@ Proxy metric 정의:
 ## Status
 
 - 2026-07-04: report 문서 생성.
-- 2026-07-04: benchmark 실행 결과와 해석, 한계 기록. status done.
+- 2026-07-04: 6-케이스 초기 실행 결과 기록.
+- 2026-07-04: decision-grade 확장 — 14 케이스(카테고리 8종), metric 정의 고정, 결정 threshold 5종 도입, 전부 PASS. regression 케이스(paraphrase drop)와 mitigation 검증 포함. status done.

@@ -106,3 +106,4 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-07-04: `T0025` issued from clean main for ReContext-inspired answer evidence replay context packing under P0001.
 - 2026-07-04: `T0025` completed on feature branch with prompt-only `/api/answer` evidence replay, focused retrieval-service tests, and required validators.
 - 2026-07-04: `T0026` extended the replay slice with query-aware budget-bounded `AnswerEvidencePacker` and a deterministic baseline-vs-ReContext grounding benchmark; report recorded in `docs/reports/2026-07-04-recontext-answer-grounding-benchmark.md`.
+- 2026-07-04: `T0026` benchmark expanded to a 14-case decision-grade set with five pass/fail thresholds (hit, exclusion improvement, replay size reduction, budget compliance); all thresholds passed and the paraphrase-drop regression risk is documented with its retrieved-context mitigation.
