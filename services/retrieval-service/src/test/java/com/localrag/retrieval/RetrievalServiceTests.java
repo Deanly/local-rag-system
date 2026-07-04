@@ -274,6 +274,7 @@ class RetrievalServiceTests {
         String prompt = RetrievalService.answerPrompt("How should filters work?", List.of(result));
 
         assertThat(prompt).contains(
+                "Grounded evidence replay:",
                 "Source priority:",
                 "title=search-filter-and-answer-context-governance",
                 "sourceId=local-rag-system.docs",
@@ -282,7 +283,43 @@ class RetrievalServiceTests {
                 "status=active",
                 "authority=canonical",
                 "updated=2026-05-30T00:00:00Z",
+                "Evidence: Filters should use metadata.",
+                "Retrieved context:",
                 "Snippet: Filters should use metadata."
+        );
+        assertThat(prompt.indexOf("Grounded evidence replay:"))
+                .isLessThan(prompt.indexOf("Retrieved context:"));
+    }
+
+    @Test
+    void answerPromptDeduplicatesReplayedEvidenceButKeepsRetrievedContext() {
+        SearchResultItem first = answerResult(
+                "chunk-1",
+                "tasks/T0025-recontext-context-grounding.md#purpose",
+                "Grounded evidence should be replayed."
+        );
+        SearchResultItem duplicate = answerResult(
+                "chunk-2",
+                "tasks/T0025-recontext-context-grounding.md#purpose",
+                "Grounded   evidence should be replayed."
+        );
+
+        String prompt = RetrievalService.answerPrompt("How should ReContext evidence be used?", List.of(first, duplicate));
+
+        assertThat(countOccurrences(prompt, "Evidence: Grounded evidence should be replayed.")).isEqualTo(1);
+        assertThat(countOccurrences(prompt, "Snippet: Grounded evidence should be replayed.")).isEqualTo(1);
+        assertThat(countOccurrences(prompt, "Snippet: Grounded   evidence should be replayed.")).isEqualTo(1);
+    }
+
+    @Test
+    void answerPromptKeepsExplicitFallbacksWhenNoContextWasRetrieved() {
+        String prompt = RetrievalService.answerPrompt("What evidence exists?", List.of());
+
+        assertThat(prompt).contains(
+                "Grounded evidence replay:",
+                "No replayable evidence.",
+                "Retrieved context:",
+                "No retrieved context."
         );
     }
 
@@ -313,6 +350,42 @@ class RetrievalServiceTests {
                 Map.of(),
                 Map.of("rerankScore", 1.0)
         );
+    }
+
+    private static SearchResultItem answerResult(String chunkId, String citation, String snippet) {
+        return new SearchResultItem(
+                chunkId,
+                chunkId + "-doc",
+                "local-rag-system",
+                "local-rag-system.docs",
+                "project-current-truth",
+                "tasks/T0025-recontext-context-grounding.md",
+                "T0025 > Purpose",
+                citation,
+                snippet,
+                Map.of(
+                        "title", "recontext-context-grounding",
+                        "docType", "task",
+                        "frontmatterStatus", "active",
+                        "authority", "source-default",
+                        "updated", "2026-07-04T00:00:00Z",
+                        "supersededBy", List.of()
+                ),
+                Map.of("rerankScore", 1.0)
+        );
+    }
+
+    private static int countOccurrences(String text, String needle) {
+        int count = 0;
+        int fromIndex = 0;
+        while (true) {
+            int found = text.indexOf(needle, fromIndex);
+            if (found < 0) {
+                return count;
+            }
+            count++;
+            fromIndex = found + needle.length();
+        }
     }
 
     private static RetrievalSettings defaultSettings() {

@@ -14,7 +14,6 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 
 | ID | Title | Status | Parent / Reference Project | Related Design | Updated |
 | --- | --- | --- | --- | --- | --- |
-| T0025 | recontext-context-grounding | active | `P0001` | `local-rag-system-development-direction`, `retrieval-quality-improvement-design`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-07-04 |
 | T0024 | local-cross-encoder-sidecar-proof | active | `P0003` | `retrieval-quality-improvement-design` | 2026-06-16 |
 | T0010 | codex-rag-utilization-hardening | active | `P0001` | `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-29 |
 
@@ -38,6 +37,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | P0001 | local-rag-system | done | self | Functional baseline plus portable host-local/LAN Ollama endpoint failover | 2026-05-29 |
 | P0002 | retrieval-governance-hardening | done | `P0001` | Metadata-aware retrieval governance, source-priority answer context, staleness/citation evaluation, search audit observability, and local reranker deployment decision | 2026-05-31 |
 | P0003 | scoregate-adaptive-context-selection | done | `P0001` | ScoreGate selector and offline evaluator completed; runtime rollout closed as no-ship because no true local cross-encoder `r_i` source exists in the current profile | 2026-06-16 |
+| T0025 | recontext-context-grounding | done | `P0001` | ReContext-inspired prompt-only answer evidence replay, focused retrieval-service tests, validators, compose config, and diff check | 2026-07-04 |
 | T0001 | source-registry-project-ssot-registration | done | `P0001` | Registry validation and scope resolution smoke | 2026-05-24 |
 | T0002 | msa-runtime-baseline | done | `P0001` | Compose config, DDL smoke, service/storage contracts | 2026-05-24 |
 | T0003 | spring-boot-msa-skeleton | done | `P0001` | Maven tests, Compose build/up, gateway health | 2026-05-24 |
@@ -103,3 +103,4 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-06-16: `T0024` implementation substrate added optional reranker sidecar, retrieval-service ScoreGate debug/opt-in path, runtime probes, and snapshot collector while keeping default search behavior unchanged.
 - 2026-06-16: `T0024` sidecar proof smoke built the CPU reranker image and confirmed direct normalized `r_i` scoring; live `rag_search` runtime snapshots remain pending controlled restart/deploy.
 - 2026-07-04: `T0025` issued from clean main for ReContext-inspired answer evidence replay context packing under P0001.
+- 2026-07-04: `T0025` completed on feature branch with prompt-only `/api/answer` evidence replay, focused retrieval-service tests, and required validators.

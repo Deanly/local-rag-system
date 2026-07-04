@@ -5,7 +5,7 @@ status: current
 domain: retrieval-quality
 owner:
 created: 2026-05-25
-updated: 2026-06-16
+updated: 2026-07-04
 retrieval_class:
   - domain-current
 context:
@@ -27,7 +27,12 @@ referenced_by:
   - docs/tasks/T0022-scoregate-offline-evaluation-fixture.md
   - docs/tasks/T0023-local-cross-encoder-score-source.md
   - docs/tasks/T0024-local-cross-encoder-sidecar-proof.md
+  - docs/tasks/T0025-recontext-context-grounding.md
 source_refs:
+  - https://arxiv.org/abs/2607.02509
+  - "ai-paper-product-fit-research:sources/papers/2607.02509-recontext/fulltext.md"
+  - "ai-paper-product-fit-research:docs/research/papers/2607.02509-recontext/summary.md"
+  - "ai-paper-product-fit-research:docs/research/papers/2607.02509-recontext/eval-card.md"
   - https://arxiv.org/abs/2606.14269
   - ~/Workspace/personal-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md
   - docs/reports/2026-05-25-retrieval-quality-baseline.md
@@ -41,6 +46,7 @@ source_refs:
   - docs/reports/2026-06-16-scoregate-offline-snapshot-evaluation.md
   - docs/tasks/T0023-local-cross-encoder-score-source.md
   - docs/tasks/T0024-local-cross-encoder-sidecar-proof.md
+  - docs/tasks/T0025-recontext-context-grounding.md
   - docs/reports/2026-06-16-scoregate-runtime-no-ship-decision.md
   - docs/reports/2026-06-16-scoregate-before-after-comparison.md
   - docs/reports/2026-06-16-scoregate-sidecar-proof-smoke.md
@@ -56,6 +62,7 @@ source_refs:
   - services/reranker-sidecar/app/main.py
   - services/retrieval-service/src/test/java/com/localrag/retrieval/ScoreGateCandidateSelectorTests.java
   - services/retrieval-service/src/test/java/com/localrag/retrieval/ScoreGateOfflineEvaluationTests.java
+  - services/retrieval-service/src/test/java/com/localrag/retrieval/RetrievalServiceTests.java
   - services/indexer-service/src/main/java/com/localrag/indexer/MarkdownChunker.java
   - services/indexer-service/src/main/java/com/localrag/indexer/IndexerService.java
 tags:
@@ -64,6 +71,7 @@ tags:
   - retrieval-quality
   - rerank
   - evaluation
+  - recontext
 ---
 
 # retrieval-quality-improvement-design
@@ -72,7 +80,7 @@ tags:
 - Domain: retrieval-quality
 - Owner:
 - Created: 2026-05-25
-- Updated: 2026-06-16
+- Updated: 2026-07-04
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/projects/P0002-retrieval-governance-hardening.md`
@@ -87,6 +95,7 @@ tags:
   - `docs/tasks/T0022-scoregate-offline-evaluation-fixture.md`
   - `docs/tasks/T0023-local-cross-encoder-score-source.md`
   - `docs/tasks/T0024-local-cross-encoder-sidecar-proof.md`
+  - `docs/tasks/T0025-recontext-context-grounding.md`
 
 ## Context
 
@@ -102,7 +111,7 @@ Local RAG의 functional baseline은 완성되어 있다. 현재 시스템은 등
 - project-scoped search에서 default context가 primary project source보다 앞서는 경우가 있다.
 - reranker, source weighting, document-level diversity, 정식 evaluation harness가 없다.
 
-이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-31 기준 `P0002`의 `T0013`-`T0017`이 metadata-aware chunking, document authority metadata, metadata filters, stale-source demotion, answer source priority cues, staleness/citation evaluation checks, search audit observability, and local reranker deployment decision을 완료했다. 2026-06-16 기준 `P0003`는 ScoreGate를 final context selection 개선 후보로 검토했고 selector/evaluator artifact를 남겼지만, 현재 profile에 true local cross-encoder `r_i` score source가 없어 default runtime rollout은 no-ship으로 닫았다. 이후 `T0024`는 local reranker sidecar와 explicit debug/opt-in proof path를 추가했으며, default `rag_search` promotion은 real `r_i` snapshot calibration 전까지 보류한다.
+이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-31 기준 `P0002`의 `T0013`-`T0017`이 metadata-aware chunking, document authority metadata, metadata filters, stale-source demotion, answer source priority cues, staleness/citation evaluation checks, search audit observability, and local reranker deployment decision을 완료했다. 2026-06-16 기준 `P0003`는 ScoreGate를 final context selection 개선 후보로 검토했고 selector/evaluator artifact를 남겼지만, 현재 profile에 true local cross-encoder `r_i` score source가 없어 default runtime rollout은 no-ship으로 닫았다. 이후 `T0024`는 local reranker sidecar와 explicit debug/opt-in proof path를 추가했으며, default `rag_search` promotion은 real `r_i` snapshot calibration 전까지 보류한다. 2026-07-04 기준 `T0025`는 ReContext의 grounded evidence replay 개념을 full paper method가 아니라 prompt-only answer context packing으로 제한해 `/api/answer`에 적용했다.
 
 ## Whole-System Role
 
@@ -159,6 +168,7 @@ Local RAG의 functional baseline은 완성되어 있다. 현재 시스템은 등
 - `ScoreGateCandidate`: normalized bi-encoder similarity `s_i`, normalized local cross-encoder reranker score `r_i`, and metadata를 가진 adaptive selection candidate.
 - `ScoreGateDecision`: bucket, fusion score, retained flag, and decision reason을 가진 final context selection decision.
 - `FinalSearchResult`: diversity and duplicate suppression 후 API로 반환되는 result.
+- `AnswerEvidenceReplay`: `/api/answer` prompt에서 final search results의 citation-bearing snippets를 중복 제거해 질문 가까이에 재제시하는 grounded evidence block.
 - `SourceWeightPolicy`: primary source, default context, archive, compiled wiki의 rank weight.
 - `ChunkMetadata`: title, frontmatter status, heading hierarchy, document type, updated date.
 - `SearchPhaseTiming`: embedding, Weaviate, weighting, rerank, finalization latency breakdown.
@@ -183,6 +193,7 @@ query
   -> optional adaptive context selection
   -> duplicate and diversity control
   -> citation/snippet finalization
+  -> answer-only grounded evidence replay
   -> audit and evaluation metrics
 ```
 
@@ -195,6 +206,7 @@ query
 - `default_context` sources are recall support, not equal-rank project truth.
 - Reranker must be optional and fail closed to first-stage retrieval when unavailable.
 - Search API results must keep source metadata, citation, heading, snippet, and score information.
+- Answer evidence replay must use only retrieved citation-bearing snippets and must preserve the full retrieved context block for fallback and inspection.
 - Ranking changes must be measured against a versioned query set before being called an improvement.
 - Evaluation fixtures must not contain raw private source content beyond short query strings and expected paths.
 
@@ -310,6 +322,15 @@ Future optional fields may be added only if backward compatible:
   "candidateLimit": 30
 }
 ```
+
+### Answer API Context Packing
+
+`/api/answer` may transform final `SearchResultItem` rows into a prompt-only context packet, but it must not change the search response contract. As of `T0025`, answer generation receives two grounded context views:
+
+1. `Grounded evidence replay`: deduplicated citation-bearing snippets placed close to the question to emphasize likely supporting spans.
+2. `Retrieved context`: the full final result list with citation and source priority metadata preserved.
+
+This is a conservative ReContext-inspired adaptation. It does not implement model-internal attention readout, recursive token scoring, KV-cache replay, or official ReContext code. The official code URL in the paper was still HTTP 404 at `T0025` issue time, so local product evidence must come from Local RAG tests and future evaluation fixtures, not from paper benchmark transfer.
 
 ## Source Weighting Policy
 
@@ -601,6 +622,7 @@ Expected future artifacts:
 | Keep reranker local-only and optional. | Private source content must not leave local/network-local infrastructure. |
 | Do not ship a separate local model reranker in P0002. | T0017 evidence shows current default hybrid/vector quality is deployable, while model rerank would add memory/latency surface. |
 | Treat ScoreGate as offline-first context selection in P0003 and explicit proof-only in T0024. | It requires real normalized `s_i` and local cross-encoder `r_i`; current deterministic composite scores are not sufficient evidence for production behavior. |
+| Treat ReContext as prompt-only answer evidence replay until official code or a separate local reimplementation task exists. | T0025 can reuse grounded search snippets without changing retrieval contracts, while the full paper method requires model-internal attention access and unavailable official code. |
 | Improve chunking incrementally. | Reindexing all sources is acceptable, but chunk schema changes should be measurable and reversible. |
 | Defer PostgreSQL audit schema expansion after evaluation-output observability exists. | It avoids a migration before the exact phase timing fields are proven useful. |
 
@@ -617,6 +639,7 @@ Expected future artifacts:
 9. Done: Evaluate local reranker deployment decision after deterministic improvements plateau; do not add separate model reranker to P0002.
 10. Done: P0003 evaluated ScoreGate as offline-first adaptive context selection. T0021 implemented the pure selector, T0022 added the offline snapshot fixture/validator, and T0023 closed runtime rollout as no-ship for the current profile because no true local cross-encoder `r_i` source exists.
 11. In progress: T0024 adds the local reranker sidecar and explicit debug/opt-in proof path needed to collect real `r_i` snapshots without changing default `rag_search`.
+12. Done: T0025 adds prompt-only grounded evidence replay to `/api/answer` without changing `rag_search`, retrieval ranking, source registry, or indexing.
 
 ## Open Questions
 
@@ -639,3 +662,4 @@ Expected future artifacts:
 - 2026-05-31: `T0017` completed the local reranker deployment decision. P0002 ships deterministic governance ranking and defers separate local model reranker work until expanded default-mode regression evidence exists.
 - 2026-06-16: `P0003`, `T0021`, `T0022`, and `T0023` evaluated ScoreGate as an offline-first adaptive context selection path. `ScoreGateCandidateSelector` and the offline snapshot validator are implemented and tested; runtime ScoreGate is no-ship for the current profile because no true local cross-encoder `r_i` source exists.
 - 2026-06-16: `T0024` added the local cross-encoder sidecar proof substrate, retrieval-service reranker client with fallback, explicit ScoreGate debug/opt-in request mode, runtime probes, and snapshot collection script. Default runtime behavior remains unchanged pending real sidecar calibration evidence.
+- 2026-07-04: `T0025` added ReContext-inspired prompt-only grounded evidence replay for `/api/answer` context packing. This preserves search contracts and does not claim full ReContext attention-readout reproduction.

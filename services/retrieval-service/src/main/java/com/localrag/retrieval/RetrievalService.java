@@ -876,6 +876,21 @@ public class RetrievalService {
     }
 
     static String answerPrompt(String query, List<SearchResultItem> results) {
+        String replay = evidenceReplayBlock(results);
+        String context = retrievedContextBlock(results);
+        return """
+                Question:
+                %s
+
+                Grounded evidence replay:
+                %s
+
+                Retrieved context:
+                %s
+                """.formatted(query, replay, context);
+    }
+
+    private static String retrievedContextBlock(List<SearchResultItem> results) {
         String context = results.stream()
                 .map(result -> """
                         [%s]
@@ -886,13 +901,29 @@ public class RetrievalService {
         if (context.isBlank()) {
             context = "No retrieved context.";
         }
-        return """
-                Question:
-                %s
+        return context;
+    }
 
-                Retrieved context:
-                %s
-                """.formatted(query, context);
+    private static String evidenceReplayBlock(List<SearchResultItem> results) {
+        Set<String> seen = new LinkedHashSet<>();
+        String replay = results.stream()
+                .filter(result -> result.snippet() != null && !result.snippet().isBlank())
+                .filter(result -> seen.add(evidenceKey(result)))
+                .map(result -> """
+                        [%s]
+                        Source priority: %s
+                        Evidence: %s
+                        """.formatted(result.citation(), sourcePriorityLine(result), result.snippet().trim()).trim())
+                .collect(Collectors.joining("\n\n"));
+        if (replay.isBlank()) {
+            replay = "No replayable evidence.";
+        }
+        return replay;
+    }
+
+    private static String evidenceKey(SearchResultItem result) {
+        String snippet = result.snippet() == null ? "" : result.snippet().replaceAll("\\s+", " ").trim();
+        return result.citation() + "\n" + snippet;
     }
 
     private static String sourcePriorityLine(SearchResultItem result) {

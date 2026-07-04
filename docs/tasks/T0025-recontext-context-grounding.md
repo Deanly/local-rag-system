@@ -2,11 +2,11 @@
 type: task
 doc_id: T0025
 title: recontext-context-grounding
-status: active
+status: done
 owner:
 created: 2026-07-04
 updated: 2026-07-04
-current_focus: "ReContext-inspired answer evidence replay slice for retrieval-service"
+current_focus: "Done: ReContext-inspired answer evidence replay slice for retrieval-service"
 completion_mode: functional
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: docs/projects/P0001-local-rag-system.md
@@ -42,12 +42,12 @@ tags:
 
 - Type: task
 - Document ID: T0025
-- Status: active
+- Status: done
 - Completion Mode: functional
 - Owner:
 - Created: 2026-07-04
 - Updated: 2026-07-04
-- Current Focus: ReContext-inspired answer evidence replay slice for retrieval-service
+- Current Focus: Done: ReContext-inspired answer evidence replay slice for retrieval-service
 - Related Control Plane: docs/design/control-plane.md
 - Related Umbrella Project: docs/projects/P0001-local-rag-system.md
 - Related Project: docs/projects/P0001-local-rag-system.md
@@ -164,15 +164,15 @@ Test plan:
 
 | ID | Work Item | Status | Progress | Notes |
 | --- | --- | --- | --- | --- |
-| W1 | Issue and push clean-main task doc | In Progress | 50% | `new-doc.sh` issued this task from clean `origin/main`; main commit/push pending |
-| W2 | Review ReContext source and lock minimal product slice | In Progress | 70% | paper source and research summary reviewed; official code 404 verified |
-| W3 | Implement answer evidence replay helper and prompt integration | Todo | 0% | feature branch only |
-| W4 | Add focused retrieval-service tests | Todo | 0% | feature branch only |
-| W5 | Run required validators and closeout updates | Todo | 0% | feature branch only |
+| W1 | Issue and push clean-main task doc | Done | 100% | main commit `6e490ea` pushed before feature branch creation |
+| W2 | Review ReContext source and lock minimal product slice | Done | 100% | paper source and research summary reviewed; official code 404 verified |
+| W3 | Implement answer evidence replay helper and prompt integration | Done | 100% | `RetrievalService.answerPrompt` now emits grounded evidence replay plus full retrieved context |
+| W4 | Add focused retrieval-service tests | Done | 100% | prompt ordering, dedupe, citation/source priority, and fallback tests added |
+| W5 | Run required validators and closeout updates | Done | 100% | validators, compose config, focused Maven tests, and diff check passed |
 
 ## Overall Progress
 
-- 20%
+- 100%
 
 ## Completion Criteria
 
@@ -185,16 +185,16 @@ Test plan:
 
 ## Completion Evidence
 
-- Main doc issuance commit hash and pushed branch evidence.
-- Feature branch commit hash for implementation.
-- Focused test command output for touched service.
-- Validator outputs:
-  - `./docs/bin/validate-codex-readiness.sh`
-  - `./docs/bin/validate-harness-foundation.sh`
-  - `./docs/bin/validate-doc-retrieval.sh`
-  - `./docs/bin/validate-closeout.sh --all`
-  - `docker compose --env-file .env.example config`
-  - `git diff --check`
+- Main doc issuance: `6e490ea Issue ReContext context grounding task`, pushed to `origin/main`.
+- Feature branch: `feature/recontext-context-grounding`, created from `6e490ea`.
+- Focused Java tests: `mvn -pl services/retrieval-service -am test` passed; common tests 7/0 failures, retrieval-service tests 22/0 failures.
+- Validators:
+  - `./docs/bin/validate-codex-readiness.sh` passed.
+  - `./docs/bin/validate-harness-foundation.sh` passed.
+  - `./docs/bin/validate-doc-retrieval.sh` passed.
+  - `./docs/bin/validate-closeout.sh --all` passed.
+  - `docker compose --env-file .env.example config` passed.
+  - `git diff --check` passed.
 
 ## Outputs / Handoff
 
@@ -217,9 +217,9 @@ Test plan:
 
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| G1 | In Progress | ReContext source refs captured; official code 404 checked at issue time. | Full completion waits on implementation notes and final status. |
-| G2 | Pending | | |
-| G3 | Pending | | |
+| G1 | Done | ReContext source refs captured from `ai-paper-product-fit-research` current `main`; official code 404 checked through `gh api repos/Yanjun-Zhao/ReContext`. | Product slice excludes attention readout, training, and official code import. |
+| G2 | Done | `RetrievalService.answerPrompt` adds grounded evidence replay while preserving full retrieved context; focused tests cover prompt shape and dedupe. | Search/ranking/registry/indexing contracts unchanged. |
+| G3 | Done | Required validators, compose config, focused Java tests, and `git diff --check` passed. | No deployment or worknote release note performed. |
 
 ## Completion Guardrails
 
@@ -237,3 +237,5 @@ Test plan:
 
 - 2026-07-04: Issued from clean `origin/main` worktree with `./docs/bin/new-doc.sh task recontext-context-grounding`.
 - 2026-07-04: Reviewed ReContext source corpus from `ai-paper-product-fit-research` current `main`; official code URL returned HTTP 404 through `gh api repos/Yanjun-Zhao/ReContext`.
+- 2026-07-04: Implemented prompt-only grounded evidence replay in `retrieval-service`, preserving search results and source metadata. Focused Maven tests passed.
+- 2026-07-04: Required docs validators, `docker compose --env-file .env.example config`, and `git diff --check` passed. Task closed as done on feature branch; no deployment performed.
