@@ -876,7 +876,12 @@ public class RetrievalService {
     }
 
     static String answerPrompt(String query, List<SearchResultItem> results) {
-        String replay = evidenceReplayBlock(results);
+        return answerPrompt(query, results, AnswerEvidencePacker.Config.defaults());
+    }
+
+    static String answerPrompt(String query, List<SearchResultItem> results, AnswerEvidencePacker.Config config) {
+        AnswerEvidencePacker.Packed packed = AnswerEvidencePacker.pack(query, results, config);
+        String replay = evidenceReplayBlock(packed);
         String context = retrievedContextBlock(results);
         return """
                 Question:
@@ -904,26 +909,22 @@ public class RetrievalService {
         return context;
     }
 
-    private static String evidenceReplayBlock(List<SearchResultItem> results) {
-        Set<String> seen = new LinkedHashSet<>();
-        String replay = results.stream()
-                .filter(result -> result.snippet() != null && !result.snippet().isBlank())
-                .filter(result -> seen.add(evidenceKey(result)))
-                .map(result -> """
+    static String evidenceReplayBlock(AnswerEvidencePacker.Packed packed) {
+        String replay = packed.selected().stream()
+                .map(evidence -> """
                         [%s]
                         Source priority: %s
                         Evidence: %s
-                        """.formatted(result.citation(), sourcePriorityLine(result), result.snippet().trim()).trim())
+                        """.formatted(
+                        evidence.item().citation(),
+                        sourcePriorityLine(evidence.item()),
+                        evidence.item().snippet().trim()
+                ).trim())
                 .collect(Collectors.joining("\n\n"));
         if (replay.isBlank()) {
             replay = "No replayable evidence.";
         }
         return replay;
-    }
-
-    private static String evidenceKey(SearchResultItem result) {
-        String snippet = result.snippet() == null ? "" : result.snippet().replaceAll("\\s+", " ").trim();
-        return result.citation() + "\n" + snippet;
     }
 
     private static String sourcePriorityLine(SearchResultItem result) {

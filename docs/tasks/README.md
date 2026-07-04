@@ -26,6 +26,7 @@
 
 ## Done
 
+- [`T0026-recontext-grounding-benchmark.md`](T0026-recontext-grounding-benchmark.md): T0025 replay slice를 query-aware budget-bounded evidence packing으로 확장하고 baseline 대비 deterministic grounding benchmark를 추가함. Updated: 2026-07-04.
 - [`T0025-recontext-context-grounding.md`](T0025-recontext-context-grounding.md): ReContext의 grounded evidence replay 개념을 prompt-only `/api/answer` context packing으로 적용하고 focused retrieval-service tests와 validators를 통과함. Updated: 2026-07-04.
 - [`T0020-service-artifact-version-doc-drift.md`](T0020-service-artifact-version-doc-drift.md): `services/README.md` artifact convention과 `1.2.0` Maven/Docker artifact naming을 맞춤. Updated: 2026-06-16.
 - [`T0023-local-cross-encoder-score-source.md`](T0023-local-cross-encoder-score-source.md): 현재 프로파일에서 true local cross-encoder `r_i` source가 없어 P0003 runtime ScoreGate를 no-ship으로 결정. Updated: 2026-06-16.

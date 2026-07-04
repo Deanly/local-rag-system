@@ -27,3 +27,4 @@ This is a compact design selection map derived from `docs/design/README.md`.
 - 2026-06-16: Retrieval quality design updated for P0003 ScoreGate adaptive context selection, T0021 offline selector substrate, T0022 offline snapshot evaluator, and T0023 runtime no-ship decision.
 - 2026-06-16: Retrieval quality design updated for T0024 local cross-encoder sidecar proof and ScoreGate runtime snapshot path.
 - 2026-07-04: Retrieval quality design updated for T0025 ReContext-inspired answer evidence replay context packing.
+- 2026-07-04: Retrieval quality design updated for T0026 answer evidence packer selection and deterministic grounding benchmark.

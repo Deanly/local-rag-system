@@ -28,6 +28,7 @@ referenced_by:
   - docs/tasks/T0023-local-cross-encoder-score-source.md
   - docs/tasks/T0024-local-cross-encoder-sidecar-proof.md
   - docs/tasks/T0025-recontext-context-grounding.md
+  - docs/tasks/T0026-recontext-grounding-benchmark.md
 source_refs:
   - https://arxiv.org/abs/2607.02509
   - "ai-paper-product-fit-research:sources/papers/2607.02509-recontext/fulltext.md"
@@ -47,6 +48,10 @@ source_refs:
   - docs/tasks/T0023-local-cross-encoder-score-source.md
   - docs/tasks/T0024-local-cross-encoder-sidecar-proof.md
   - docs/tasks/T0025-recontext-context-grounding.md
+  - docs/tasks/T0026-recontext-grounding-benchmark.md
+  - docs/reports/2026-07-04-recontext-answer-grounding-benchmark.md
+  - services/retrieval-service/src/main/java/com/localrag/retrieval/AnswerEvidencePacker.java
+  - services/retrieval-service/src/test/java/com/localrag/retrieval/AnswerGroundingBenchmarkTests.java
   - docs/reports/2026-06-16-scoregate-runtime-no-ship-decision.md
   - docs/reports/2026-06-16-scoregate-before-after-comparison.md
   - docs/reports/2026-06-16-scoregate-sidecar-proof-smoke.md
@@ -96,6 +101,7 @@ tags:
   - `docs/tasks/T0023-local-cross-encoder-score-source.md`
   - `docs/tasks/T0024-local-cross-encoder-sidecar-proof.md`
   - `docs/tasks/T0025-recontext-context-grounding.md`
+  - `docs/tasks/T0026-recontext-grounding-benchmark.md`
 
 ## Context
 
@@ -111,7 +117,7 @@ Local RAG의 functional baseline은 완성되어 있다. 현재 시스템은 등
 - project-scoped search에서 default context가 primary project source보다 앞서는 경우가 있다.
 - reranker, source weighting, document-level diversity, 정식 evaluation harness가 없다.
 
-이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-31 기준 `P0002`의 `T0013`-`T0017`이 metadata-aware chunking, document authority metadata, metadata filters, stale-source demotion, answer source priority cues, staleness/citation evaluation checks, search audit observability, and local reranker deployment decision을 완료했다. 2026-06-16 기준 `P0003`는 ScoreGate를 final context selection 개선 후보로 검토했고 selector/evaluator artifact를 남겼지만, 현재 profile에 true local cross-encoder `r_i` score source가 없어 default runtime rollout은 no-ship으로 닫았다. 이후 `T0024`는 local reranker sidecar와 explicit debug/opt-in proof path를 추가했으며, default `rag_search` promotion은 real `r_i` snapshot calibration 전까지 보류한다. 2026-07-04 기준 `T0025`는 ReContext의 grounded evidence replay 개념을 full paper method가 아니라 prompt-only answer context packing으로 제한해 `/api/answer`에 적용했다.
+이 설계는 검색 품질 개선의 current truth를 고정한다. 2026-05-25 기준 `T0011-retrieval-quality-hardening`에서 evaluation harness, deterministic source weighting, metadata/path rerank, and document diversity control이 구현됐다. 2026-05-31 기준 `P0002`의 `T0013`-`T0017`이 metadata-aware chunking, document authority metadata, metadata filters, stale-source demotion, answer source priority cues, staleness/citation evaluation checks, search audit observability, and local reranker deployment decision을 완료했다. 2026-06-16 기준 `P0003`는 ScoreGate를 final context selection 개선 후보로 검토했고 selector/evaluator artifact를 남겼지만, 현재 profile에 true local cross-encoder `r_i` score source가 없어 default runtime rollout은 no-ship으로 닫았다. 이후 `T0024`는 local reranker sidecar와 explicit debug/opt-in proof path를 추가했으며, default `rag_search` promotion은 real `r_i` snapshot calibration 전까지 보류한다. 2026-07-04 기준 `T0025`는 ReContext의 grounded evidence replay 개념을 full paper method가 아니라 prompt-only answer context packing으로 제한해 `/api/answer`에 적용했다. 같은 날 `T0026`은 replay block을 query-aware, budget-bounded evidence selection(`AnswerEvidencePacker`)으로 확장하고 baseline 대비 deterministic grounding benchmark를 추가했다.
 
 ## Whole-System Role
 
@@ -169,6 +175,7 @@ Local RAG의 functional baseline은 완성되어 있다. 현재 시스템은 등
 - `ScoreGateDecision`: bucket, fusion score, retained flag, and decision reason을 가진 final context selection decision.
 - `FinalSearchResult`: diversity and duplicate suppression 후 API로 반환되는 result.
 - `AnswerEvidenceReplay`: `/api/answer` prompt에서 final search results의 citation-bearing snippets를 중복 제거해 질문 가까이에 재제시하는 grounded evidence block.
+- `AnswerEvidencePacker`: deterministic query-overlap 점수로 replay evidence를 선택·순서화하고 char/count budget을 지키는 answer-only packing 컴포넌트. lexical grounding이 없으면 dedupe된 retrieval order로 fail-open한다.
 - `SourceWeightPolicy`: primary source, default context, archive, compiled wiki의 rank weight.
 - `ChunkMetadata`: title, frontmatter status, heading hierarchy, document type, updated date.
 - `SearchPhaseTiming`: embedding, Weaviate, weighting, rerank, finalization latency breakdown.
@@ -327,8 +334,10 @@ Future optional fields may be added only if backward compatible:
 
 `/api/answer` may transform final `SearchResultItem` rows into a prompt-only context packet, but it must not change the search response contract. As of `T0025`, answer generation receives two grounded context views:
 
-1. `Grounded evidence replay`: deduplicated citation-bearing snippets placed close to the question to emphasize likely supporting spans.
+1. `Grounded evidence replay`: deduplicated citation-bearing snippets placed close to the question to emphasize likely supporting spans. As of `T0026`, `AnswerEvidencePacker` selects and orders this block by deterministic query-term overlap, drops zero-overlap candidates when any candidate is grounded, and enforces a replay char budget (1600) and evidence count budget (6). When no candidate overlaps the query, the block fails open to deduplicated retrieval order.
 2. `Retrieved context`: the full final result list with citation and source priority metadata preserved.
+
+Replay selection quality is benchmarked without an LLM by `AnswerGroundingBenchmarkTests` (baseline replay-everything arm vs packer arm) using rule-based proxy metrics: expected-evidence hit, distractor exclusion, first evidence position, and replay chars. Results are recorded in `docs/reports/2026-07-04-recontext-answer-grounding-benchmark.md`.
 
 This is a conservative ReContext-inspired adaptation. It does not implement model-internal attention readout, recursive token scoring, KV-cache replay, or official ReContext code. The official code URL in the paper was still HTTP 404 at `T0025` issue time, so local product evidence must come from Local RAG tests and future evaluation fixtures, not from paper benchmark transfer.
 
@@ -640,6 +649,7 @@ Expected future artifacts:
 10. Done: P0003 evaluated ScoreGate as offline-first adaptive context selection. T0021 implemented the pure selector, T0022 added the offline snapshot fixture/validator, and T0023 closed runtime rollout as no-ship for the current profile because no true local cross-encoder `r_i` source exists.
 11. In progress: T0024 adds the local reranker sidecar and explicit debug/opt-in proof path needed to collect real `r_i` snapshots without changing default `rag_search`.
 12. Done: T0025 adds prompt-only grounded evidence replay to `/api/answer` without changing `rag_search`, retrieval ranking, source registry, or indexing.
+13. Done: T0026 upgrades the replay block to query-aware budget-bounded selection with a deterministic baseline-vs-ReContext grounding benchmark; LLM answer-quality A/B remains future work.
 
 ## Open Questions
 
@@ -663,3 +673,4 @@ Expected future artifacts:
 - 2026-06-16: `P0003`, `T0021`, `T0022`, and `T0023` evaluated ScoreGate as an offline-first adaptive context selection path. `ScoreGateCandidateSelector` and the offline snapshot validator are implemented and tested; runtime ScoreGate is no-ship for the current profile because no true local cross-encoder `r_i` source exists.
 - 2026-06-16: `T0024` added the local cross-encoder sidecar proof substrate, retrieval-service reranker client with fallback, explicit ScoreGate debug/opt-in request mode, runtime probes, and snapshot collection script. Default runtime behavior remains unchanged pending real sidecar calibration evidence.
 - 2026-07-04: `T0025` added ReContext-inspired prompt-only grounded evidence replay for `/api/answer` context packing. This preserves search contracts and does not claim full ReContext attention-readout reproduction.
+- 2026-07-04: `T0026` added `AnswerEvidencePacker` query-aware budget-bounded replay selection and the deterministic answer grounding benchmark comparing baseline and ReContext packing arms.

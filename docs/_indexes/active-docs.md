@@ -38,6 +38,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | P0002 | retrieval-governance-hardening | done | `P0001` | Metadata-aware retrieval governance, source-priority answer context, staleness/citation evaluation, search audit observability, and local reranker deployment decision | 2026-05-31 |
 | P0003 | scoregate-adaptive-context-selection | done | `P0001` | ScoreGate selector and offline evaluator completed; runtime rollout closed as no-ship because no true local cross-encoder `r_i` source exists in the current profile | 2026-06-16 |
 | T0025 | recontext-context-grounding | done | `P0001` | ReContext-inspired prompt-only answer evidence replay, focused retrieval-service tests, validators, compose config, and diff check | 2026-07-04 |
+| T0026 | recontext-grounding-benchmark | done | `P0001` | Query-aware budget-bounded answer evidence packing plus deterministic baseline-vs-ReContext grounding benchmark and report | 2026-07-04 |
 | T0001 | source-registry-project-ssot-registration | done | `P0001` | Registry validation and scope resolution smoke | 2026-05-24 |
 | T0002 | msa-runtime-baseline | done | `P0001` | Compose config, DDL smoke, service/storage contracts | 2026-05-24 |
 | T0003 | spring-boot-msa-skeleton | done | `P0001` | Maven tests, Compose build/up, gateway health | 2026-05-24 |
@@ -104,3 +105,4 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-06-16: `T0024` sidecar proof smoke built the CPU reranker image and confirmed direct normalized `r_i` scoring; live `rag_search` runtime snapshots remain pending controlled restart/deploy.
 - 2026-07-04: `T0025` issued from clean main for ReContext-inspired answer evidence replay context packing under P0001.
 - 2026-07-04: `T0025` completed on feature branch with prompt-only `/api/answer` evidence replay, focused retrieval-service tests, and required validators.
+- 2026-07-04: `T0026` extended the replay slice with query-aware budget-bounded `AnswerEvidencePacker` and a deterministic baseline-vs-ReContext grounding benchmark; report recorded in `docs/reports/2026-07-04-recontext-answer-grounding-benchmark.md`.
