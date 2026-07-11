@@ -23,12 +23,6 @@ public class EmbeddingClient {
     private final String model;
     private final boolean fallbackEnabled;
 
-    public EmbeddingClient(String baseUrl, String model, boolean fallbackEnabled) {
-        this(OllamaEndpointConfig.parseBaseUrls(baseUrl), model, fallbackEnabled,
-                OllamaEndpointConfig.DEFAULT_CONNECT_TIMEOUT_MILLIS,
-                OllamaEndpointConfig.DEFAULT_READ_TIMEOUT_MILLIS);
-    }
-
     public EmbeddingClient(String baseUrls, String model, boolean fallbackEnabled, long connectTimeoutMillis, long readTimeoutMillis) {
         this(OllamaEndpointConfig.parseBaseUrls(baseUrls), model, fallbackEnabled, connectTimeoutMillis, readTimeoutMillis);
     }

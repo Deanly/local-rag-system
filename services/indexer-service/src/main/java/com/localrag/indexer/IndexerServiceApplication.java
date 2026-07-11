@@ -1,6 +1,9 @@
 package com.localrag.indexer;
 
 import com.localrag.common.embedding.EmbeddingClient;
+import com.localrag.common.config.OllamaProperties;
+import com.localrag.common.config.WeaviateProperties;
+import com.localrag.common.ollama.OllamaHealthClient;
 import com.localrag.common.registry.RegistrySynchronizer;
 import com.localrag.common.registry.SourceRegistryLoader;
 import com.localrag.common.registry.SourceRegistryValidator;
@@ -8,6 +11,7 @@ import com.localrag.common.weaviate.WeaviateClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -21,8 +25,8 @@ public class IndexerServiceApplication {
     }
 
     @Bean
-    SourceRegistryLoader sourceRegistryLoader() {
-        return new SourceRegistryLoader();
+    SourceRegistryLoader sourceRegistryLoader(Environment environment) {
+        return new SourceRegistryLoader(environment::getProperty);
     }
 
     @Bean
@@ -36,18 +40,29 @@ public class IndexerServiceApplication {
     }
 
     @Bean
-    EmbeddingClient embeddingClient(IndexerSettings settings) {
+    EmbeddingClient embeddingClient(IndexerSettings settings, OllamaProperties ollama) {
         return new EmbeddingClient(
-                settings.ollamaBaseUrls(),
-                settings.embeddingModel(),
+                ollama.baseUrls(),
+                ollama.embeddingModel(),
                 settings.embeddingFallbackEnabled(),
-                settings.ollamaConnectTimeoutMillis(),
-                settings.ollamaReadTimeoutMillis()
+                ollama.connectTimeoutMillis(),
+                ollama.readTimeoutMillis()
         );
     }
 
     @Bean
-    WeaviateClient weaviateClient(IndexerSettings settings) {
-        return new WeaviateClient(settings.weaviateUrl());
+    OllamaHealthClient ollamaHealthClient(OllamaProperties ollama) {
+        return new OllamaHealthClient(
+                ollama.baseUrls(),
+                ollama.embeddingModel(),
+                "",
+                ollama.connectTimeoutMillis(),
+                ollama.healthTimeoutMillis()
+        );
+    }
+
+    @Bean
+    WeaviateClient weaviateClient(WeaviateProperties weaviate) {
+        return new WeaviateClient(weaviate.url());
     }
 }

@@ -2,6 +2,7 @@ package com.localrag.indexer;
 
 import com.localrag.common.dto.DocumentFetchRequest;
 import com.localrag.common.dto.DocumentFetchResponse;
+import com.localrag.common.config.SourceRegistryProperties;
 import com.localrag.common.registry.SourceRegistry;
 import com.localrag.common.registry.SourceRegistryLoader;
 import com.localrag.common.registry.SourceRegistryValidator;
@@ -19,16 +20,16 @@ import java.util.List;
 
 @Service
 public class DocumentFetchService {
-    private final IndexerSettings settings;
+    private final SourceRegistryProperties registrySettings;
     private final SourceRegistryLoader loader;
     private final SourceRegistryValidator validator;
 
     public DocumentFetchService(
-            IndexerSettings settings,
+            SourceRegistryProperties registrySettings,
             SourceRegistryLoader loader,
             SourceRegistryValidator validator
     ) {
-        this.settings = settings;
+        this.registrySettings = registrySettings;
         this.loader = loader;
         this.validator = validator;
     }
@@ -41,8 +42,8 @@ public class DocumentFetchService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "relativePath is required");
         }
 
-        SourceRegistry registry = loader.load(Path.of(settings.registryPath()));
-        List<String> errors = validator.validate(registry, settings.registryRequirePaths());
+        SourceRegistry registry = loader.load(Path.of(registrySettings.path()));
+        List<String> errors = validator.validate(registry, registrySettings.requirePaths());
         if (!errors.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "source registry is invalid: " + String.join("; ", errors));
         }

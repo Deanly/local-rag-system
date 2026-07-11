@@ -4,7 +4,8 @@ Machine-local source registry service.
 
 Responsibilities:
 
-- Load `source-registry.yaml` from `LOCAL_RAG_SOURCE_REGISTRY`.
+- Load the registry selected by the Spring property `local-rag.registry.path`
+  (`LOCAL_RAG_REGISTRY_PATH` in the canonical environment contract).
 - Validate project ids, source ids, absolute paths, include/exclude rules, active flags, read/write policies, and SSOT roles.
 - Normalize registry entries into PostgreSQL tables.
 - Resolve search scopes from `projectId`, `includeSourceIds`, `excludeSourceIds`, and filters.

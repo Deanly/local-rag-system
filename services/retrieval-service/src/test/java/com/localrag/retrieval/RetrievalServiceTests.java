@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -317,25 +318,18 @@ class RetrievalServiceTests {
 
     private static RetrievalSettings defaultSettings() {
         return new RetrievalSettings(
-                null,
-                null,
-                null,
-                null,
-                null,
                 false,
-                0,
-                0,
                 false,
                 "",
-                0,
-                0,
+                Duration.ofMillis(500),
+                Duration.ofSeconds(5),
                 false,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
+                0.70,
+                0.08,
+                0.30,
+                0.255,
+                0.15,
+                10
         );
     }
 

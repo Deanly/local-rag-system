@@ -1,7 +1,10 @@
 package com.localrag.retrieval;
 
 import com.localrag.common.embedding.EmbeddingClient;
+import com.localrag.common.config.OllamaProperties;
+import com.localrag.common.config.WeaviateProperties;
 import com.localrag.common.ollama.OllamaChatClient;
+import com.localrag.common.ollama.OllamaHealthClient;
 import com.localrag.common.weaviate.WeaviateClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,29 +17,43 @@ public class RetrievalServiceApplication {
     }
 
     @Bean
-    EmbeddingClient embeddingClient(RetrievalSettings settings) {
+    EmbeddingClient embeddingClient(RetrievalSettings settings, OllamaProperties ollama) {
         return new EmbeddingClient(
-                settings.ollamaBaseUrls(),
-                settings.embeddingModel(),
+                ollama.baseUrls(),
+                ollama.embeddingModel(),
                 settings.embeddingFallbackEnabled(),
-                settings.ollamaConnectTimeoutMillis(),
-                settings.ollamaReadTimeoutMillis()
+                ollama.connectTimeoutMillis(),
+                ollama.readTimeoutMillis()
         );
     }
 
     @Bean
-    OllamaChatClient ollamaChatClient(RetrievalSettings settings) {
+    OllamaChatClient ollamaChatClient(OllamaProperties ollama) {
         return new OllamaChatClient(
-                settings.ollamaBaseUrls(),
-                settings.chatModel(),
-                settings.ollamaConnectTimeoutMillis(),
-                settings.ollamaReadTimeoutMillis()
+                ollama.baseUrls(),
+                ollama.chatModel(),
+                ollama.connectTimeoutMillis(),
+                ollama.readTimeoutMillis(),
+                ollama.chatMaxTokens(),
+                ollama.chatTemperature(),
+                ollama.chatThinkingEnabled()
         );
     }
 
     @Bean
-    WeaviateClient weaviateClient(RetrievalSettings settings) {
-        return new WeaviateClient(settings.weaviateUrl());
+    OllamaHealthClient ollamaHealthClient(OllamaProperties ollama) {
+        return new OllamaHealthClient(
+                ollama.baseUrls(),
+                ollama.embeddingModel(),
+                ollama.chatModel(),
+                ollama.connectTimeoutMillis(),
+                ollama.healthTimeoutMillis()
+        );
+    }
+
+    @Bean
+    WeaviateClient weaviateClient(WeaviateProperties weaviate) {
+        return new WeaviateClient(weaviate.url());
     }
 
     @Bean

@@ -31,7 +31,15 @@ class OllamaChatClientTests {
         server.createContext("/api/chat", this::handleChat);
         server.start();
 
-        OllamaChatClient client = new OllamaChatClient("http://127.0.0.1:" + server.getAddress().getPort(), "chat-model");
+        OllamaChatClient client = new OllamaChatClient(
+                "http://127.0.0.1:" + server.getAddress().getPort(),
+                "chat-model",
+                100,
+                1_000,
+                512,
+                0.1,
+                false
+        );
 
         String answer = client.chat("system", "user");
 
@@ -51,7 +59,10 @@ class OllamaChatClientTests {
                 String.join(",", List.of("http://127.0.0.1:" + closedLocalPort(), workingUrl)),
                 "chat-model",
                 100,
-                1_000
+                1_000,
+                512,
+                0.1,
+                false
         );
 
         assertEquals("answer", client.chat("system", "user"));

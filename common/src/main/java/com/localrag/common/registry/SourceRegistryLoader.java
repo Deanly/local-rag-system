@@ -11,9 +11,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.function.Function;
 
 public class SourceRegistryLoader {
     private static final Pattern ENV_PATTERN = Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}");
+    private final Function<String, String> propertyResolver;
+
+    public SourceRegistryLoader() {
+        this(key -> System.getProperty(key, ""));
+    }
+
+    public SourceRegistryLoader(Function<String, String> propertyResolver) {
+        this.propertyResolver = propertyResolver;
+    }
 
     public SourceRegistry load(Path path) {
         if (!Files.exists(path)) {
@@ -70,15 +80,13 @@ public class SourceRegistryLoader {
         return new SourceRegistry(version, deviceId, defaultProjectId, List.copyOf(projects), List.copyOf(sources));
     }
 
-    public static String resolveEnv(String value) {
+    public String resolveEnv(String value) {
         Matcher matcher = ENV_PATTERN.matcher(value);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
             String envName = matcher.group(1);
-            String envValue = System.getenv(envName);
-            if (envValue == null) {
-                envValue = System.getProperty(envName, "");
-            }
+            String envValue = propertyResolver.apply(envName);
+            envValue = envValue == null ? "" : envValue;
             matcher.appendReplacement(result, Matcher.quoteReplacement(envValue));
         }
         matcher.appendTail(result);

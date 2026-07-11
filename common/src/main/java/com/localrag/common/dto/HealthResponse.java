@@ -16,4 +16,8 @@ public record HealthResponse(
     public static HealthResponse up(String service, Map<String, Object> details) {
         return new HealthResponse(service, "UP", Instant.now(), details);
     }
+
+    public static HealthResponse down(String service, Map<String, Object> details) {
+        return new HealthResponse(service, "DOWN", Instant.now(), details);
+    }
 }

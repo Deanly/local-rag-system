@@ -16,7 +16,6 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | --- | --- | --- | --- | --- | --- |
 | T0025 | recontext-context-grounding | active | `P0001` | `local-rag-system-development-direction`, `retrieval-quality-improvement-design`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-07-04 |
 | T0024 | local-cross-encoder-sidecar-proof | active | `P0003` | `retrieval-quality-improvement-design` | 2026-06-16 |
-| T0010 | codex-rag-utilization-hardening | active | `P0001` | `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-29 |
 
 ## Draft Tasks
 
@@ -35,6 +34,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 
 | ID | Title | Status | Parent / Reference Project | Evidence | Updated |
 | --- | --- | --- | --- | --- | --- |
+| T0027 | configuration-contract-centralization | done | `P0001` | Typed Spring properties, canonical env and ISO durations, portable operator/LaunchAgent, live rebuild and smoke | 2026-07-11 |
 | P0001 | local-rag-system | done | self | Functional baseline plus portable host-local/LAN Ollama endpoint failover | 2026-05-29 |
 | P0002 | retrieval-governance-hardening | done | `P0001` | Metadata-aware retrieval governance, source-priority answer context, staleness/citation evaluation, search audit observability, and local reranker deployment decision | 2026-05-31 |
 | P0003 | scoregate-adaptive-context-selection | done | `P0001` | ScoreGate selector and offline evaluator completed; runtime rollout closed as no-ship because no true local cross-encoder `r_i` source exists in the current profile | 2026-06-16 |
@@ -58,6 +58,8 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 | T0021 | scoregate-offline-selector-experiment | done | `P0003` | Pure ScoreGate selector, B1-B4/fusion/MAX-K decision tests, and no default runtime behavior change | 2026-06-16 |
 | T0022 | scoregate-offline-evaluation-fixture | done | `P0003` | Offline ScoreGate snapshot fixture, selector-backed validator, and snapshot evaluation report | 2026-06-16 |
 | T0023 | local-cross-encoder-score-source | done | `P0003` | Local cross-encoder score-source decision; runtime ScoreGate no-ship for current profile | 2026-06-16 |
+| T0028 | ollama-dependency-health-and-launchagent-hardening | done | `P0001` | LaunchAgent, dependency-aware gateway health, Compose redeploy, self-index and search/answer smoke | 2026-07-10 |
+| T0010 | codex-rag-utilization-hardening | done | `P0001` | `~/Services` operator command, self-index registry, seven MCP tools, and full Codex smoke | 2026-07-10 |
 
 ## Active Reports
 
@@ -103,3 +105,6 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-06-16: `T0024` implementation substrate added optional reranker sidecar, retrieval-service ScoreGate debug/opt-in path, runtime probes, and snapshot collector while keeping default search behavior unchanged.
 - 2026-06-16: `T0024` sidecar proof smoke built the CPU reranker image and confirmed direct normalized `r_i` scoring; live `rag_search` runtime snapshots remain pending controlled restart/deploy.
 - 2026-07-04: `T0025` issued from clean main for ReContext-inspired answer evidence replay context packing under P0001.
+- 2026-07-10: `T0028` recovery completed with a running Ollama LaunchAgent, dependency-aware gateway health, Compose redeploy, and full runtime smoke. `T0010` also closed after restoring `local-rag-system.docs` and confirming all seven MCP tools in the current Codex session.
+- 2026-07-11: `T0027` issued to centralize Java, Compose, and operator configuration under one Spring `ConfigurationProperties` contract without machine-specific tracked values.
+- 2026-07-11: `T0027` closed after canonical ISO-duration migration, portable LaunchAgent rendering, full Compose rebuild, gateway health, self-index, Codex smoke, and hybrid answer verification.

@@ -1,5 +1,6 @@
 package com.localrag.indexer;
 
+import com.localrag.common.config.SourceRegistryProperties;
 import com.localrag.common.dto.DocumentFetchRequest;
 import com.localrag.common.dto.DocumentFetchResponse;
 import com.localrag.common.registry.SourceRegistryLoader;
@@ -83,19 +84,9 @@ class DocumentFetchServiceTests {
                     read_policy: registered-default
                     write_policy: repo-docs
                 """.formatted(source.toAbsolutePath()));
-        IndexerSettings settings = new IndexerSettings(
+        SourceRegistryProperties settings = new SourceRegistryProperties(
                 registry.toString(),
-                true,
-                "http://localhost:11434",
-                "http://localhost:11434",
-                "qwen3-embedding:4b",
-                "http://weaviate:8080",
-                false,
-                false,
-                300_000,
-                10_000,
-                1_500,
-                120_000
+                true
         );
         return new DocumentFetchService(settings, new SourceRegistryLoader(), new SourceRegistryValidator());
     }

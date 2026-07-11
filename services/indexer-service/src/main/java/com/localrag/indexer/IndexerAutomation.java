@@ -1,5 +1,6 @@
 package com.localrag.indexer;
 
+import com.localrag.common.config.SourceRegistryProperties;
 import com.localrag.common.registry.SourceRegistry;
 import com.localrag.common.registry.SourceRegistryLoader;
 import com.localrag.common.registry.SourceRegistryValidator;
@@ -26,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 public class IndexerAutomation {
     private final IndexerSettings settings;
+    private final SourceRegistryProperties registrySettings;
     private final SourceRegistryLoader loader;
     private final SourceRegistryValidator validator;
     private final IndexerService indexerService;
@@ -33,11 +35,13 @@ public class IndexerAutomation {
 
     public IndexerAutomation(
             IndexerSettings settings,
+            SourceRegistryProperties registrySettings,
             SourceRegistryLoader loader,
             SourceRegistryValidator validator,
             IndexerService indexerService
     ) {
         this.settings = settings;
+        this.registrySettings = registrySettings;
         this.loader = loader;
         this.validator = validator;
         this.indexerService = indexerService;
@@ -53,7 +57,7 @@ public class IndexerAutomation {
         watcher.start();
     }
 
-    @Scheduled(fixedDelayString = "${local-rag.indexer.scan-interval-millis:300000}", initialDelayString = "${local-rag.indexer.scan-interval-millis:300000}")
+    @Scheduled(fixedDelayString = "${local-rag.indexer.scan-interval}", initialDelayString = "${local-rag.indexer.scan-interval}")
     public void periodicScan() {
         indexerService.scan(null);
     }
@@ -98,8 +102,8 @@ public class IndexerAutomation {
     }
 
     private List<SourceRoot> activeSources() {
-        SourceRegistry registry = loader.load(Path.of(settings.registryPath()));
-        List<String> errors = validator.validate(registry, settings.registryRequirePaths());
+        SourceRegistry registry = loader.load(Path.of(registrySettings.path()));
+        List<String> errors = validator.validate(registry, registrySettings.requirePaths());
         if (!errors.isEmpty()) {
             return List.of();
         }

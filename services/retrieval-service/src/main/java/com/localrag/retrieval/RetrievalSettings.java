@@ -2,20 +2,15 @@ package com.localrag.retrieval;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 @ConfigurationProperties(prefix = "local-rag.retrieval")
 public record RetrievalSettings(
-        String ollamaBaseUrl,
-        String ollamaBaseUrls,
-        String embeddingModel,
-        String chatModel,
-        String weaviateUrl,
         boolean embeddingFallbackEnabled,
-        long ollamaConnectTimeoutMillis,
-        long ollamaReadTimeoutMillis,
         boolean rerankerEnabled,
         String rerankerBaseUrl,
-        long rerankerConnectTimeoutMillis,
-        long rerankerReadTimeoutMillis,
+        Duration rerankerConnectTimeout,
+        Duration rerankerReadTimeout,
         boolean scoreGateEnabled,
         double scoreGateSimilarityThreshold,
         double scoreGateRerankerThreshold,
@@ -25,72 +20,37 @@ public record RetrievalSettings(
         int scoreGateMaxK
 ) {
     public RetrievalSettings {
-        if (ollamaBaseUrl == null || ollamaBaseUrl.isBlank()) {
-            ollamaBaseUrl = System.getenv().getOrDefault("RAG_OLLAMA_BASE_URL", "http://localhost:11434");
-        }
-        if (ollamaBaseUrls == null || ollamaBaseUrls.isBlank()) {
-            ollamaBaseUrls = System.getenv().getOrDefault("RAG_OLLAMA_BASE_URLS", ollamaBaseUrl);
-            if (ollamaBaseUrls == null || ollamaBaseUrls.isBlank()) {
-                ollamaBaseUrls = ollamaBaseUrl;
-            }
-        }
-        if (embeddingModel == null || embeddingModel.isBlank()) {
-            embeddingModel = System.getenv().getOrDefault("RAG_EMBEDDING_MODEL", "qwen3-embedding:4b");
-        }
-        if (chatModel == null) {
-            chatModel = System.getenv().getOrDefault("RAG_CHAT_MODEL", "");
-        }
-        if (weaviateUrl == null || weaviateUrl.isBlank()) {
-            weaviateUrl = System.getenv().getOrDefault("RAG_WEAVIATE_URL", "http://weaviate:8080");
-        }
-        if (ollamaConnectTimeoutMillis <= 0) {
-            ollamaConnectTimeoutMillis = Long.parseLong(System.getenv().getOrDefault("RAG_OLLAMA_CONNECT_TIMEOUT_MILLIS", "1500"));
-        }
-        if (ollamaReadTimeoutMillis <= 0) {
-            ollamaReadTimeoutMillis = Long.parseLong(System.getenv().getOrDefault("RAG_OLLAMA_READ_TIMEOUT_MILLIS", "120000"));
-        }
-        if (!rerankerEnabled) {
-            rerankerEnabled = truthy(System.getenv().getOrDefault("RAG_RERANKER_ENABLED", "false"));
-        }
-        if (rerankerBaseUrl == null || rerankerBaseUrl.isBlank()) {
-            rerankerBaseUrl = System.getenv().getOrDefault("RAG_RERANKER_BASE_URL", "");
-        }
-        if (rerankerConnectTimeoutMillis <= 0) {
-            rerankerConnectTimeoutMillis = Long.parseLong(System.getenv().getOrDefault("RAG_RERANKER_CONNECT_TIMEOUT_MILLIS", "500"));
-        }
-        if (rerankerReadTimeoutMillis <= 0) {
-            rerankerReadTimeoutMillis = Long.parseLong(System.getenv().getOrDefault("RAG_RERANKER_READ_TIMEOUT_MILLIS", "5000"));
-        }
-        if (!scoreGateEnabled) {
-            scoreGateEnabled = truthy(System.getenv().getOrDefault("RAG_SCOREGATE_ENABLED", "false"));
-        }
-        if (scoreGateSimilarityThreshold <= 0.0) {
-            scoreGateSimilarityThreshold = Double.parseDouble(System.getenv().getOrDefault("RAG_SCOREGATE_SIMILARITY_THRESHOLD", "0.70"));
-        }
-        if (scoreGateRerankerThreshold <= 0.0) {
-            scoreGateRerankerThreshold = Double.parseDouble(System.getenv().getOrDefault("RAG_SCOREGATE_RERANKER_THRESHOLD", "0.08"));
-        }
-        if (scoreGateSimilarityWeight <= 0.0) {
-            scoreGateSimilarityWeight = Double.parseDouble(System.getenv().getOrDefault("RAG_SCOREGATE_SIMILARITY_WEIGHT", "0.30"));
-        }
-        if (scoreGateBucket2Threshold <= 0.0) {
-            scoreGateBucket2Threshold = Double.parseDouble(System.getenv().getOrDefault("RAG_SCOREGATE_BUCKET2_THRESHOLD", "0.255"));
-        }
-        if (scoreGateBucket3Threshold <= 0.0) {
-            scoreGateBucket3Threshold = Double.parseDouble(System.getenv().getOrDefault("RAG_SCOREGATE_BUCKET3_THRESHOLD", "0.15"));
-        }
+        rerankerBaseUrl = rerankerBaseUrl == null ? "" : rerankerBaseUrl.trim();
+        rerankerConnectTimeout = positive(rerankerConnectTimeout, "rerankerConnectTimeout");
+        rerankerReadTimeout = positive(rerankerReadTimeout, "rerankerReadTimeout");
+        positive(scoreGateSimilarityThreshold, "scoreGateSimilarityThreshold");
+        positive(scoreGateRerankerThreshold, "scoreGateRerankerThreshold");
+        positive(scoreGateSimilarityWeight, "scoreGateSimilarityWeight");
+        positive(scoreGateBucket2Threshold, "scoreGateBucket2Threshold");
+        positive(scoreGateBucket3Threshold, "scoreGateBucket3Threshold");
         if (scoreGateMaxK <= 0) {
-            scoreGateMaxK = Integer.parseInt(System.getenv().getOrDefault("RAG_SCOREGATE_MAX_K", "10"));
+            throw new IllegalArgumentException("scoreGateMaxK must be positive");
         }
     }
 
-    private static boolean truthy(String value) {
-        if (value == null) {
-            return false;
+    public long rerankerConnectTimeoutMillis() {
+        return rerankerConnectTimeout.toMillis();
+    }
+
+    public long rerankerReadTimeoutMillis() {
+        return rerankerReadTimeout.toMillis();
+    }
+
+    private static Duration positive(Duration value, String name) {
+        if (value == null || value.isZero() || value.isNegative()) {
+            throw new IllegalArgumentException(name + " must be positive");
         }
-        return switch (value.trim().toLowerCase()) {
-            case "true", "yes", "1", "on", "enabled" -> true;
-            default -> false;
-        };
+        return value;
+    }
+
+    private static void positive(double value, String name) {
+        if (value <= 0.0) {
+            throw new IllegalArgumentException(name + " must be positive");
+        }
     }
 }

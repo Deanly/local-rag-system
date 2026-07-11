@@ -1,5 +1,6 @@
 package com.localrag.registryservice;
 
+import com.localrag.common.config.SourceRegistryProperties;
 import com.localrag.common.registry.SourceRegistry;
 import com.localrag.common.registry.SourceRegistryLoader;
 import org.springframework.stereotype.Component;
@@ -9,11 +10,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Component
 public class RegistryRepository {
-    private final RegistryConfig config;
+    private final SourceRegistryProperties config;
     private final SourceRegistryLoader loader;
     private final AtomicReference<SourceRegistry> current = new AtomicReference<>();
 
-    public RegistryRepository(RegistryConfig config, SourceRegistryLoader loader) {
+    public RegistryRepository(SourceRegistryProperties config, SourceRegistryLoader loader) {
         this.config = config;
         this.loader = loader;
     }

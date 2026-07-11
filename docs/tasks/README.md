@@ -14,7 +14,6 @@
 
 - [`T0025-recontext-context-grounding.md`](T0025-recontext-context-grounding.md): P0001 후속으로 ReContext의 grounded evidence replay 개념을 `/api/answer` prompt context packing에 작게 적용. Updated: 2026-07-04.
 - [`T0024-local-cross-encoder-sidecar-proof.md`](T0024-local-cross-encoder-sidecar-proof.md): P0003 후속으로 local-only reranker sidecar, ScoreGate debug/opt-in path, runtime probe/snapshot proof를 개발 중. Updated: 2026-06-16.
-- [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): `~/Services` 운영존 generic user-managed source slots와 live smoke 완료; Codex Desktop 새 세션 MCP visibility 확인만 남음. Updated: 2026-05-29.
 
 ## Draft
 
@@ -27,6 +26,9 @@
 
 ## Done
 
+- [`T0027-configuration-contract-centralization.md`](T0027-configuration-contract-centralization.md): Spring typed properties, canonical `LOCAL_RAG_*`, ISO-8601 duration, portable operator/LaunchAgent 설정으로 통합하고 live runtime smoke 완료. Updated: 2026-07-11.
+- [`T0028-ollama-dependency-health-and-launchagent-hardening.md`](T0028-ollama-dependency-health-and-launchagent-hardening.md): Ollama LaunchAgent, dependency health 전파, runtime 재배포, self-index 복구 및 search/answer smoke 완료. Updated: 2026-07-10.
+- [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): `~/Services` 운영 명령, `local-rag-system.docs`, Codex MCP 7개 도구 visibility 및 전체 smoke를 확인하고 종료. Updated: 2026-07-10.
 - [`T0020-service-artifact-version-doc-drift.md`](T0020-service-artifact-version-doc-drift.md): `services/README.md` artifact convention과 `1.2.0` Maven/Docker artifact naming을 맞춤. Updated: 2026-06-16.
 - [`T0023-local-cross-encoder-score-source.md`](T0023-local-cross-encoder-score-source.md): 현재 프로파일에서 true local cross-encoder `r_i` source가 없어 P0003 runtime ScoreGate를 no-ship으로 결정. Updated: 2026-06-16.
 - [`T0022-scoregate-offline-evaluation-fixture.md`](T0022-scoregate-offline-evaluation-fixture.md): P0003 offline snapshot fixture, validator, and selector-level ScoreGate metric report를 추가함. Updated: 2026-06-16.

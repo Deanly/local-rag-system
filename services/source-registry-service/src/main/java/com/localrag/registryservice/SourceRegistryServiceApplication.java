@@ -6,6 +6,7 @@ import com.localrag.common.registry.SourceRegistryValidator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -17,8 +18,8 @@ public class SourceRegistryServiceApplication {
     }
 
     @Bean
-    SourceRegistryLoader sourceRegistryLoader() {
-        return new SourceRegistryLoader();
+    SourceRegistryLoader sourceRegistryLoader(Environment environment) {
+        return new SourceRegistryLoader(environment::getProperty);
     }
 
     @Bean

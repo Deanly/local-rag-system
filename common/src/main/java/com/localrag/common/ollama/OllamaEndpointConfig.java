@@ -8,15 +8,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 public final class OllamaEndpointConfig {
-    public static final long DEFAULT_CONNECT_TIMEOUT_MILLIS = 1_500L;
-    public static final long DEFAULT_READ_TIMEOUT_MILLIS = 120_000L;
-
     private OllamaEndpointConfig() {
     }
 
     public static List<String> parseBaseUrls(String baseUrls) {
         if (baseUrls == null || baseUrls.isBlank()) {
-            return List.of("http://localhost:11434");
+            throw new IllegalArgumentException("At least one Ollama base URL must be configured");
         }
         LinkedHashSet<String> normalized = new LinkedHashSet<>();
         for (String value : baseUrls.split(",")) {
@@ -26,40 +23,41 @@ public final class OllamaEndpointConfig {
             }
         }
         if (normalized.isEmpty()) {
-            return List.of("http://localhost:11434");
+            throw new IllegalArgumentException("At least one Ollama base URL must be configured");
         }
         return List.copyOf(normalized);
     }
 
     public static List<String> parseBaseUrls(List<String> baseUrls) {
         if (baseUrls == null || baseUrls.isEmpty()) {
-            return List.of("http://localhost:11434");
+            throw new IllegalArgumentException("At least one Ollama base URL must be configured");
         }
         List<String> expanded = new ArrayList<>();
         for (String baseUrl : baseUrls) {
             expanded.addAll(parseBaseUrls(baseUrl));
         }
         LinkedHashSet<String> normalized = new LinkedHashSet<>(expanded);
-        return normalized.isEmpty() ? List.of("http://localhost:11434") : List.copyOf(normalized);
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("At least one Ollama base URL must be configured");
+        }
+        return List.copyOf(normalized);
     }
 
     public static RestClient restClient(String baseUrl, long connectTimeoutMillis, long readTimeoutMillis) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(toTimeoutMillis(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS));
-        requestFactory.setReadTimeout(toTimeoutMillis(readTimeoutMillis, DEFAULT_READ_TIMEOUT_MILLIS));
+        requestFactory.setConnectTimeout(toTimeoutMillis(connectTimeoutMillis));
+        requestFactory.setReadTimeout(toTimeoutMillis(readTimeoutMillis));
         return RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
                 .build();
     }
 
-    public static long positiveOrDefault(long value, long defaultValue) {
-        return value > 0 ? value : defaultValue;
-    }
-
-    private static int toTimeoutMillis(long value, long defaultValue) {
-        long timeout = positiveOrDefault(value, defaultValue);
-        return timeout > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) timeout;
+    private static int toTimeoutMillis(long value) {
+        if (value <= 0) {
+            throw new IllegalArgumentException("Timeout must be positive");
+        }
+        return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) value;
     }
 
     private static String normalizeBaseUrl(String value) {

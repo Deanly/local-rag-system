@@ -1,5 +1,6 @@
 package com.localrag.registryservice;
 
+import com.localrag.common.config.SourceRegistryProperties;
 import com.localrag.common.registry.RegistrySynchronizer;
 import com.localrag.common.registry.SourceRegistry;
 import com.localrag.common.registry.SourceRegistryValidator;
@@ -13,13 +14,13 @@ import java.util.List;
 public class RegistryStartup {
     private final RegistryRepository repository;
     private final SourceRegistryValidator validator;
-    private final RegistryConfig config;
+    private final SourceRegistryProperties config;
     private final RegistrySynchronizer synchronizer;
 
     public RegistryStartup(
             RegistryRepository repository,
             SourceRegistryValidator validator,
-            RegistryConfig config,
+            SourceRegistryProperties config,
             RegistrySynchronizer synchronizer
     ) {
         this.repository = repository;

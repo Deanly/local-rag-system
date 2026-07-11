@@ -56,23 +56,23 @@ From any checkout:
 ollama pull qwen3-embedding:4b
 ollama pull qwen3.5:4b
 ops/service/local-rag install-command
-~/Services/bin/local-rag sync-local "$PWD"
-~/Services/bin/local-rag init-config
-~/Services/bin/local-rag doctor
+local-rag sync-local "$PWD"
+local-rag init-config
+local-rag doctor
 ```
 
 Edit:
 
-- `~/Services/local-rag-system/config/local.env`
-- `~/Services/local-rag-system/config/source-registry.local.yaml`
+- `${LOCAL_RAG_CONFIG_DIR}/local.env`
+- `${LOCAL_RAG_CONFIG_DIR}/source-registry.local.yaml`
 
 The generated env starts with notebook-local Ollama via `http://host.docker.internal:11434`. For a desk setup that prefers a Mac mini but still works when the notebook leaves the LAN, put the Mac mini URL first in `LOCAL_RAG_OLLAMA_BASE_URLS` and keep `http://host.docker.internal:11434` second.
 
 Then run:
 
 ```bash
-~/Services/bin/local-rag deploy
-~/Services/bin/local-rag status
+local-rag deploy
+local-rag status
 ```
 
 `local-rag deploy` syncs the configured local checkout or pulls the configured repo, starts Docker Compose with the local env file, and installs the Codex MCP/skill integration.
@@ -82,17 +82,17 @@ Then run:
 When a development-zone commit is ready but the running service should not be restarted yet, review the operation-zone impact with:
 
 ```bash
-~/Services/bin/local-rag config
-~/Services/bin/local-rag pull
-~/Services/bin/local-rag doctor
+local-rag config
+local-rag pull
+local-rag doctor
 ```
 
 For this task class, deployment requires a stack rebuild/recreate because Spring Boot services and the Codex adapter changed:
 
 ```bash
-~/Services/bin/local-rag update
-~/Services/bin/local-rag force-scan local-rag-system
-~/Services/bin/local-rag codex-smoke
+local-rag update
+local-rag force-scan local-rag-system
+local-rag codex-smoke
 ```
 
 Restart Codex after `install-codex` so the stdio MCP server and skill are reloaded. Use `local-rag codex-smoke --allow-empty-search` only before the first successful indexing run.
@@ -129,7 +129,7 @@ If real source folders are not under a common parent, create a local compose ove
 The operation command automatically reads this untracked override when it exists:
 
 ```text
-~/Services/local-rag-system/config/docker-compose.override.yaml
+${LOCAL_RAG_CONFIG_DIR}/docker-compose.override.yaml
 ```
 
 ## Codex Integration
@@ -143,7 +143,7 @@ Install manually:
 Or through the operation script:
 
 ```bash
-~/Services/bin/local-rag install-codex
+local-rag install-codex
 ```
 
 Restart Codex after installation. The installer writes:
@@ -154,7 +154,7 @@ Restart Codex after installation. The installer writes:
 For machine-specific project ids or source names, keep a local skill file outside the repository:
 
 ```text
-~/Services/local-rag-system/config/codex-skill.local.md
+${LOCAL_RAG_CONFIG_DIR}/codex-skill.local.md
 ```
 
 `local-rag deploy` and `local-rag install-codex` use that file when it exists. For manual installation, pass `LOCAL_RAG_SKILL_FILE=/path/to/SKILL.md`.
@@ -162,7 +162,7 @@ For machine-specific project ids or source names, keep a local skill file outsid
 Codex readiness is not proven by config installation alone. Run the project-owned smoke command to verify gateway health, index status, MCP adapter framing, representative `rag_search`, source-safe document fetch, and invalid-project behavior:
 
 ```bash
-~/Services/bin/local-rag codex-smoke --allow-empty-search
+local-rag codex-smoke --allow-empty-search
 ```
 
 Use `--allow-empty-search` before the first successful indexing run. Remove it after sources are indexed so the smoke fails when retrieval is not returning evidence.
@@ -174,11 +174,12 @@ Default:
 ```env
 LOCAL_RAG_OLLAMA_BASE_URL=http://host.docker.internal:11434
 LOCAL_RAG_OLLAMA_BASE_URLS=
-LOCAL_RAG_OLLAMA_CONNECT_TIMEOUT_MILLIS=1500
-LOCAL_RAG_OLLAMA_READ_TIMEOUT_MILLIS=120000
-LOCAL_RAG_EMBEDDING_MODEL=qwen3-embedding:4b
-LOCAL_RAG_EMBEDDING_FALLBACK_ENABLED=false
-LOCAL_RAG_WATCH_DEBOUNCE_SECONDS=10
+LOCAL_RAG_OLLAMA_CONNECT_TIMEOUT=PT1.5S
+LOCAL_RAG_OLLAMA_READ_TIMEOUT=PT2M
+LOCAL_RAG_OLLAMA_EMBEDDING_MODEL=qwen3-embedding:4b
+LOCAL_RAG_INDEXER_EMBEDDING_FALLBACK_ENABLED=false
+LOCAL_RAG_RETRIEVAL_EMBEDDING_FALLBACK_ENABLED=false
+LOCAL_RAG_INDEXER_WATCH_DEBOUNCE=PT10S
 ```
 
 For a notebook that sometimes leaves the local network, keep the host-local endpoint available as a fallback. To prefer the Mac mini when reachable, set the ordered list in the untracked env file:
@@ -193,7 +194,7 @@ To keep notebook-local Ollama primary and only use the Mac mini as a secondary e
 LOCAL_RAG_OLLAMA_BASE_URLS=http://host.docker.internal:11434,http://mac-mini-host.local:11434
 ```
 
-Install the same embedding model on every endpoint in the ordered list. If `LOCAL_RAG_EMBEDDING_MODEL` changes later, force a reindex before trusting vector results.
+Install the same embedding model on every endpoint in the ordered list. If `LOCAL_RAG_OLLAMA_EMBEDDING_MODEL` changes later, force a reindex before trusting vector results.
 
 Fallback embeddings are deterministic placeholders for development smoke only. Do not use them for real indexing.
 

@@ -1,5 +1,6 @@
 package com.localrag.registryservice;
 
+import com.localrag.common.config.SourceRegistryProperties;
 import com.localrag.common.dto.HealthResponse;
 import com.localrag.common.dto.RegistryDtos.ProjectDto;
 import com.localrag.common.dto.RegistryDtos.RegistryValidationResponse;
@@ -27,13 +28,13 @@ import java.util.Map;
 public class RegistryController {
     private final RegistryRepository repository;
     private final SourceRegistryValidator validator;
-    private final RegistryConfig config;
+    private final SourceRegistryProperties config;
     private final RegistrySynchronizer synchronizer;
 
     public RegistryController(
             RegistryRepository repository,
             SourceRegistryValidator validator,
-            RegistryConfig config,
+            SourceRegistryProperties config,
             RegistrySynchronizer synchronizer
     ) {
         this.repository = repository;

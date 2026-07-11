@@ -2,6 +2,7 @@ package com.localrag.indexer;
 
 import com.localrag.common.dto.IndexStatusResponse;
 import com.localrag.common.dto.ScanResponse;
+import com.localrag.common.config.SourceRegistryProperties;
 import com.localrag.common.embedding.EmbeddingClient;
 import com.localrag.common.registry.RegistrySynchronizer;
 import com.localrag.common.registry.SourceRegistry;
@@ -32,7 +33,7 @@ import java.util.UUID;
 
 @Service
 public class IndexerService {
-    private final IndexerSettings settings;
+    private final SourceRegistryProperties registrySettings;
     private final SourceRegistryLoader loader;
     private final SourceRegistryValidator validator;
     private final RegistrySynchronizer synchronizer;
@@ -42,7 +43,7 @@ public class IndexerService {
     private final MarkdownChunker chunker = new MarkdownChunker();
 
     public IndexerService(
-            IndexerSettings settings,
+            SourceRegistryProperties registrySettings,
             SourceRegistryLoader loader,
             SourceRegistryValidator validator,
             RegistrySynchronizer synchronizer,
@@ -50,7 +51,7 @@ public class IndexerService {
             EmbeddingClient embeddingClient,
             WeaviateClient weaviateClient
     ) {
-        this.settings = settings;
+        this.registrySettings = registrySettings;
         this.loader = loader;
         this.validator = validator;
         this.synchronizer = synchronizer;
@@ -60,8 +61,8 @@ public class IndexerService {
     }
 
     public synchronized ScanResponse scan(String projectId) {
-        SourceRegistry registry = loader.load(Path.of(settings.registryPath()));
-        List<String> errors = new ArrayList<>(validator.validate(registry, settings.registryRequirePaths()));
+        SourceRegistry registry = loader.load(Path.of(registrySettings.path()));
+        List<String> errors = new ArrayList<>(validator.validate(registry, registrySettings.requirePaths()));
         if (!errors.isEmpty()) {
             return new ScanResponse(Instant.now(), 0, 0, 0, 0, 0, errors);
         }

@@ -94,7 +94,7 @@ Local RAG는 장비별 source registry를 가진다.
 대체 경로:
 
 ```text
-LOCAL_RAG_SOURCE_REGISTRY=/absolute/path/to/source-registry.yaml
+LOCAL_RAG_REGISTRY_PATH=/absolute/path/to/source-registry.yaml
 ```
 
 Repo에는 실제 개인 경로가 들어간 active config를 커밋하지 않는다. 개발용 예시는 `docs/examples/` 또는 후속 task의 `config/source-registry.example.yaml`로 둔다.

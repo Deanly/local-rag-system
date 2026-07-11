@@ -1,5 +1,6 @@
 package com.localrag.mcp;
 
+import com.localrag.common.config.ServiceEndpointsProperties;
 import com.localrag.common.dto.DocumentFetchRequest;
 import com.localrag.common.dto.HealthResponse;
 import com.localrag.common.dto.SearchRequest;
@@ -19,10 +20,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 public class McpBridgeController {
-    private final McpSettings settings;
+    private final ServiceEndpointsProperties settings;
     private final RestClient.Builder restClientBuilder;
 
-    public McpBridgeController(McpSettings settings, RestClient.Builder restClientBuilder) {
+    public McpBridgeController(ServiceEndpointsProperties settings, RestClient.Builder restClientBuilder) {
         this.settings = settings;
         this.restClientBuilder = restClientBuilder;
     }

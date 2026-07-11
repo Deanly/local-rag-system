@@ -5,7 +5,7 @@ status: current
 domain: control-plane
 owner:
 created: 2026-05-24
-updated: 2026-06-16
+updated: 2026-07-10
 retrieval_class:
   - core-start
 context:
@@ -34,7 +34,7 @@ tags:
 - Domain: control-plane
 - Owner:
 - Created: 2026-05-24
-- Updated: 2026-06-16
+- Updated: 2026-07-10
 - Referenced By:
   - `docs/README.md`
   - `docs/projects/P0001-local-rag-system.md`
@@ -58,6 +58,7 @@ tags:
 - repo `docs/`는 해당 repo의 current truth로, 별도 등록된 compiled knowledge source는 cross-project reference로 구분한다.
 - 변경된 파일만 재인덱싱하고 삭제/이름 변경을 index에 반영한다.
 - local 또는 LAN-local Ollama embedding/chat만 사용한다.
+- Ollama 같은 hard dependency 장애는 gateway health에서 확인 가능해야 한다.
 - BM25/keyword와 vector를 결합한 hybrid retrieval을 기본 검색으로 제공한다.
 - Codex, CLI, future UI가 같은 API surface를 사용한다.
 - Docker Compose로 로컬에서 재현 가능하게 실행한다.
@@ -135,7 +136,7 @@ tags:
 | Surface | Purpose | Status | Notes |
 | --- | --- | --- | --- |
 | `docs/projects/README.md` | active project 입구 | Active | no active project; `P0001`, `P0002`, and `P0003` done |
-| `docs/tasks/README.md` | active task 입구 | Active | `T0024` ScoreGate sidecar proof and `T0010` operation-zone follow-up active |
+| `docs/tasks/README.md` | active task 입구 | Active | `T0025` ReContext grounding active; `T0027` configuration centralization, `T0028`, and `T0010` recovery work completed |
 | `docs/guide/sdlc-automation.md` | SDLC 자동화 목표, critical path, gate, verification ladder | Active | implementation session entry guide |
 | `docs/reports/README.md` | active report 입구 | Active | 현재 active report 없음 |
 | `docs/design/README.md` | design retrieval 입구 | Active | domain design 포함 |
@@ -204,3 +205,7 @@ tags:
 - 2026-05-31: `P0002`를 done으로 닫았다. Metadata-aware chunking, governance ranking, answer context, staleness/citation evaluation, search audit, and local reranker deployment decision이 완료됐다.
 - 2026-06-16: `P0003`를 ScoreGate adaptive context selection exception branch로 열고 닫았다. T0021/T0022는 selector와 offline snapshot evaluator를 완료했고, T0023은 current profile에 true local cross-encoder `r_i` source가 없어 runtime no-ship으로 결정했다.
 - 2026-06-16: `T0024`를 active execution surface로 추가했다. Local reranker sidecar proof, ScoreGate debug/opt-in path, runtime probes, and snapshot collection are tracked as a follow-up task while P0003 remains default runtime no-ship.
+- 2026-06-28: 이후 `T0028`로 재번호화된 Ollama dependency health remediation을 시작했다.
+- 2026-07-10: `T0028`과 `T0010`을 닫았다. Ollama LaunchAgent와 dependency-aware health를 실제 runtime에 배포했고, `local-rag-system.docs` self-index 및 Codex MCP visibility를 복구했다.
+- 2026-07-11: `T0027`을 발급해 Java `ConfigurationProperties`, Compose, operator/LaunchAgent 설정을 단일 계약으로 통합한다.
+- 2026-07-11: `T0027`을 닫았다. typed Spring properties, canonical env/ISO duration, portable operator/LaunchAgent를 배포하고 runtime smoke를 통과했다.

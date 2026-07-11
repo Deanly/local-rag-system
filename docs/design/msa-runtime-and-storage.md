@@ -5,7 +5,7 @@ status: current
 domain: runtime
 owner:
 created: 2026-05-24
-updated: 2026-05-31
+updated: 2026-07-10
 retrieval_class:
   - domain-current
 context:
@@ -31,7 +31,7 @@ tags:
 - Type: design
 - Domain: runtime
 - Created: 2026-05-24
-- Updated: 2026-05-31
+- Updated: 2026-07-10
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/tasks/T0002-msa-runtime-baseline.md`
@@ -112,6 +112,8 @@ Ollama is configured through `LOCAL_RAG_OLLAMA_BASE_URL` for backward compatibil
 
 When `LOCAL_RAG_OLLAMA_BASE_URLS` is set, indexer and retrieval services try the comma-separated endpoints in order for both embeddings and chat. This supports a Mac mini preferred profile with notebook-local fallback, or a notebook-local preferred profile with Mac mini fallback. Endpoint fallback is not a hosted-provider fallback and must remain within operator-owned local/LAN Ollama endpoints.
 
+Indexer and retrieval health include Ollama dependency readiness. A service reports `DOWN` when every configured Ollama endpoint is unreachable, the embedding model is absent, or the retrieval chat model is configured but absent. The gateway rolls that downstream `DOWN` status into `/api/health`, so a host Ollama outage is visible before `hybrid` search or `/api/answer` returns an execution error.
+
 ## Storage Contracts
 
 Authoritative storage files:
@@ -158,12 +160,14 @@ Minimum local startup flow after service implementation:
 ```bash
 cp .env.example .env
 # edit LOCAL_RAG_SOURCE_ROOT, LOCAL_RAG_HOST_SOURCE_*, and LOCAL_RAG_DATA_DIR
-# optionally tune LOCAL_RAG_WATCH_DEBOUNCE_SECONDS for editor autosave behavior
-# optionally set LOCAL_RAG_SOURCE_REGISTRY to /config/source-registry.yaml
+# optionally tune LOCAL_RAG_INDEXER_WATCH_DEBOUNCE for editor autosave behavior
+# optionally set LOCAL_RAG_REGISTRY_PATH to /config/source-registry.yaml
 docker compose --env-file .env up -d --build
 ```
 
-The single-user operation-zone command defaults to `~/Service`, with code in `~/Service/code/local-rag-system`, config in `~/Service/config/local-rag-system`, runtime data in `~/Service/runtime/local-rag-system`, logs in `~/Service/logs/local-rag-system`, and the operator command in `~/Service/bin/local-rag`. On Dean's Mac, Service-zone deployments are registered with `~/Service/deploy/bin/personal-deploy`; that authority calls `~/Service/update_local-rag-system.sh`, records release evidence, and passes `BRANCH` or `DEPLOY_VERSION` so the Local RAG operator command can reset the operational checkout to `origin/main` or a validated tag before rebuilding. Generated operation env defaults use the notebook-local Ollama endpoint `http://host.docker.internal:11434`; a Mac mini or other LAN-local Ollama endpoint can be placed first in `LOCAL_RAG_OLLAMA_BASE_URLS` without changing committed files.
+The single-user operation-zone command resolves paths from `LOCAL_RAG_BOOTSTRAP_ENV`, `LOCAL_RAG_SERVICE_ROOT`, `LOCAL_RAG_CODE_DIR`, `LOCAL_RAG_CONFIG_DIR`, `LOCAL_RAG_ENV_FILE`, and `LOCAL_RAG_BIN_DIR`. When no machine override exists it follows XDG data/config locations. The tracked operator and LaunchAgent template contain no user-home, package-manager, endpoint, log, or runtime path; those values are supplied only by ignored machine-local configuration.
+
+Java services consume a single Spring externalized-configuration contract. Shared defaults live in `common/src/main/resources/local-rag-defaults.properties`; shared typed groups are `local-rag.ollama`, `local-rag.weaviate`, `local-rag.registry`, and `local-rag.services`, while service behavior uses `local-rag.indexer` and `local-rag.retrieval`. Compose passes the same keys through the canonical `LOCAL_RAG_*` relaxed-binding namespace. Application code must not call `System.getenv` for runtime settings.
 
 The current Compose baseline keeps the legacy sample `/source` mount and also supports generic read-only slots under `/sources` for machine-local RAG corpora:
 
@@ -202,6 +206,7 @@ POST http://127.0.0.1:42120/api/search
 - PostgreSQL state is the operational truth for freshness, failures, and jobs.
 - Search results must include source metadata and citation data.
 - Deletion from source must delete stale retrieval chunks.
+- Gateway health must surface hard dependency degradation, including Ollama readiness from indexer and retrieval.
 
 ## Implementation Order
 
@@ -228,3 +233,6 @@ POST http://127.0.0.1:42120/api/search
 - 2026-05-29: Ollama configuration extended from a single base URL to an ordered local/LAN endpoint list with connection/read timeout controls.
 - 2026-05-30: Storage contract extended for T0013 metadata-aware chunking and document authority indexing. `document_state` and `chunk_state` now carry metadata migration fields, and `LocalRagChunk` carries document authority/freshness/supersession and heading context metadata.
 - 2026-05-31: P0002 closeout recorded that the release path uses deterministic governance ranking inside `retrieval-service`; a separate local model reranker remains future optional work only.
+- 2026-06-28: Indexer/retrieval health now checks configured Ollama endpoints and required models, and gateway health propagates downstream dependency `DOWN` status.
+- 2026-07-10: Dependency-aware health was deployed to the live Compose stack and the macOS Ollama LaunchAgent was loaded in the configured operation zone.
+- 2026-07-11: T0027 centralized runtime settings under typed Spring `ConfigurationProperties`, canonical `LOCAL_RAG_*` Compose variables, XDG/operator bootstrap variables, and a rendered LaunchAgent template.

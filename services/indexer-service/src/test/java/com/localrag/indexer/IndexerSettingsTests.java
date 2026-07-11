@@ -2,47 +2,33 @@ package com.localrag.indexer;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class IndexerSettingsTests {
     @Test
-    void defaultsWatchDebounceToTenSeconds() {
+    void exposesTypedDurationsAsMillisForRuntimeClients() {
         IndexerSettings settings = new IndexerSettings(
-                null,
-                false,
-                null,
-                null,
-                null,
-                null,
                 false,
                 true,
-                0,
-                0,
-                0,
-                0
+                Duration.ofMinutes(5),
+                Duration.ofSeconds(10)
         );
 
         assertThat(settings.watchDebounceMillis()).isEqualTo(10_000L);
+        assertThat(settings.scanInterval()).isEqualTo(Duration.ofMinutes(5));
     }
 
     @Test
-    void preservesExplicitWatchDebounceMillis() {
+    void preservesExplicitWatchDebounce() {
         IndexerSettings settings = new IndexerSettings(
-                "/config/source-registry.yaml",
-                true,
-                "http://ollama:11434",
-                "http://mac-mini.local:11434,http://ollama:11434",
-                "embedding-model",
-                "http://weaviate:8080",
                 false,
                 true,
-                300_000,
-                7_500,
-                250,
-                60_000
+                Duration.ofMinutes(5),
+                Duration.ofMillis(7_500)
         );
 
         assertThat(settings.watchDebounceMillis()).isEqualTo(7_500L);
-        assertThat(settings.ollamaBaseUrls()).isEqualTo("http://mac-mini.local:11434,http://ollama:11434");
     }
 }

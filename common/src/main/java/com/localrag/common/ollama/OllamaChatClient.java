@@ -12,18 +12,26 @@ import java.util.stream.Collectors;
 public class OllamaChatClient {
     private final List<Endpoint> endpoints;
     private final String model;
+    private final int maxTokens;
+    private final double temperature;
+    private final boolean thinkingEnabled;
 
-    public OllamaChatClient(String baseUrl, String model) {
-        this(baseUrl, model,
-                OllamaEndpointConfig.DEFAULT_CONNECT_TIMEOUT_MILLIS,
-                OllamaEndpointConfig.DEFAULT_READ_TIMEOUT_MILLIS);
-    }
-
-    public OllamaChatClient(String baseUrls, String model, long connectTimeoutMillis, long readTimeoutMillis) {
+    public OllamaChatClient(
+            String baseUrls,
+            String model,
+            long connectTimeoutMillis,
+            long readTimeoutMillis,
+            int maxTokens,
+            double temperature,
+            boolean thinkingEnabled
+    ) {
         this.endpoints = OllamaEndpointConfig.parseBaseUrls(baseUrls).stream()
                 .map(baseUrl -> new Endpoint(baseUrl, OllamaEndpointConfig.restClient(baseUrl, connectTimeoutMillis, readTimeoutMillis)))
                 .toList();
         this.model = model;
+        this.maxTokens = maxTokens;
+        this.temperature = temperature;
+        this.thinkingEnabled = thinkingEnabled;
     }
 
     public String model() {
@@ -32,7 +40,7 @@ public class OllamaChatClient {
 
     public String chat(String systemPrompt, String userPrompt) {
         if (model == null || model.isBlank()) {
-            throw new IllegalStateException("RAG_CHAT_MODEL must be configured to use local answer generation");
+            throw new IllegalStateException("local-rag.ollama.chat-model must be configured to use local answer generation");
         }
         List<RuntimeException> failures = new ArrayList<>();
         for (Endpoint endpoint : endpoints) {
@@ -43,10 +51,10 @@ public class OllamaChatClient {
                         .body(Map.of(
                                 "model", model,
                                 "stream", false,
-                                "think", false,
+                                "think", thinkingEnabled,
                                 "options", Map.of(
-                                        "num_predict", 512,
-                                        "temperature", 0.1
+                                        "num_predict", maxTokens,
+                                        "temperature", temperature
                                 ),
                                 "messages", List.of(
                                         Map.of("role", "system", "content", systemPrompt),

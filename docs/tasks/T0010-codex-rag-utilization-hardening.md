@@ -2,11 +2,11 @@
 type: task
 doc_id: T0010
 title: codex-rag-utilization-hardening
-status: active
+status: done
 owner:
 created: 2026-05-25
-updated: 2026-05-29
-current_focus: "Support initial user-managed source slots in the ~/Services operation registry"
+updated: 2026-07-10
+current_focus: "Completed"
 completion_mode: remediation
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: P0001-local-rag-system
@@ -37,12 +37,12 @@ tags:
 
 - Type: task
 - Document ID: T0010
-- Status: active
+- Status: done
 - Completion Mode: remediation
 - Owner:
 - Created: 2026-05-25
-- Updated: 2026-05-29
-- Current Focus: Support initial user-managed source slots in the ~/Services operation registry
+- Updated: 2026-07-10
+- Current Focus: Completed
 - Related Control Plane: docs/design/control-plane.md
 - Related Umbrella Project: P0001-local-rag-system
 - Related Project: docs/projects/P0001-local-rag-system.md
@@ -161,7 +161,7 @@ Completion mode는 `remediation`이다. 이미 설치된 Codex integration의 �
 
 ## Overall Progress
 
-- 98%
+- 100%
 
 ## Completion Criteria
 
@@ -212,7 +212,7 @@ Evidence that is not sufficient alone:
 
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| G1 | In Progress | `local-rag codex-smoke` passed adapter framing with 7 advertised tools after operation install | Active Codex Desktop session/new-session tool visibility still requires app restart verification; REST and adapter fallback are documented |
+| G1 | Done | current Codex session exposes all seven `mcp__local_rag__...` tools; `~/Services/bin/local-rag codex-smoke` passed adapter framing and runtime checks | live tool visibility and fallback behavior verified |
 | G2 | Done | `SearchRequestTests`, adapter `tools/list`, and docs align on `hybrid`, `vector`, `keyword`; legacy `bm25` normalizes to `keyword` | Runtime mode smoke waits for operation deploy |
 | G3 | Done | `DocumentFetchServiceTests` passed; `rag_get_document` is exposed by MCP adapter, mcp-bridge, gateway, and indexer with source-root checks | Source-safe implementation chosen instead of removal |
 | G4 | Done | `RetrievalServiceTests` passed for unknown project 400 and unsupported mode 400 before search execution | Runtime unknown-project smoke is included in `smoke-local-rag.mjs` |
@@ -243,3 +243,4 @@ Evidence that is not sufficient alone:
 - 2026-05-29: operation deployment completed under `~/Services/local-rag-system`. Installed `~/Services/bin/local-rag`, synced this checkout to the operation code directory, initialized local config, started Docker, enabled host Ollama with `brew services start ollama`, pulled `qwen3-embedding:4b`, configured `qwen3.5:4b` for chat, recreated the Compose stack, installed Codex MCP/skill integration, force-scanned `local-rag-system`, and passed `local-rag codex-smoke`. Active Codex Desktop MCP visibility still requires an application restart/new-session check.
 - 2026-05-29: user-managed source slots were added through generic Compose mounts and untracked local registry/config guidance, without committing machine-local host paths or private project names.
 - 2026-05-29: initial user-managed sources were verified in the operation registry through live search smoke and `local-rag codex-smoke`; committed docs now keep the source identities generic for portability across machines.
+- 2026-07-10: Recovery reinstalled the `~/Services` operator command, restored `local-rag-system.docs`, reindexed 69 documents into 1,144 chunks, verified project-scoped search/answer citations, and confirmed all seven Local RAG MCP tools are visible in the current Codex session. Task closed.

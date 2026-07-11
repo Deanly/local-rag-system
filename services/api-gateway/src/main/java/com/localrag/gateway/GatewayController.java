@@ -1,5 +1,6 @@
 package com.localrag.gateway;
 
+import com.localrag.common.config.ServiceEndpointsProperties;
 import com.localrag.common.dto.HealthResponse;
 import com.localrag.common.dto.DocumentFetchRequest;
 import com.localrag.common.dto.SearchRequest;
@@ -21,10 +22,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 public class GatewayController {
-    private final GatewaySettings settings;
+    private final ServiceEndpointsProperties settings;
     private final RestClient.Builder restClientBuilder;
 
-    public GatewayController(GatewaySettings settings, RestClient.Builder restClientBuilder) {
+    public GatewayController(ServiceEndpointsProperties settings, RestClient.Builder restClientBuilder) {
         this.settings = settings;
         this.restClientBuilder = restClientBuilder;
     }
@@ -36,7 +37,9 @@ public class GatewayController {
         details.put("indexer", serviceHealth(settings.indexerUrl()));
         details.put("retrieval", serviceHealth(settings.retrievalUrl()));
         details.put("mcpBridge", serviceHealth(settings.mcpBridgeUrl()));
-        return HealthResponse.up("api-gateway", details);
+        return allServicesUp(details)
+                ? HealthResponse.up("api-gateway", details)
+                : HealthResponse.down("api-gateway", details);
     }
 
     @GetMapping("/registry/projects")
@@ -145,6 +148,21 @@ public class GatewayController {
         } catch (RuntimeException exception) {
             return Map.of("status", "DOWN", "error", exception.getMessage());
         }
+    }
+
+    static boolean allServicesUp(Map<String, Object> details) {
+        return details.values().stream().allMatch(GatewayController::serviceUp);
+    }
+
+    private static boolean serviceUp(Object serviceHealth) {
+        if (serviceHealth instanceof HealthResponse response) {
+            return "UP".equals(response.status());
+        }
+        if (serviceHealth instanceof Map<?, ?> map) {
+            Object status = map.get("status");
+            return "UP".equals(status);
+        }
+        return false;
     }
 
     private Object get(String baseUrl, String path) {
