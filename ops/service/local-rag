@@ -148,6 +148,10 @@ sync_code_from_checkout() {
 
 install_command() {
   init_dirs
+  if [[ -e "${BIN_DIR}/local-rag" && "$0" -ef "${BIN_DIR}/local-rag" ]]; then
+    echo "Command already installed: ${BIN_DIR}/local-rag"
+    return
+  fi
   install -m 0755 "$0" "${BIN_DIR}/local-rag"
   echo "Installed command: ${BIN_DIR}/local-rag"
 }
