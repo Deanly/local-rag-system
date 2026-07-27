@@ -12,6 +12,9 @@ const smokeDocumentSourceId = process.env.LOCAL_RAG_SMOKE_DOC_SOURCE_ID || "";
 const smokeDocumentRelativePath = process.env.LOCAL_RAG_SMOKE_DOC_RELATIVE_PATH || "";
 const allowEmptySearch = args.has("--allow-empty-search") || process.env.LOCAL_RAG_SMOKE_ALLOW_EMPTY_SEARCH === "true";
 const forceScan = args.has("--force-scan") || process.env.LOCAL_RAG_SMOKE_FORCE_SCAN === "true";
+const answerSmoke = args.has("--answer") || process.env.LOCAL_RAG_SMOKE_ANSWER === "true";
+const allowAnswerUnavailable = args.has("--allow-answer-unavailable")
+  || process.env.LOCAL_RAG_SMOKE_ALLOW_ANSWER_UNAVAILABLE === "true";
 
 const adapterPath = join(dirname(fileURLToPath(import.meta.url)), "local-rag-mcp-server.mjs");
 const requiredTools = [
@@ -102,6 +105,24 @@ async function restSmoke() {
     assert(search.results.length > 0, "rag_search returned no results");
   }
   console.log(`[ok] rag_search returned ${search.results.length} results`);
+
+  if (answerSmoke) {
+    try {
+      const answer = await fetchJson("POST", "/api/mcp/rag_answer", {
+        projectId: projectId || undefined,
+        query,
+        limit: 3,
+        mode: "hybrid"
+      });
+      assert(typeof answer.answer === "string" && answer.answer.length > 0, "rag_answer returned empty answer");
+      console.log(`[ok] rag_answer returned answer from ${answer.citations?.length || 0} citations`);
+    } catch (error) {
+      if (!allowAnswerUnavailable || !String(error.message).includes("503")) {
+        throw error;
+      }
+      console.log("[skip] rag_answer synthesis is unavailable in this local profile");
+    }
+  }
 
   const documentRequest = documentRequestFromSearch(search);
   if (documentRequest) {

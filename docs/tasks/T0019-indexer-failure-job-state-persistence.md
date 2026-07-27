@@ -5,7 +5,7 @@ title: indexer-failure-job-state-persistence
 status: draft
 owner:
 created: 2026-06-16
-updated: 2026-06-16
+updated: 2026-07-27
 current_focus: "Persist scan/index/delete failures and job lifecycle evidence"
 completion_mode: remediation
 related_control_plane: docs/design/control-plane.md
@@ -41,7 +41,7 @@ tags:
 - Completion Mode: remediation
 - Owner:
 - Created: 2026-06-16
-- Updated: 2026-06-16
+- Updated: 2026-07-27
 - Current Focus: Persist scan/index/delete failures and job lifecycle evidence
 - Related Control Plane: docs/design/control-plane.md
 - Related Umbrella Project: P0001-local-rag-system
@@ -129,15 +129,15 @@ Completion mode는 `remediation`이다. 이미 존재하는 DDL/API 계약과 �
 
 | ID | Work Item | Status | Progress | Notes |
 | --- | --- | --- | --- | --- |
-| W1 | Define minimal job/failure lifecycle mapping | Todo | 0% | Keep it narrow enough for current synchronous scanner. |
-| W2 | Persist jobs and failures in `IndexerService` | Todo | 0% | Include source walk, index file, embedding, upsert, delete cleanup paths. |
-| W3 | Expose operator-visible status | Todo | 0% | Extend status only if current grouped counts are not enough. |
-| W4 | Add focused failure tests | Todo | 0% | Simulate failures without requiring real Ollama/Weaviate where possible. |
-| W5 | Run verification and update docs if contract changes | Todo | 0% | Maven tests, compose config, docs validators. |
+| W1 | Define minimal job/failure lifecycle mapping | In Progress | 50% | Added narrow file-level failure phase/code mapping for the current synchronous scanner. Full job lifecycle mapping remains open. |
+| W2 | Persist jobs and failures in `IndexerService` | In Progress | 35% | Nonfatal file indexing failures now write failed `document_state` and `failure_record` evidence. Source walk, delete cleanup, and job records remain open. |
+| W3 | Expose operator-visible status | Todo | 0% | Existing grouped document status can now surface `failed`; explicit failure/job summaries remain open. |
+| W4 | Add focused failure tests | In Progress | 40% | Added unit coverage for invalid frontmatter tolerance and nonfatal file index failure persistence. |
+| W5 | Run verification and update docs if contract changes | In Progress | 75% | Module tests, compose config, smoke script syntax, and document validators pass for this partial remediation. |
 
 ## Overall Progress
 
-- 0%
+- 35%
 
 ## Completion Criteria
 
@@ -180,10 +180,10 @@ Insufficient evidence:
 
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| G1 | Pending | | |
-| G2 | Pending | | |
+| G1 | Pending | | Full `index_job` lifecycle persistence remains open. |
+| G2 | In Progress | `IndexerServiceTests.recordsNonFatalFileIndexFailuresAndContinuesScan` | Covers nonfatal file indexing failure persistence without raw source content. |
 | G3 | Pending | | |
-| G4 | Pending | | |
+| G4 | In Progress | Existing document status grouping plus failed document state | Explicit status contract extension remains open. |
 
 ## Completion Guardrails
 
@@ -199,4 +199,7 @@ Insufficient evidence:
 
 ## Status
 
+- 2026-07-27: Incident-driven partial remediation implemented. Missing local chat model during `rag_answer` now returns a structured 503 instead of an unhandled 500. Invalid markdown frontmatter is marked `status=invalid` and the body remains indexable. Nonfatal per-file indexing failures continue the source scan and write failed `document_state` plus `failure_record` evidence without storing raw source content. Smoke can now opt into `rag_answer` and optionally tolerate local profiles where answer generation is intentionally unavailable.
+- 2026-07-27: Verification passed for partial remediation: `mvn -q -pl services/indexer-service,services/retrieval-service -am test`, `node --check integrations/codex/smoke-local-rag.mjs`, `docker compose --env-file .env.example config`, `git diff --check`, and document harness/closeout validators.
+- 2026-07-27: Device application completed. Docker build context now excludes local env and local registry files. The local stack was rebuilt/recreated, the device-local chat model env was applied outside tracked files, a registered project force scan completed with no errors, and Codex smoke passed with `rag_answer`.
 - 2026-06-16: task 문서 생성. Review finding captured from mismatch between DDL/status design and current `IndexerService` failure handling.

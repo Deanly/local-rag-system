@@ -80,6 +80,32 @@ class MarkdownChunkerTests {
     }
 
     @Test
+    void indexesBodyWithInvalidStatusWhenFrontmatterYamlIsInvalid() {
+        MarkdownChunker chunker = new MarkdownChunker();
+
+        var document = chunker.chunkDocument("""
+                ---
+                title: Broken Task
+                current_focus: Check: queue short demo fixtures
+                ---
+                # Broken Task
+
+                Body text should still be searchable.
+                """, 1000, new MarkdownChunker.DocumentDefaults(
+                "tasks/broken-task.md",
+                Instant.parse("2026-05-30T01:02:03Z"),
+                "project-docs",
+                "project-current-truth"
+        ));
+
+        assertThat(document.metadata().title()).isEqualTo("Broken Task");
+        assertThat(document.metadata().frontmatterStatus()).isEqualTo("invalid");
+        assertThat(document.metadata().authority()).isEqualTo("source-default");
+        assertThat(document.chunks()).hasSize(1);
+        assertThat(document.chunks().get(0).content()).contains("status=invalid", "Body text should still be searchable.");
+    }
+
+    @Test
     void preservesDeprecatedAndSupersededMetadataForLaterGovernance() {
         MarkdownChunker chunker = new MarkdownChunker();
 

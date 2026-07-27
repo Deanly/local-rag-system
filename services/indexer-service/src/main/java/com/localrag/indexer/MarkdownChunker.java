@@ -2,6 +2,7 @@ package com.localrag.indexer;
 
 import com.localrag.common.embedding.EmbeddingClient;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import java.text.Normalizer;
 import java.time.Instant;
@@ -129,7 +130,15 @@ public class MarkdownChunker {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> parseFrontmatter(String frontmatter) {
-        Object raw = new Yaml().load(frontmatter);
+        Object raw;
+        try {
+            raw = new Yaml().load(frontmatter);
+        } catch (YAMLException exception) {
+            return Map.of(
+                    "status", "invalid",
+                    "authority", "source-default"
+            );
+        }
         if (!(raw instanceof Map<?, ?> map)) {
             return Map.of();
         }

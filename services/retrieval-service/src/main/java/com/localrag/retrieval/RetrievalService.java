@@ -139,7 +139,12 @@ public class RetrievalService {
 
     public AnswerResponse answer(SearchRequest request) {
         SearchResponse search = search(request);
-        String answer = ollamaChatClient.chat(systemPrompt(), answerPrompt(request.query(), search.results()));
+        String answer;
+        try {
+            answer = ollamaChatClient.chat(systemPrompt(), answerPrompt(request.query(), search.results()));
+        } catch (IllegalStateException exception) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, answerUnavailableMessage(exception), exception);
+        }
         return new AnswerResponse(
                 search.projectId(),
                 search.query(),
@@ -150,6 +155,14 @@ public class RetrievalService {
                 search.results().stream().map(SearchResultItem::citation).distinct().toList(),
                 search.results()
         );
+    }
+
+    static String answerUnavailableMessage(IllegalStateException exception) {
+        String message = exception.getMessage() == null ? "" : exception.getMessage().toLowerCase(Locale.ROOT);
+        if (message.contains("rag_chat_model")) {
+            return "local answer generation is unavailable: RAG_CHAT_MODEL is not configured";
+        }
+        return "local answer generation is unavailable: check the configured local chat model and Ollama endpoints";
     }
 
     private ScoreGateSelection applyScoreGate(

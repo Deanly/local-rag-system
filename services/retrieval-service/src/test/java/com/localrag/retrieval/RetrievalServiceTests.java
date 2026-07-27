@@ -287,6 +287,33 @@ class RetrievalServiceTests {
     }
 
     @Test
+    void answerReturnsServiceUnavailableWhenLocalChatModelIsNotConfigured() throws Exception {
+        when(jdbcTemplate.query(
+                startsWith("SELECT source_id FROM source_root WHERE active ORDER BY priority DESC"),
+                any(RowMapper.class)
+        )).thenReturn(List.of());
+        when(weaviateClient.graphQl(anyString())).thenReturn(OBJECT_MAPPER.readTree("""
+                {"data":{"Get":{"LocalRagChunk":[]}}}
+                """));
+        when(ollamaChatClient.chat(anyString(), anyString()))
+                .thenThrow(new IllegalStateException("RAG_CHAT_MODEL must be configured to use local answer generation"));
+
+        assertThatThrownBy(() -> retrievalService.answer(new SearchRequest(
+                null,
+                "What does Local RAG know?",
+                3,
+                "keyword",
+                null,
+                null,
+                null
+        )))
+                .isInstanceOfSatisfying(ResponseStatusException.class, exception -> {
+                    assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                    assertThat(exception.getReason()).contains("RAG_CHAT_MODEL is not configured");
+                });
+    }
+
+    @Test
     void sourceDistributionCountsFinalResultsBySourceId() {
         List<SearchResultItem> results = List.of(
                 resultFrom("local-rag-system.docs", "tasks/T0016-retrieval-audit-observability-expansion.md"),

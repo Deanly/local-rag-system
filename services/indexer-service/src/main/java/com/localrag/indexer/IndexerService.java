@@ -9,6 +9,7 @@ import com.localrag.common.registry.SourceRegistryLoader;
 import com.localrag.common.registry.SourceRegistryValidator;
 import com.localrag.common.registry.SourceRoot;
 import com.localrag.common.weaviate.WeaviateClient;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Service;
@@ -85,6 +86,7 @@ public class IndexerService {
                 indexed += counters.indexed();
                 deleted += counters.deleted();
                 chunks += counters.chunks();
+                errors.addAll(counters.errors());
             } catch (RuntimeException exception) {
                 errors.add(source.sourceId() + ": " + exception.getMessage());
             }
@@ -134,15 +136,24 @@ public class IndexerService {
 
         int indexed = 0;
         int chunks = 0;
+        List<String> errors = new ArrayList<>();
         for (Map.Entry<String, Path> entry : seen.entrySet()) {
-            IndexFileResult result = indexFile(source, entry.getKey(), entry.getValue());
-            if (result.indexed()) {
-                indexed++;
+            try {
+                IndexFileResult result = indexFile(source, entry.getKey(), entry.getValue());
+                if (result.indexed()) {
+                    indexed++;
+                }
+                chunks += result.chunks();
+            } catch (RuntimeException exception) {
+                if (isFatalIndexFailure(exception)) {
+                    throw exception;
+                }
+                recordFileFailure(source, entry.getKey(), entry.getValue(), exception);
+                errors.add(fileError(source, entry.getKey(), exception));
             }
-            chunks += result.chunks();
         }
         int deleted = removeStale(source, seen.keySet().stream().toList());
-        return new ScanCounters(seen.size(), indexed, deleted, chunks);
+        return new ScanCounters(seen.size(), indexed, deleted, chunks, errors);
     }
 
     private IndexFileResult indexFile(SourceRoot source, String relativePath, Path path) {
@@ -197,8 +208,145 @@ public class IndexerService {
             jdbcTemplate.update("UPDATE document_state SET status = 'indexed', last_indexed_at = now(), updated_at = now() WHERE document_id = ?", documentId);
             return new IndexFileResult(true, candidates.size());
         } catch (IOException exception) {
-            throw new IllegalArgumentException("failed to index file " + path, exception);
+            throw new IllegalArgumentException("failed to read or inspect file", exception);
         }
+    }
+
+    private void recordFileFailure(SourceRoot source, String relativePath, Path path, RuntimeException exception) {
+        String phase = failurePhase(exception);
+        String code = failureCode(exception);
+        String message = failureMessage(code);
+        try {
+            upsertFailedDocument(source, relativePath, path, message);
+            jdbcTemplate.update("""
+                            INSERT INTO failure_record(source_id, document_id, relative_path, phase, error_code, error_message, retryable)
+                            VALUES (
+                                ?,
+                                (SELECT document_id FROM document_state WHERE source_id = ? AND relative_path = ?),
+                                ?,
+                                ?,
+                                ?,
+                                ?,
+                                ?
+                            )
+                            """,
+                    source.sourceId(),
+                    source.sourceId(),
+                    relativePath,
+                    relativePath,
+                    phase,
+                    code,
+                    message,
+                    isRetryableFailure(code));
+        } catch (RuntimeException ignored) {
+            // The scan response still exposes the failed relative path when persistence is unavailable.
+        }
+    }
+
+    private void upsertFailedDocument(SourceRoot source, String relativePath, Path path, String message) {
+        BasicFileAttributes attrs = readAttributesOrNull(path);
+        long fileSize = attrs == null ? 0L : attrs.size();
+        long mtimeNs = attrs == null ? 0L : fileMtimeNs(attrs);
+        jdbcTemplate.update("""
+                        INSERT INTO document_state(
+                            source_id,
+                            relative_path,
+                            absolute_path_hash,
+                            file_name,
+                            extension,
+                            file_size,
+                            mtime_ns,
+                            sha256,
+                            status,
+                            title,
+                            doc_type,
+                            frontmatter_status,
+                            authority,
+                            document_updated,
+                            metadata_version,
+                            last_error
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'failed', ?, 'document', 'unknown', 'source-default', '1970-01-01T00:00:00Z', 0, ?)
+                        ON CONFLICT (source_id, relative_path) DO UPDATE
+                        SET absolute_path_hash = EXCLUDED.absolute_path_hash,
+                            file_name = EXCLUDED.file_name,
+                            extension = EXCLUDED.extension,
+                            file_size = EXCLUDED.file_size,
+                            mtime_ns = EXCLUDED.mtime_ns,
+                            status = 'failed',
+                            last_error = EXCLUDED.last_error,
+                            last_detected_at = now(),
+                            updated_at = now()
+                        """,
+                source.sourceId(),
+                relativePath,
+                EmbeddingClient.sha256Hex(path.toAbsolutePath().toString()),
+                fileName(path, relativePath),
+                extension(path),
+                fileSize,
+                mtimeNs,
+                fileName(path, relativePath),
+                message);
+    }
+
+    private static BasicFileAttributes readAttributesOrNull(Path path) {
+        try {
+            return Files.readAttributes(path, BasicFileAttributes.class);
+        } catch (IOException ignored) {
+            return null;
+        }
+    }
+
+    private static String fileName(Path path, String relativePath) {
+        Path fileName = path.getFileName();
+        if (fileName != null) {
+            return fileName.toString();
+        }
+        int slash = relativePath.lastIndexOf('/');
+        return slash >= 0 ? relativePath.substring(slash + 1) : relativePath;
+    }
+
+    private static boolean isFatalIndexFailure(RuntimeException exception) {
+        return exception instanceof DataAccessException;
+    }
+
+    private static String fileError(SourceRoot source, String relativePath, RuntimeException exception) {
+        return source.sourceId() + ":" + relativePath + " failed during " + failurePhase(exception) + " (" + failureCode(exception) + ")";
+    }
+
+    private static String failurePhase(RuntimeException exception) {
+        Throwable cause = rootCause(exception);
+        if (cause instanceof IOException) {
+            return "file-read";
+        }
+        return "index-file";
+    }
+
+    private static String failureCode(RuntimeException exception) {
+        Throwable cause = rootCause(exception);
+        if (cause instanceof IOException) {
+            return "file_read_failed";
+        }
+        return "index_file_failed";
+    }
+
+    private static String failureMessage(String code) {
+        return switch (code) {
+            case "file_read_failed" -> "Failed to read or inspect the source file";
+            default -> "Failed to index the source file";
+        };
+    }
+
+    private static boolean isRetryableFailure(String code) {
+        return !"frontmatter_parse_failed".equals(code);
+    }
+
+    private static Throwable rootCause(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current;
     }
 
     private UUID upsertDocument(
@@ -440,7 +588,7 @@ public class IndexerService {
         }
     }
 
-    private record ScanCounters(int detected, int indexed, int deleted, int chunks) {
+    private record ScanCounters(int detected, int indexed, int deleted, int chunks, List<String> errors) {
     }
 
     private record IndexFileResult(boolean indexed, int chunks) {

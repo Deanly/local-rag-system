@@ -1,6 +1,12 @@
 .git
+.env
+.env.*
+!.env.example
 .runtime
 .rag_index
+config/source-registry.local.yaml
+config/*.local.yaml
+!config/*.local.example.yaml
 **/target
 **/.gradle
 **/build
