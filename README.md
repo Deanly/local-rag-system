@@ -14,11 +14,12 @@ The earlier Python BM25 scaffold has been removed from the active runtime surfac
 
 ## Current Status
 
-The functional baseline is implemented and smoke-tested. The current formal release is `1.2.0` for the P0003 ScoreGate adaptive context selection evaluation work:
+The functional baseline is implemented and smoke-tested. The current formal release is `1.2.1`, which keeps the P0003 retrieval baseline and updates local answer generation to native Ollama `qwen3.8:latest`:
 
 - official baseline version `1.0.0`
 - official P0002 release version `1.1.0`
 - official P0003 release version `1.2.0`
+- official Ollama qwen3.8 chat baseline version `1.2.1`
 - source registry validation and project-scoped source resolution
 - file watcher plus periodic scan fallback
 - Markdown/plain text chunk indexing
@@ -203,7 +204,7 @@ Install the service command:
 
 ```bash
 ollama pull qwen3-embedding:4b
-ollama pull qwen3.5:4b
+ollama pull qwen3.8:latest
 ops/service/local-rag install-command
 ~/Services/bin/local-rag sync-local "$PWD"
 ~/Services/bin/local-rag init-config

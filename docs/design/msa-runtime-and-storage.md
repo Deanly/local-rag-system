@@ -5,7 +5,7 @@ status: current
 domain: runtime
 owner:
 created: 2026-05-24
-updated: 2026-05-31
+updated: 2026-08-29
 retrieval_class:
   - domain-current
 context:
@@ -16,6 +16,7 @@ context:
 referenced_by:
   - docs/projects/P0001-local-rag-system.md
   - docs/tasks/T0002-msa-runtime-baseline.md
+  - docs/tasks/T0025-ollama-qwen38-chat-cutover.md
 source_refs:
   - docs/design/local-rag-system-development-direction.md
   - docs/design/source-registry-and-project-ssot.md
@@ -31,10 +32,11 @@ tags:
 - Type: design
 - Domain: runtime
 - Created: 2026-05-24
-- Updated: 2026-05-31
+- Updated: 2026-08-29
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/tasks/T0002-msa-runtime-baseline.md`
+  - `docs/tasks/T0025-ollama-qwen38-chat-cutover.md`
 
 ## Purpose
 
@@ -110,7 +112,7 @@ services/<service>/target/<service>-1.2.0.jar
 
 Ollama is configured through `LOCAL_RAG_OLLAMA_BASE_URL` for backward compatibility and `LOCAL_RAG_OLLAMA_BASE_URLS` for ordered multi-endpoint operation. The Compose default is `http://host.docker.internal:11434` because application services run inside containers. Device-specific direct-network endpoints, such as a Mac mini Ollama host on the local network, belong only in an untracked local env file.
 
-When `LOCAL_RAG_OLLAMA_BASE_URLS` is set, indexer and retrieval services try the comma-separated endpoints in order for both embeddings and chat. This supports a Mac mini preferred profile with notebook-local fallback, or a notebook-local preferred profile with Mac mini fallback. Endpoint fallback is not a hosted-provider fallback and must remain within operator-owned local/LAN Ollama endpoints.
+When `LOCAL_RAG_OLLAMA_BASE_URLS` is set, indexer and retrieval services try the comma-separated endpoints in order for both embeddings and chat. This supports a Mac mini preferred profile with notebook-local fallback, or a notebook-local preferred profile with Mac mini fallback. Endpoint fallback is not a hosted-provider fallback and must remain within operator-owned local/LAN Ollama endpoints. The tracked and generated answer-generation default is native Ollama `qwen3.8:latest`; `LOCAL_RAG_CHAT_MODEL` remains the explicit machine-local override.
 
 ## Storage Contracts
 
@@ -226,5 +228,6 @@ POST http://127.0.0.1:42120/api/search
 - 2026-05-24: MSA runtime, Docker Compose, PostgreSQL DDL, Weaviate schema, and service boundaries added as current runtime design.
 - 2026-05-25: Compose source mounts generalized to portable `/sources/source-*` slots so real source names and host paths remain machine-local.
 - 2026-05-29: Ollama configuration extended from a single base URL to an ordered local/LAN endpoint list with connection/read timeout controls.
+- 2026-08-29: tracked/generated chat default and the current Service baseline moved to native Ollama `qwen3.8:latest`; embedding remains `qwen3-embedding:4b` and oMLX compatibility env remains empty.
 - 2026-05-30: Storage contract extended for T0013 metadata-aware chunking and document authority indexing. `document_state` and `chunk_state` now carry metadata migration fields, and `LocalRagChunk` carries document authority/freshness/supersession and heading context metadata.
 - 2026-05-31: P0002 closeout recorded that the release path uses deterministic governance ranking inside `retrieval-service`; a separate local model reranker remains future optional work only.

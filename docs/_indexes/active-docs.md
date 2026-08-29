@@ -14,6 +14,7 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 
 | ID | Title | Status | Parent / Reference Project | Related Design | Updated |
 | --- | --- | --- | --- | --- | --- |
+| T0025 | ollama-qwen38-chat-cutover | active | `P0001` | `local-rag-system-development-direction`, `msa-runtime-and-storage` | 2026-08-29 |
 | T0024 | local-cross-encoder-sidecar-proof | active | `P0003` | `retrieval-quality-improvement-design` | 2026-06-16 |
 | T0010 | codex-rag-utilization-hardening | active | `P0001` | `local-rag-system-development-direction`, `source-registry-and-project-ssot`, `msa-runtime-and-storage` | 2026-05-29 |
 
@@ -101,3 +102,4 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 - 2026-06-16: `T0024` issued as the P0003 follow-up proof task for a local-only cross-encoder score source and ScoreGate opt-in path.
 - 2026-06-16: `T0024` implementation substrate added optional reranker sidecar, retrieval-service ScoreGate debug/opt-in path, runtime probes, and snapshot collector while keeping default search behavior unchanged.
 - 2026-06-16: `T0024` sidecar proof smoke built the CPU reranker image and confirmed direct normalized `r_i` scoring; live `rag_search` runtime snapshots remain pending controlled restart/deploy.
+- 2026-08-29: `T0025` issued to align tracked/generated/current Service answer generation with native Ollama `qwen3.8:latest` and close it through a tagged deployment.

@@ -12,6 +12,7 @@
 
 ## Active
 
+- [`T0025-ollama-qwen38-chat-cutover.md`](T0025-ollama-qwen38-chat-cutover.md): Local RAG active/generated answer model을 native Ollama `qwen3.8:latest`로 전환하고 tagged deployment로 검증 중. Updated: 2026-08-29.
 - [`T0024-local-cross-encoder-sidecar-proof.md`](T0024-local-cross-encoder-sidecar-proof.md): P0003 후속으로 local-only reranker sidecar, ScoreGate debug/opt-in path, runtime probe/snapshot proof를 개발 중. Updated: 2026-06-16.
 - [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): `~/Services` 운영존 generic user-managed source slots와 live smoke 완료; Codex Desktop 새 세션 MCP visibility 확인만 남음. Updated: 2026-05-29.
 

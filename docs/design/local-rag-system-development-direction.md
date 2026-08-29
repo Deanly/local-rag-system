@@ -5,7 +5,7 @@ status: current
 domain: local-rag-system
 owner:
 created: 2026-05-24
-updated: 2026-05-29
+updated: 2026-08-29
 retrieval_class:
   - domain-current
 context:
@@ -18,6 +18,7 @@ referenced_by:
   - docs/tasks/T0001-source-registry-project-ssot-registration.md
   - docs/tasks/T0002-msa-runtime-baseline.md
   - docs/tasks/T0010-codex-rag-utilization-hardening.md
+  - docs/tasks/T0025-ollama-qwen38-chat-cutover.md
 source_refs:
   - source:planning/local-rag-system-project-note
   - source:planning/local-rag-system-design-note
@@ -33,11 +34,12 @@ tags:
 - Domain: local-rag-system
 - Owner:
 - Created: 2026-05-24
-- Updated: 2026-05-29
+- Updated: 2026-08-29
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/tasks/T0001-source-registry-project-ssot-registration.md`
   - `docs/tasks/T0010-codex-rag-utilization-hardening.md`
+  - `docs/tasks/T0025-ollama-qwen38-chat-cutover.md`
 
 ## Context
 
@@ -162,6 +164,7 @@ queued/indexing -> failed -> queued
 - 삭제 파일은 검색 결과에서 사라져야 한다.
 - embedding/chat 호출은 local 또는 LAN-local Ollama endpoint로만 나가야 한다.
 - 여러 Ollama endpoint를 설정해도 fallback은 operator가 명시한 local/LAN endpoint 목록 안에서만 일어나야 한다.
+- tracked/generated answer-generation default는 native Ollama `qwen3.8:latest`이며 machine-local override는 `LOCAL_RAG_CHAT_MODEL`이 소유한다.
 - retrieval API는 검색 엔진 교체를 숨기는 interface 뒤에 둔다.
 - 검색 결과는 source path, heading, snippet, score breakdown, citation을 포함해야 한다.
 - 실패는 조용히 삼키지 않고 `FailureRecord`와 index status에 남긴다.
