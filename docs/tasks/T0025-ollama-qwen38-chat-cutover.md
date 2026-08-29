@@ -150,7 +150,7 @@ oMLX endpoint는 이미 제거됐지만 active Service config와 tracked bootstr
 | --- | --- | --- | --- |
 | G1 | Done | `.env.example`, generated ops config, installed `/Users/dean/Service/bin/local-rag`, Service env, `local-rag-retrieval` container env | 모두 `qwen3.8:latest`; installed command SHA-256 `8ea5d618d5de3053cd09831e0d604962edd00bcc11ff832f48c4b5cf0111d736` |
 | G2 | Done | container env: `RAG_OLLAMA_BASE_URL=http://10.10.10.2:11434`, `RAG_OMLX_BASE_URL=` | native Ollama only; oMLX slot empty |
-| G3 | Done | product commit `f8a365754aed8a30963c40a25fed8b64430e3a0d`; tag `v1.2.1`; deploy job `20260829-211220-local-rag-system-2f8e1694` | health HTTP 200; source registry 24 projects/24 sources; answer/search smoke PASS |
+| G3 | Done | product commit `f8a365754aed8a30963c40a25fed8b64430e3a0d`; tag `v1.2.1`; deploy job `20260829-211220-local-rag-system-2f8e1694`; model digest `22130167c4c20e20c7b71454612966ca8e8171e9b3cc8ab6ce8aa6cbfec79643` | health HTTP 200; source registry 24 projects/24 sources; answer/search smoke PASS |
 | G4 | Done | `docs/releases/v1.2.1.md`; Worknote release note `2026-08-29-2118-sandbox-local-rag-system.md` | actual deployment evidence recorded |
 
 ## Completion Guardrails
@@ -169,3 +169,4 @@ oMLX endpoint는 이미 제거됐지만 active Service config와 tracked bootstr
 - 2026-08-29: targeted Maven test, document validators, Compose validation과 source/config alignment를 통과하고 product commit `f8a365754aed8a30963c40a25fed8b64430e3a0d` 및 tag `v1.2.1`을 발행했습니다.
 - 2026-08-29: deploy authority job `20260829-211220-local-rag-system-2f8e1694`가 exact tag를 배포했습니다. 전체 health UP, source registry 24 projects/24 sources, `qwen3.8:latest` answer 209 chars/3 citations와 hybrid search 3 results를 확인해 task를 닫았습니다.
 - 2026-08-29: installed operator command도 release의 `ops/service/local-rag`와 SHA-256 `8ea5d618d5de3053cd09831e0d604962edd00bcc11ff832f48c4b5cf0111d736`로 일치시켰습니다. qwen3.8 default, empty oMLX slot, shell syntax와 doctor/MCP 7-tool smoke를 재검증했습니다.
+- 2026-08-29: deployment evidence에 실제 설치된 `qwen3.8:latest` digest `22130167c4c20e20c7b71454612966ca8e8171e9b3cc8ab6ce8aa6cbfec79643`을 고정했습니다.
