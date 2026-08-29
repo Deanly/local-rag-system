@@ -2,11 +2,11 @@
 type: task
 doc_id: T0025
 title: ollama-qwen38-chat-cutover
-status: active
+status: done
 owner: Dean
 created: 2026-08-29
 updated: 2026-08-29
-current_focus: Local RAG의 active/generated chat model을 native Ollama qwen3.8:latest로 전환하고 versioned deployment로 검증합니다.
+current_focus: Local RAG의 active/generated chat model을 native Ollama qwen3.8:latest로 전환하고 versioned deployment와 실제 answer/search로 검증했습니다.
 completion_mode: operational-baseline
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: P0001-local-rag-system
@@ -34,12 +34,12 @@ tags:
 
 - Type: task
 - Document ID: T0025
-- Status: active
+- Status: done
 - Completion Mode: operational-baseline
 - Owner: Dean
 - Created: 2026-08-29
 - Updated: 2026-08-29
-- Current Focus: Local RAG active/generated chat model의 native Ollama `qwen3.8:latest` versioned cutover와 운영 검증
+- Current Focus: Local RAG active/generated chat model의 native Ollama `qwen3.8:latest` versioned cutover와 운영 검증 완료
 - Related Control Plane: docs/design/control-plane.md
 - Related Umbrella Project: P0001-local-rag-system
 - Related Project: docs/projects/P0001-local-rag-system.md
@@ -108,13 +108,13 @@ oMLX endpoint는 이미 제거됐지만 active Service config와 tracked bootstr
 | ID | Work Item | Status | Progress | Notes |
 | --- | --- | --- | --- | --- |
 | W1 | Source/runtime residual audit | Done | 100% | active config qwen3.6, tracked default qwen3.5 확인 |
-| W2 | Config/version/design alignment | In Progress | 50% | |
-| W3 | Tests and actual qwen3.8 answer smoke | Todo | 0% | |
-| W4 | Commit, tag, deploy and release evidence | Todo | 0% | |
+| W2 | Config/version/design alignment | Done | 100% | source, generated ops template, Service config와 container env가 `qwen3.8:latest`로 일치 |
+| W3 | Tests and actual qwen3.8 answer smoke | Done | 100% | targeted Maven/docs/Compose PASS, answer 209 chars with 3 citations, hybrid search 3 results |
+| W4 | Commit, tag, deploy and release evidence | Done | 100% | `f8a365754aed8a30963c40a25fed8b64430e3a0d`, `v1.2.1`, deploy job `20260829-211220-local-rag-system-2f8e1694` |
 
 ## Overall Progress
 
-- 30%
+- 100%
 
 ## Completion Criteria
 
@@ -148,10 +148,10 @@ oMLX endpoint는 이미 제거됐지만 active Service config와 tracked bootstr
 
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| G1 | In Progress | | |
-| G2 | In Progress | | |
-| G3 | Pending | | |
-| G4 | Pending | | |
+| G1 | Done | `.env.example`, generated ops config, `/Users/dean/Service/config/local-rag-system/local.env`, `local-rag-retrieval` container env | 모두 `qwen3.8:latest` |
+| G2 | Done | container env: `RAG_OLLAMA_BASE_URL=http://10.10.10.2:11434`, `RAG_OMLX_BASE_URL=` | native Ollama only; oMLX slot empty |
+| G3 | Done | product commit `f8a365754aed8a30963c40a25fed8b64430e3a0d`; tag `v1.2.1`; deploy job `20260829-211220-local-rag-system-2f8e1694` | health HTTP 200; source registry 24 projects/24 sources; answer/search smoke PASS |
+| G4 | Done | `docs/releases/v1.2.1.md`; Worknote release note `2026-08-29-2118-sandbox-local-rag-system.md` | actual deployment evidence recorded |
 
 ## Completion Guardrails
 
@@ -161,8 +161,10 @@ oMLX endpoint는 이미 제거됐지만 active Service config와 tracked bootstr
 
 ## Risks / Open Questions
 
-- qwen3.8 answer latency는 first live smoke와 후속 운영 관찰 대상입니다.
+- first qwen3.8 answer smoke는 약 27초가 걸렸습니다. 정확성·인용은 통과했으며 latency는 후속 운영 관찰 대상입니다.
 
 ## Status
 
 - 2026-08-29: final cross-service audit에서 Local RAG active chat model의 qwen3.6 잔여를 확인하고 T0025를 발급했습니다.
+- 2026-08-29: targeted Maven test, document validators, Compose validation과 source/config alignment를 통과하고 product commit `f8a365754aed8a30963c40a25fed8b64430e3a0d` 및 tag `v1.2.1`을 발행했습니다.
+- 2026-08-29: deploy authority job `20260829-211220-local-rag-system-2f8e1694`가 exact tag를 배포했습니다. 전체 health UP, source registry 24 projects/24 sources, `qwen3.8:latest` answer 209 chars/3 citations와 hybrid search 3 results를 확인해 task를 닫았습니다.

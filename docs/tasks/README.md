@@ -12,7 +12,6 @@
 
 ## Active
 
-- [`T0025-ollama-qwen38-chat-cutover.md`](T0025-ollama-qwen38-chat-cutover.md): Local RAG active/generated answer model을 native Ollama `qwen3.8:latest`로 전환하고 tagged deployment로 검증 중. Updated: 2026-08-29.
 - [`T0024-local-cross-encoder-sidecar-proof.md`](T0024-local-cross-encoder-sidecar-proof.md): P0003 후속으로 local-only reranker sidecar, ScoreGate debug/opt-in path, runtime probe/snapshot proof를 개발 중. Updated: 2026-06-16.
 - [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): `~/Services` 운영존 generic user-managed source slots와 live smoke 완료; Codex Desktop 새 세션 MCP visibility 확인만 남음. Updated: 2026-05-29.
 
@@ -27,6 +26,7 @@
 
 ## Done
 
+- [`T0025-ollama-qwen38-chat-cutover.md`](T0025-ollama-qwen38-chat-cutover.md): Local RAG answer generation을 native Ollama `qwen3.8:latest`로 전환하고 tagged deployment, 실제 answer/search와 health로 검증함. Updated: 2026-08-29.
 - [`T0020-service-artifact-version-doc-drift.md`](T0020-service-artifact-version-doc-drift.md): `services/README.md` artifact convention과 `1.2.0` Maven/Docker artifact naming을 맞춤. Updated: 2026-06-16.
 - [`T0023-local-cross-encoder-score-source.md`](T0023-local-cross-encoder-score-source.md): 현재 프로파일에서 true local cross-encoder `r_i` source가 없어 P0003 runtime ScoreGate를 no-ship으로 결정. Updated: 2026-06-16.
 - [`T0022-scoregate-offline-evaluation-fixture.md`](T0022-scoregate-offline-evaluation-fixture.md): P0003 offline snapshot fixture, validator, and selector-level ScoreGate metric report를 추가함. Updated: 2026-06-16.

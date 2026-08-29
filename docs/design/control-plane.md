@@ -135,7 +135,7 @@ tags:
 | Surface | Purpose | Status | Notes |
 | --- | --- | --- | --- |
 | `docs/projects/README.md` | active project 입구 | Active | no active project; `P0001`, `P0002`, and `P0003` done |
-| `docs/tasks/README.md` | active task 입구 | Active | `T0025` Ollama qwen3.8 chat cutover, `T0024` ScoreGate sidecar proof and `T0010` operation-zone follow-up active |
+| `docs/tasks/README.md` | active task 입구 | Active | `T0024` ScoreGate sidecar proof and `T0010` operation-zone follow-up active; `T0025` qwen3.8 cutover done |
 | `docs/guide/sdlc-automation.md` | SDLC 자동화 목표, critical path, gate, verification ladder | Active | implementation session entry guide |
 | `docs/reports/README.md` | active report 입구 | Active | 현재 active report 없음 |
 | `docs/design/README.md` | design retrieval 입구 | Active | domain design 포함 |
@@ -205,3 +205,4 @@ tags:
 - 2026-06-16: `P0003`를 ScoreGate adaptive context selection exception branch로 열고 닫았다. T0021/T0022는 selector와 offline snapshot evaluator를 완료했고, T0023은 current profile에 true local cross-encoder `r_i` source가 없어 runtime no-ship으로 결정했다.
 - 2026-06-16: `T0024`를 active execution surface로 추가했다. Local reranker sidecar proof, ScoreGate debug/opt-in path, runtime probes, and snapshot collection are tracked as a follow-up task while P0003 remains default runtime no-ship.
 - 2026-08-29: `T0025`를 active execution surface로 추가해 tracked/generated/current Service answer model의 native Ollama `qwen3.8:latest` alignment와 tagged deployment를 추적한다.
+- 2026-08-29: `T0025`를 done으로 닫았다. `v1.2.1` exact deployment에서 native Ollama `qwen3.8:latest`, empty oMLX slot, 전체 health와 citation-backed answer/search를 검증했다.
