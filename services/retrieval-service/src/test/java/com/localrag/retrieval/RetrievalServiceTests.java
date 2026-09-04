@@ -287,6 +287,26 @@ class RetrievalServiceTests {
     }
 
     @Test
+    void answerFailsClosedBeforeRetrievalWhenGenerationIsDisabled() {
+        assertThatThrownBy(() -> retrievalService.answer(new SearchRequest(
+                "local-rag-system",
+                "What changed?",
+                5,
+                "hybrid",
+                null,
+                null,
+                null
+        )))
+                .isInstanceOfSatisfying(ResponseStatusException.class, exception -> {
+                    assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                    assertThat(exception.getReason()).contains("ANSWER_GENERATION_DISABLED");
+                    assertThat(exception.getReason()).contains("/api/search");
+                });
+
+        verifyNoInteractions(embeddingClient, ollamaChatClient, weaviateClient, jdbcTemplate);
+    }
+
+    @Test
     void sourceDistributionCountsFinalResultsBySourceId() {
         List<SearchResultItem> results = List.of(
                 resultFrom("local-rag-system.docs", "tasks/T0016-retrieval-audit-observability-expansion.md"),

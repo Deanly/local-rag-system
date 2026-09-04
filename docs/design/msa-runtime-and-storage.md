@@ -114,7 +114,9 @@ services/<service>/target/<service>-1.2.0.jar
 
 Ollama is configured through `LOCAL_RAG_OLLAMA_BASE_URL` for backward compatibility and `LOCAL_RAG_OLLAMA_BASE_URLS` for ordered multi-endpoint operation. The Compose default is `http://host.docker.internal:11434` because application services run inside containers. Device-specific direct-network endpoints, such as a Mac mini Ollama host on the local network, belong only in an untracked local env file.
 
-When `LOCAL_RAG_OLLAMA_BASE_URLS` is set, indexer and retrieval services try the comma-separated endpoints in order for both embeddings and chat. This supports a Mac mini preferred profile with notebook-local fallback, or a notebook-local preferred profile with Mac mini fallback. Endpoint fallback is not a hosted-provider fallback and must remain within operator-owned local/LAN Ollama endpoints. The tracked and generated answer-generation default is native Ollama `qwen3.8:latest`; `LOCAL_RAG_CHAT_MODEL` remains the explicit machine-local override.
+When `LOCAL_RAG_OLLAMA_BASE_URLS` is set, indexer and retrieval services try the comma-separated endpoints in order. In the M4 three-zone profile this list is used only for authenticated embedding requests: `retrieval-service` uses the query binding and `indexer-service` uses the bulk binding. Endpoint fallback is not a hosted-provider fallback and must remain within operator-owned local/LAN endpoints.
+
+`LOCAL_RAG_CHAT_MODEL` remains an explicit machine-local answer-generation override outside the M4 three-zone profile. The M4 RAG zone is embedding-only, so its production profile leaves this value blank. In that state `/api/answer` fails before retrieval with `503 ANSWER_GENERATION_DISABLED`; callers use `/api/search` or `rag_search` and perform synthesis in their own authorized reasoning boundary. The service never borrows the Voice or Trade generation binding as an answer fallback.
 
 ### Authenticated M4 RAG zone bindings
 
@@ -130,9 +132,9 @@ from a private regular file, sends only the `Authorization` header and request a
 lane headers. Missing, unreadable, group/world-accessible or empty token files fail before a request. Wrong tokens fail at
 the proxy. The proxy strips credentials before forwarding to the loopback backend.
 
-The direct Ollama settings remain the compatibility default until an independently approved operational cutover. The
-tracked `config/m4-rag-bindings.env.example` and Compose override contain only `.invalid`/placeholder values. Real LAN
-endpoints and token host paths belong in untracked Service-zone configuration.
+The direct Ollama settings remain a development compatibility default. The tracked
+`config/m4-rag-bindings.env.example` and Compose override contain only `.invalid`/placeholder values. Real LAN endpoints,
+token host paths and the explicit blank answer-generation setting belong in untracked Service-zone configuration.
 
 `RAG_EMBEDDING_BASE_URLS` is intentionally separate from `RAG_OLLAMA_BASE_URLS`: retrieval embedding may use the
 authenticated RAG query binding while chat generation remains on its separately governed endpoint. `RAG_EMBEDDING_*`

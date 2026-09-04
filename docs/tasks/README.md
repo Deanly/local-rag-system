@@ -12,6 +12,7 @@
 
 ## Active
 
+- [`T0027-m4-rag-embedding-production-cutover.md`](T0027-m4-rag-embedding-production-cutover.md): M4 RAG query/bulk 인증 binding 운영 전환과 embedding-only 경계 검증을 진행. Updated: 2026-09-05.
 - [`T0024-local-cross-encoder-sidecar-proof.md`](T0024-local-cross-encoder-sidecar-proof.md): P0003 후속으로 local-only reranker sidecar, ScoreGate debug/opt-in path, runtime probe/snapshot proof를 개발 중. Updated: 2026-06-16.
 - [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): `~/Services` 운영존 generic user-managed source slots와 live smoke 완료; Codex Desktop 새 세션 MCP visibility 확인만 남음. Updated: 2026-05-29.
 

@@ -55,7 +55,7 @@ If `LOCAL_RAG_DEFAULT_PROJECT_ID` was configured during install, `projectId` can
 4. If results are noisy, narrow with `includeSourceIds` using ids returned by `rag_list_sources`.
 5. Cite the returned `citation` fields in the answer when using retrieved context.
 6. Use `rag_get_document` only for a returned `sourceId` and `relativePath` when a full registered source document is needed.
-7. Use `rag_answer` when the user wants a synthesized answer from indexed local evidence.
+7. Use `rag_answer` when the user wants a synthesized answer and the installed profile has an explicit answer model. If it returns `ANSWER_GENERATION_DISABLED`, use `rag_search` and synthesize from its citations in the current authorized reasoning boundary; do not retry through a Voice or Trade binding.
 8. If freshness matters, check `rag_index_status`; use `rag_force_scan` only when the user asks for immediate sync or the answer depends on just-changed files.
 
 ## Fallback Practice

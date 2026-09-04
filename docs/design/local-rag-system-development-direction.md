@@ -164,7 +164,7 @@ queued/indexing -> failed -> queued
 - 삭제 파일은 검색 결과에서 사라져야 한다.
 - embedding/chat 호출은 local 또는 LAN-local Ollama endpoint로만 나가야 한다.
 - 여러 Ollama endpoint를 설정해도 fallback은 operator가 명시한 local/LAN endpoint 목록 안에서만 일어나야 한다.
-- tracked/generated answer-generation default는 native Ollama `qwen3.8:latest`이며 machine-local override는 `LOCAL_RAG_CHAT_MODEL`이 소유한다.
+- 일반 profile의 answer generation은 machine-local `LOCAL_RAG_CHAT_MODEL`이 소유한다. M4 three-zone production profile은 RAG zone을 embedding-only로 유지하고 이 값을 비워 `/api/answer`를 명시적 503으로 닫으며, Voice/Trade generation binding으로 fallback하지 않는다.
 - retrieval API는 검색 엔진 교체를 숨기는 interface 뒤에 둔다.
 - 검색 결과는 source path, heading, snippet, score breakdown, citation을 포함해야 한다.
 - 실패는 조용히 삼키지 않고 `FailureRecord`와 index status에 남긴다.
