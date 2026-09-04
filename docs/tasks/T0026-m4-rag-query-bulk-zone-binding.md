@@ -2,11 +2,11 @@
 type: task
 doc_id: T0026
 title: m4-rag-query-bulk-zone-binding
-status: active
+status: done
 owner: dean
 created: 2026-09-04
 updated: 2026-09-04
-current_focus: authenticated query/bulk embedding profiles와 publish-before-delete 안전 경계 구현
+current_focus: source/test candidate 완료; external P0033 actual M4 qualification으로 handoff
 completion_mode: functional
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: P0001-local-rag-system
@@ -34,12 +34,12 @@ tags:
 
 - Type: task
 - Document ID: T0026
-- Status: active
+- Status: done
 - Completion Mode: functional
 - Owner: dean
 - Created: 2026-09-04
 - Updated: 2026-09-04
-- Current Focus: authenticated query/bulk embedding profiles와 publish-before-delete 안전 경계 구현
+- Current Focus: source/test candidate 완료; external P0033 actual M4 qualification으로 handoff
 - Related Control Plane: docs/design/control-plane.md
 - Related Umbrella Project: P0001-local-rag-system
 - Related Project: external P0033
@@ -119,13 +119,13 @@ Local RAG retrieval과 indexer가 M4 3존 Governor의 서로 다른 authenticate
 | ID | Work Item | Status | Progress | Notes |
 | --- | --- | --- | --- | --- |
 | W1 | Baseline/design/task boundary | Done | 100% | production 4B/2560와 delete-before-embed risk 확인 |
-| W2 | Authenticated embedding request profiles | In Progress | 20% | query/bulk service wiring |
-| W3 | Dimension/provenance/publication guard | Todo | 0% | publish only after validated batch |
-| W4 | Focused/full tests와 documentation closeout | Todo | 0% | no runtime mutation |
+| W2 | Authenticated embedding request profiles | Done | 100% | alias/token-file/keep-alive service wiring |
+| W3 | Dimension/provenance/publication guard | Done | 100% | full batch validation 뒤에만 replace |
+| W4 | Focused/full tests와 documentation closeout | Done | 100% | Maven, Compose와 docs validators PASS |
 
 ## Overall Progress
 
-- 20%
+- 100% — `100d10a` source candidate와 focused/full local tests를 완료했다. runtime/vector mutation은 없다.
 
 ## Completion Criteria
 
@@ -159,10 +159,10 @@ Local RAG retrieval과 indexer가 M4 3존 Governor의 서로 다른 authenticate
 
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| G1 | Pending | | |
-| G2 | Pending | | |
-| G3 | Pending | | |
-| G4 | Pending | | |
+| G1 | Met | `EmbeddingClientTests`, rendered query/bulk Compose profile | exact alias/token/keep-alive 분리 |
+| G2 | Met | dimension/fallback/auth negative tests | 4B/2560 candidate는 mismatch 시 fail closed |
+| G3 | Met | `IndexerPublicationGuardTests` | embedding contract failure 전에 JDBC/Weaviate interaction 0 |
+| G4 | Met | `mvn -q test`, Compose and docs validators | exact source `100d10a` |
 
 ## Completion Guardrails
 
@@ -177,3 +177,4 @@ Local RAG retrieval과 indexer가 M4 3존 Governor의 서로 다른 authenticate
 ## Status
 
 - 2026-09-04: T0026 발급 및 active 전환. external P0033/T0010 S4 authority 아래 source/test-only 실행을 시작했다.
+- 2026-09-04: authenticated query/bulk profiles, 4B/2560 provenance와 pre-publication guard를 구현했다. 전체 Maven tests, 기본/3존 Compose render와 document validators가 통과했으며 actual M4·Service·vector·secret mutation은 0이다.
