@@ -1,6 +1,7 @@
 package com.localrag.indexer;
 
 import com.localrag.common.embedding.EmbeddingClient;
+import com.localrag.common.embedding.EmbeddingRequestProfile;
 import com.localrag.common.registry.RegistrySynchronizer;
 import com.localrag.common.registry.SourceRegistryLoader;
 import com.localrag.common.registry.SourceRegistryValidator;
@@ -37,9 +38,13 @@ public class IndexerServiceApplication {
 
     @Bean
     EmbeddingClient embeddingClient(IndexerSettings settings) {
-        return new EmbeddingClient(
-                settings.ollamaBaseUrls(),
+        EmbeddingRequestProfile profile = EmbeddingRequestProfile.fromEnvironment(
                 settings.embeddingModel(),
+                "rag-bulk"
+        );
+        return new EmbeddingClient(
+                EmbeddingRequestProfile.baseUrlsFromEnvironment(settings.ollamaBaseUrls()),
+                profile,
                 settings.embeddingFallbackEnabled(),
                 settings.ollamaConnectTimeoutMillis(),
                 settings.ollamaReadTimeoutMillis()

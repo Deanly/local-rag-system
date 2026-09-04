@@ -2,6 +2,7 @@ package com.localrag.common.embedding;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.localrag.common.ollama.OllamaEndpointConfig;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 
@@ -9,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -20,44 +22,72 @@ public class EmbeddingClient {
     private static final int MAX_EMBED_BATCH_SIZE = 16;
 
     private final List<Endpoint> endpoints;
-    private final String model;
+    private final EmbeddingRequestProfile profile;
     private final boolean fallbackEnabled;
 
     public EmbeddingClient(String baseUrl, String model, boolean fallbackEnabled) {
-        this(OllamaEndpointConfig.parseBaseUrls(baseUrl), model, fallbackEnabled,
+        this(OllamaEndpointConfig.parseBaseUrls(baseUrl), EmbeddingRequestProfile.direct(model, "rag-bulk"), fallbackEnabled,
                 OllamaEndpointConfig.DEFAULT_CONNECT_TIMEOUT_MILLIS,
                 OllamaEndpointConfig.DEFAULT_READ_TIMEOUT_MILLIS);
     }
 
     public EmbeddingClient(String baseUrls, String model, boolean fallbackEnabled, long connectTimeoutMillis, long readTimeoutMillis) {
-        this(OllamaEndpointConfig.parseBaseUrls(baseUrls), model, fallbackEnabled, connectTimeoutMillis, readTimeoutMillis);
+        this(OllamaEndpointConfig.parseBaseUrls(baseUrls), EmbeddingRequestProfile.direct(model, "rag-bulk"), fallbackEnabled, connectTimeoutMillis, readTimeoutMillis);
     }
 
     public EmbeddingClient(List<String> baseUrls, String model, boolean fallbackEnabled, long connectTimeoutMillis, long readTimeoutMillis) {
+        this(baseUrls, EmbeddingRequestProfile.direct(model, "rag-bulk"), fallbackEnabled, connectTimeoutMillis, readTimeoutMillis);
+    }
+
+    public EmbeddingClient(String baseUrls, EmbeddingRequestProfile profile, boolean fallbackEnabled, long connectTimeoutMillis, long readTimeoutMillis) {
+        this(OllamaEndpointConfig.parseBaseUrls(baseUrls), profile, fallbackEnabled, connectTimeoutMillis, readTimeoutMillis);
+    }
+
+    public EmbeddingClient(List<String> baseUrls, EmbeddingRequestProfile profile, boolean fallbackEnabled, long connectTimeoutMillis, long readTimeoutMillis) {
         this.endpoints = OllamaEndpointConfig.parseBaseUrls(baseUrls).stream()
                 .map(baseUrl -> new Endpoint(baseUrl, OllamaEndpointConfig.restClient(baseUrl, connectTimeoutMillis, readTimeoutMillis)))
                 .toList();
-        this.model = model;
+        this.profile = profile;
+        if (fallbackEnabled && (profile.authenticationRequired() || !profile.bearerTokenFile().isBlank())) {
+            throw new IllegalArgumentException("authenticated embedding bindings cannot enable fallback vectors");
+        }
         this.fallbackEnabled = fallbackEnabled;
+    }
+
+    public EmbeddingRequestProfile profile() {
+        return profile;
     }
 
     public List<Double> embed(String text) {
         List<RuntimeException> failures = new ArrayList<>();
         for (Endpoint endpoint : endpoints) {
             try {
-                JsonNode response = endpoint.restClient().post()
+                Map<String, Object> requestBody = new LinkedHashMap<>();
+                requestBody.put("model", profile.requestModel());
+                requestBody.put("prompt", text);
+                if (profile.keepAliveSeconds() != null) {
+                    requestBody.put("keep_alive", profile.keepAliveSeconds());
+                }
+                var request = endpoint.restClient().post()
                         .uri("/api/embeddings")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(Map.of("model", model, "prompt", text))
+                        .contentType(MediaType.APPLICATION_JSON);
+                String authorization = profile.authorizationHeader();
+                if (authorization != null) {
+                    request.header(HttpHeaders.AUTHORIZATION, authorization);
+                }
+                JsonNode response = request.body(requestBody)
                         .retrieve()
                         .body(JsonNode.class);
                 JsonNode embedding = response == null ? null : response.get("embedding");
                 if (embedding != null && embedding.isArray() && !embedding.isEmpty()) {
                     List<Double> vector = new ArrayList<>();
                     embedding.forEach(value -> vector.add(value.asDouble()));
+                    profile.validateDimensions(vector.size());
                     return vector;
                 }
                 throw new IllegalStateException("Ollama embedding response did not contain embedding");
+            } catch (EmbeddingContractException exception) {
+                throw exception;
             } catch (RuntimeException exception) {
                 failures.add(new IllegalStateException("Ollama embedding failed at " + endpoint.baseUrl(), exception));
             }
@@ -83,10 +113,20 @@ public class EmbeddingClient {
         List<RuntimeException> failures = new ArrayList<>();
         for (Endpoint endpoint : endpoints) {
             try {
-                JsonNode response = endpoint.restClient().post()
+                Map<String, Object> requestBody = new LinkedHashMap<>();
+                requestBody.put("model", profile.requestModel());
+                requestBody.put("input", texts);
+                if (profile.keepAliveSeconds() != null) {
+                    requestBody.put("keep_alive", profile.keepAliveSeconds());
+                }
+                var request = endpoint.restClient().post()
                         .uri("/api/embed")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(Map.of("model", model, "input", texts))
+                        .contentType(MediaType.APPLICATION_JSON);
+                String authorization = profile.authorizationHeader();
+                if (authorization != null) {
+                    request.header(HttpHeaders.AUTHORIZATION, authorization);
+                }
+                JsonNode response = request.body(requestBody)
                         .retrieve()
                         .body(JsonNode.class);
                 JsonNode embeddings = response == null ? null : response.get("embeddings");
@@ -98,11 +138,14 @@ public class EmbeddingClient {
                         }
                         List<Double> vector = new ArrayList<>();
                         embedding.forEach(value -> vector.add(value.asDouble()));
+                        profile.validateDimensions(vector.size());
                         result.add(vector);
                     }
                     return result;
                 }
                 throw new IllegalStateException("Ollama embed response did not contain matching embeddings");
+            } catch (EmbeddingContractException exception) {
+                throw exception;
             } catch (RuntimeException exception) {
                 failures.add(new IllegalStateException("Ollama batch embed failed at " + endpoint.baseUrl(), exception));
             }

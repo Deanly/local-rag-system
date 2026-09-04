@@ -1,6 +1,7 @@
 package com.localrag.retrieval;
 
 import com.localrag.common.embedding.EmbeddingClient;
+import com.localrag.common.embedding.EmbeddingRequestProfile;
 import com.localrag.common.ollama.OllamaChatClient;
 import com.localrag.common.weaviate.WeaviateClient;
 import org.springframework.boot.SpringApplication;
@@ -15,9 +16,13 @@ public class RetrievalServiceApplication {
 
     @Bean
     EmbeddingClient embeddingClient(RetrievalSettings settings) {
-        return new EmbeddingClient(
-                settings.ollamaBaseUrls(),
+        EmbeddingRequestProfile profile = EmbeddingRequestProfile.fromEnvironment(
                 settings.embeddingModel(),
+                "rag-query"
+        );
+        return new EmbeddingClient(
+                EmbeddingRequestProfile.baseUrlsFromEnvironment(settings.ollamaBaseUrls()),
+                profile,
                 settings.embeddingFallbackEnabled(),
                 settings.ollamaConnectTimeoutMillis(),
                 settings.ollamaReadTimeoutMillis()

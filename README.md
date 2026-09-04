@@ -196,6 +196,17 @@ Set `LOCAL_RAG_CHAT_MODEL` in the local env file to enable `/api/answer`. The an
 
 Fallback embeddings are for development smoke only. Do not use fallback for production indexing because fallback vectors are deterministic placeholders, not semantic embeddings.
 
+### M4 three-zone RAG binding candidate
+
+The source-only candidate profile in `config/m4-rag-bindings.env.example` separates interactive query embeddings from
+bulk indexing. Use it only with `config/docker-compose.m4-rag-bindings.yml`, private token files and a separately approved
+M4 platform candidate. The query alias keeps the 4B model warm for at most 120 seconds; bulk requests set keep-alive to
+zero and are checkpointed so Voice activity can reject new bulk admission without deleting the existing index.
+
+The profile pins the physical provenance to `qwen3-embedding:4b` and validates 2560 dimensions before publication. Do
+not replace the `.invalid` endpoint or placeholder token paths in tracked files. Actual endpoint/token provisioning,
+schema mutation, scan/reindex and cutover are operational actions outside this source profile.
+
 ## Operations
 
 Development happens from a normal workspace checkout. For a single-user host deployment, the provided operation command runs under `~/Services/local-rag-system` and reads host-specific configuration from `~/Services/local-rag-system/config/local.env`.

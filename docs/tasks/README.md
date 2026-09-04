@@ -12,6 +12,7 @@
 
 ## Active
 
+- [`T0026-m4-rag-query-bulk-zone-binding.md`](T0026-m4-rag-query-bulk-zone-binding.md): M4 RAG query/bulk authenticated binding, 4B/2560 provenance와 checkpoint-safe publication을 source/test로 구현. Updated: 2026-09-04.
 - [`T0024-local-cross-encoder-sidecar-proof.md`](T0024-local-cross-encoder-sidecar-proof.md): P0003 후속으로 local-only reranker sidecar, ScoreGate debug/opt-in path, runtime probe/snapshot proof를 개발 중. Updated: 2026-06-16.
 - [`T0010-codex-rag-utilization-hardening.md`](T0010-codex-rag-utilization-hardening.md): `~/Services` 운영존 generic user-managed source slots와 live smoke 완료; Codex Desktop 새 세션 MCP visibility 확인만 남음. Updated: 2026-05-29.
 

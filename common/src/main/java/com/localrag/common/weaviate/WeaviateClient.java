@@ -43,7 +43,11 @@ public class WeaviateClient {
             property("tags", "text[]"),
             property("links", "text[]"),
             property("fileMtimeNs", "number"),
-            property("indexedAt", "date")
+            property("indexedAt", "date"),
+            property("embeddingModel", "text"),
+            property("embeddingDimensions", "int"),
+            property("embeddingBindingId", "text"),
+            property("embeddingLane", "text")
     );
 
     private final RestClient restClient;
