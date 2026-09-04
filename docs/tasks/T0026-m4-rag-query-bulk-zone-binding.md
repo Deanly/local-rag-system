@@ -159,10 +159,10 @@ Local RAG retrieval과 indexer가 M4 3존 Governor의 서로 다른 authenticate
 
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| G1 | Met | `EmbeddingClientTests`, rendered query/bulk Compose profile | exact alias/token/keep-alive 분리 |
-| G2 | Met | dimension/fallback/auth negative tests | 4B/2560 candidate는 mismatch 시 fail closed |
-| G3 | Met | `IndexerPublicationGuardTests` | embedding contract failure 전에 JDBC/Weaviate interaction 0 |
-| G4 | Met | `mvn -q test`, Compose and docs validators | exact source `100d10a` |
+| G1 | Done | `EmbeddingClientTests`, rendered query/bulk Compose profile | exact alias/token/keep-alive 분리 |
+| G2 | Done | dimension/fallback/auth negative tests | 4B/2560 candidate는 mismatch 시 fail closed |
+| G3 | Done | `IndexerPublicationGuardTests` | embedding contract failure 전에 JDBC/Weaviate interaction 0 |
+| G4 | Done | `mvn -q test`, Compose and docs validators | exact source `100d10a` |
 
 ## Completion Guardrails
 
