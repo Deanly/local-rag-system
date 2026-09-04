@@ -2,11 +2,11 @@
 type: task
 doc_id: T0027
 title: m4-rag-embedding-production-cutover
-status: active
+status: done
 owner: dean
 created: 2026-09-05
 updated: 2026-09-05
-current_focus: authenticated query/bulk release와 embedding-only 운영 profile을 배포하고 실제 search/index 경계를 검증
+current_focus: v1.3.1 query/bulk 인증 전환, embedding-only 경계와 rollback continuity 검증 완료
 completion_mode: integration
 related_control_plane: docs/design/control-plane.md
 related_umbrella_project: P0001-local-rag-system
@@ -18,6 +18,7 @@ source_refs:
   - docs/tasks/T0026-m4-rag-query-bulk-zone-binding.md
   - external:silverstone-pad/docs/projects/P0033-m4-rag-voice-trade-three-zone-stabilization-and-cutover.md
   - external:silverstone-deploy/services/m4-ollama-platform/runtime-policy.json
+  - docs/reports/2026-09-05-m4-rag-embedding-production-cutover.md
 quality_axes:
   - WHOLE
   - GOAL
@@ -35,11 +36,11 @@ tags:
 
 - Type: task
 - Document ID: T0027
-- Status: active
+- Status: done
 - Completion Mode: integration
 - Owner: dean
 - Created / Updated: 2026-09-05 / 2026-09-05
-- Current Focus: authenticated query/bulk release와 embedding-only 운영 profile을 배포하고 실제 search/index 경계를 검증
+- Current Focus: v1.3.1 query/bulk 인증 전환, embedding-only 경계와 rollback continuity 검증 완료
 - Related Control Plane: docs/design/control-plane.md
 - Related Umbrella Project: P0001-local-rag-system
 - Related Project: external P0033
@@ -118,13 +119,14 @@ rollback point가 함께 확인돼야 한다.
 | ID | Work Item | Status | Progress | Notes |
 | --- | --- | --- | --- | --- |
 | W1 | Consumer boundary and task issuance | Done | 100% | T0026와 actual runtime drift 대조 |
-| W2 | Embedding-only failure contract and release verification | In Progress | 60% | explicit 503 source/test 추가 |
-| W3 | Service config, deploy and actual smoke | Todo | 0% | platform transition 뒤 실행 |
-| W4 | Rollback evidence and closeout | Todo | 0% | P0033 S10–S13과 함께 기록 |
+| W2 | Embedding-only failure contract and release verification | Done | 100% | v1.3.1 stable explicit 503 contract와 full tests |
+| W3 | Service config, deploy and actual smoke | Done | 100% | query/search와 direct bulk 2560-dim actual smoke PASS |
+| W4 | Rollback evidence and closeout | Done | 100% | config backups, platform rollback search continuity와 final reapply 기록 |
 
 ## Overall Progress
 
-- 35% — actual runtime drift를 확인하고 owner-local cutover task와 answer-disabled source 경계를 발급했다.
+- 100% — Local RAG v1.3.1과 M4 v0.15.1 사이의 인증 query/bulk 전환, answer-disabled 경계, index continuity,
+  rollback/reapply와 owner handoff를 완료했다.
 
 ## Completion Criteria
 
@@ -158,10 +160,10 @@ rollback point가 함께 확인돼야 한다.
 
 | Goal ID | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| G1 | Pending | | platform transition 뒤 실제 smoke 필요 |
-| G2 | In Progress | `RetrievalService.answer` fail-closed guard | tests/runtime negative smoke 잔여 |
-| G3 | Pending | T0026 source contract | actual continuity 확인 잔여 |
-| G4 | Pending | | release/deploy/rollback evidence 잔여 |
+| G1 | Done | v1.3.1 actual query/bulk audit | separate aliases/tokens, search and bulk embedding 200 |
+| G2 | Done | `ANSWER_GENERATION_DISABLED` runtime response | M4 chat/generation fallback 0; `rag_search` 안내 |
+| G3 | Done | 10,357 documents / 82,175 chunks and 2560-dim probe | destructive full reindex 0 |
+| G4 | Done | cutover report and config backups | v0.15.0 rollback search 200, v0.15.1 reapply health PASS |
 
 ## Completion Guardrails
 
@@ -178,3 +180,8 @@ rollback point가 함께 확인돼야 한다.
 
 - 2026-09-05: Dean의 service project 문서 발급과 caller correction 승인에 따라 T0027을 active로 발급했다.
 - 2026-09-05: deployed Local RAG가 M4 raw Qwen3.8 chat과 raw embedding을 함께 사용 중임을 확인하고, M4 RAG zone을 embedding-only로 고정했다.
+- 2026-09-05: `v1.3.0` 배포 뒤 `/api/answer` error body가 stable code를 노출하지 않는 실제 문제를 발견해
+  `v1.3.1@4782041`에서 `ANSWER_GENERATION_DISABLED` JSON 계약으로 교정·재배포했다. health/search와 query
+  audit, direct bulk 2560-dim, index continuity와 config/token mount를 검증했다.
+- 2026-09-05: M4 v0.15.1 final activation과 raw embedding 409를 확인하고 retained v0.15.0 rollback 중
+  authenticated search 200, v0.15.1 reapply 뒤 health를 재검증해 T0027 G1-G4를 닫았다.
