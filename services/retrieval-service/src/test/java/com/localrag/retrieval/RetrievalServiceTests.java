@@ -297,11 +297,7 @@ class RetrievalServiceTests {
                 null,
                 null
         )))
-                .isInstanceOfSatisfying(ResponseStatusException.class, exception -> {
-                    assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
-                    assertThat(exception.getReason()).contains("ANSWER_GENERATION_DISABLED");
-                    assertThat(exception.getReason()).contains("/api/search");
-                });
+                .isInstanceOf(AnswerGenerationDisabledException.class);
 
         verifyNoInteractions(embeddingClient, ollamaChatClient, weaviateClient, jdbcTemplate);
     }

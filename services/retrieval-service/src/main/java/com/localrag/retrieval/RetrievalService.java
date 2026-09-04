@@ -139,10 +139,7 @@ public class RetrievalService {
 
     public AnswerResponse answer(SearchRequest request) {
         if (settings.chatModel() == null || settings.chatModel().isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE,
-                    "ANSWER_GENERATION_DISABLED: use /api/search and let the authorized caller synthesize from citations"
-            );
+            throw new AnswerGenerationDisabledException();
         }
         SearchResponse search = search(request);
         String answer = ollamaChatClient.chat(systemPrompt(), answerPrompt(request.query(), search.results()));
