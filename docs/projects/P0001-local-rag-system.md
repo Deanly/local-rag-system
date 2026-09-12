@@ -288,3 +288,8 @@ Version 판단:
 - 2026-05-25: T0010 issued as a post-baseline remediation task after audit showed the runtime and adapter are healthy but the active Codex session does not expose local RAG MCP tools directly, and several API/tool contract gaps remain.
 - 2026-05-29: T0012 completed portable Ollama endpoint failover. Indexer and retrieval services now support ordered local/LAN Ollama endpoint lists for notebook-local and Mac mini profiles without committing private hostnames.
 - 2026-05-29: P0001 closeout was reviewed against the new retrieval-governance request. P0001 is now the official `1.0.0` functional baseline; P0002 owns governed Hybrid RAG quality hardening.
+
+
+## Follow-up Remediation — 2026-09-13
+
+- T0028: 등록 원문의 YAML 오류로 저장소 색인이 중단되는 문제를 복구한다. P0001의 기존 functional baseline 완료 이력은 보존한다. 후속 작업의 구현·운영 검증은 `docs/tasks/T0028-malformed-frontmatter-indexing-recovery.md`에서 별도로 추적한다.

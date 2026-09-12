@@ -55,3 +55,5 @@
 - 2026-06-16: Retrieval quality design surface updated for P0003 ScoreGate adaptive context selection, T0021 offline selector substrate, T0022 offline snapshot evaluator, and T0023 runtime no-ship decision.
 - 2026-06-16: Retrieval quality design surface updated for T0024 local cross-encoder sidecar proof, ScoreGate debug/opt-in path, and runtime snapshot collection.
 - 2026-09-04: MSA runtime design을 authenticated M4 RAG query/bulk binding, 4B/2560 provenance와 checkpoint-safe publication contract로 갱신.
+
+- 2026-09-13: `msa-runtime-and-storage`에 원문을 보존하는 malformed frontmatter 복구 계약을 추가했다. 실행 근거는 T0028을 따른다.

@@ -5,7 +5,7 @@ status: current
 domain: runtime
 owner:
 created: 2026-05-24
-updated: 2026-09-04
+updated: 2026-09-13
 retrieval_class:
   - domain-current
 context:
@@ -33,7 +33,7 @@ tags:
 - Type: design
 - Domain: runtime
 - Created: 2026-05-24
-- Updated: 2026-09-04
+- Updated: 2026-09-13
 - Referenced By:
   - `docs/projects/P0001-local-rag-system.md`
   - `docs/tasks/T0002-msa-runtime-baseline.md`
@@ -264,3 +264,8 @@ POST http://127.0.0.1:42120/api/search
 - 2026-08-29: tracked/generated chat default and the current Service baseline moved to native Ollama `qwen3.8:latest`; embedding remains `qwen3-embedding:4b` and oMLX compatibility env remains empty.
 - 2026-05-30: Storage contract extended for T0013 metadata-aware chunking and document authority indexing. `document_state` and `chunk_state` now carry metadata migration fields, and `LocalRagChunk` carries document authority/freshness/supersession and heading context metadata.
 - 2026-05-31: P0002 closeout recorded that the release path uses deterministic governance ranking inside `retrieval-service`; a separate local model reranker remains future optional work only.
+
+
+## Malformed Frontmatter Recovery
+
+Markdown YAML 헤더가 파싱되지 않으면 색인기는 헤더를 포함한 원문 전체를 일반 텍스트로 청킹한다. 이 경우 헤더의 status/authority를 신뢰하지 않고 기존 unknown/source-default 기본값을 사용한다. 정상 YAML은 기존 metadata 계약을 유지한다. 원문 파일은 수정하지 않는다. 파싱 경고에는 문서 경로만 기록한다. 구현·배포 근거는 `docs/tasks/T0028-malformed-frontmatter-indexing-recovery.md`를 따른다.

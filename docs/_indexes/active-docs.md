@@ -12,6 +12,8 @@ It is a context-selection surface for LLM/Codex runs, not a replacement for sour
 
 ## Active Tasks
 
+- `docs/tasks/T0028-malformed-frontmatter-indexing-recovery.md`: malformed YAML 색인 복구. Updated: 2026-09-13.
+
 | ID | Title | Status | Parent / Reference Project | Related Design | Updated |
 | --- | --- | --- | --- | --- | --- |
 | T0024 | local-cross-encoder-sidecar-proof | active | `P0003` | `retrieval-quality-improvement-design` | 2026-06-16 |
