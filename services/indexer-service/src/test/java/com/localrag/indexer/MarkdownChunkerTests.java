@@ -9,6 +9,34 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class MarkdownChunkerTests {
     @Test
+    void indexesMalformedFrontmatterAsTextWithoutPromotingItsMetadata() {
+        MarkdownChunker chunker = new MarkdownChunker();
+        String source = """
+                ---
+                status: current
+                authority: canonical
+                current_focus: Confirmed: the playback issue is resolved.
+                ---
+                # Playback evidence
+
+                Original evidence remains searchable.
+                """;
+
+        var document = chunker.chunkDocument(source, 1600, new MarkdownChunker.DocumentDefaults(
+                "docs/tasks/sample.md", Instant.parse("2026-09-12T00:00:00Z"),
+                "project-docs", "project-current-truth"));
+
+        assertThat(document.metadata().title()).isEqualTo("Playback evidence");
+        assertThat(document.metadata().frontmatterStatus()).isEqualTo("unknown");
+        assertThat(document.metadata().authority()).isEqualTo("source-default");
+        assertThat(document.chunks()).isNotEmpty();
+        String indexedText = String.join("\n", document.chunks().stream()
+                .map(MarkdownChunker.ChunkCandidate::content).toList());
+        assertThat(indexedText).contains("current_focus: Confirmed:", "Original evidence remains searchable.");
+        assertThat(document.chunks().get(0).startChar()).isZero();
+    }
+
+    @Test
     void preservesFrontmatterAndFullHeadingPathOnChunks() {
         MarkdownChunker chunker = new MarkdownChunker();
 

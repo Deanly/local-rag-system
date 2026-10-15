@@ -78,7 +78,7 @@ const tools = [
   },
   {
     name: "rag_answer",
-    description: "Generate a local-only answer from retrieved local RAG snippets with citations.",
+    description: "Generate a local-only answer from retrieved snippets when an answer model is explicitly configured. Embedding-only profiles return ANSWER_GENERATION_DISABLED; use rag_search and synthesize in the authorized caller.",
     inputSchema: ragQueryInputSchema
   },
   {

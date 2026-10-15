@@ -45,6 +45,9 @@ LOCAL_RAG_DEFAULT_PROJECT_ID=project-alpha \
 
 `rag_get_document` reads by `sourceId` plus `relativePath`. The backend rejects absolute paths, path traversal, unknown sources, and files excluded by source registry filters.
 
+In an M4 embedding-only profile, `rag_answer` returns `ANSWER_GENERATION_DISABLED`. Call `rag_search` and synthesize from
+its citations in the authorized caller; the integration does not borrow Silverstone Voice or Trade generation capacity.
+
 ## Manual Smoke
 
 ```bash

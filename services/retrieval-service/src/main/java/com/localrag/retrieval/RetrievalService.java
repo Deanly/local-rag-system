@@ -138,6 +138,9 @@ public class RetrievalService {
     }
 
     public AnswerResponse answer(SearchRequest request) {
+        if (settings.chatModel() == null || settings.chatModel().isBlank()) {
+            throw new AnswerGenerationDisabledException();
+        }
         SearchResponse search = search(request);
         String answer = ollamaChatClient.chat(systemPrompt(), answerPrompt(request.query(), search.results()));
         return new AnswerResponse(

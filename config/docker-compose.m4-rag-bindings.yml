@@ -1,0 +1,8 @@
+services:
+  indexer-service:
+    volumes:
+      - "${LOCAL_RAG_BULK_BINDING_TOKEN_HOST_FILE:?set a private bulk token file}:/run/secrets/rag-bulk-qwen3-v2.token:ro"
+
+  retrieval-service:
+    volumes:
+      - "${LOCAL_RAG_QUERY_BINDING_TOKEN_HOST_FILE:?set a private query token file}:/run/secrets/rag-query-qwen3-v2.token:ro"

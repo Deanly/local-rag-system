@@ -5,6 +5,6 @@ RUN mvn -q -pl services/api-gateway -am -DskipTests package
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
-COPY --from=build /workspace/services/api-gateway/target/api-gateway-1.2.0.jar /app/app.jar
+COPY --from=build /workspace/services/api-gateway/target/api-gateway-1.2.1.jar /app/app.jar
 EXPOSE 42120
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

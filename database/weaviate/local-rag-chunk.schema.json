@@ -32,7 +32,11 @@
     {"name": "tags", "dataType": ["text[]"], "description": "Extracted tags."},
     {"name": "links", "dataType": ["text[]"], "description": "Extracted markdown links or local references."},
     {"name": "fileMtimeNs", "dataType": ["number"], "description": "Source file modification time in nanoseconds."},
-    {"name": "indexedAt", "dataType": ["date"], "description": "Indexing timestamp."}
+    {"name": "indexedAt", "dataType": ["date"], "description": "Indexing timestamp."},
+    {"name": "embeddingModel", "dataType": ["text"], "description": "Physical embedding model provenance, not the request alias."},
+    {"name": "embeddingDimensions", "dataType": ["int"], "description": "Validated vector dimension at publication time."},
+    {"name": "embeddingBindingId", "dataType": ["text"], "description": "Authenticated platform binding or explicit legacy binding identifier."},
+    {"name": "embeddingLane", "dataType": ["text"], "description": "RAG query or bulk workload lane that produced the vector."}
   ],
   "invertedIndexConfig": {
     "bm25": {

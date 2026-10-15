@@ -1,7 +1,10 @@
 package com.localrag.indexer;
 
 import com.localrag.common.embedding.EmbeddingClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import java.text.Normalizer;
 import java.time.Instant;
@@ -17,6 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MarkdownChunker {
+    private static final Logger LOG = LoggerFactory.getLogger(MarkdownChunker.class);
     private static final int OVERLAP_CHARS = 220;
     private static final Pattern HEADING_PATTERN = Pattern.compile("^(#{1,6})\\s+(.+?)\\s*#*\\s*$");
     private static final Pattern TOKEN_PATTERN = Pattern.compile("[\\p{L}\\p{N}]+");
@@ -27,7 +31,17 @@ public class MarkdownChunker {
     }
 
     public ChunkedDocument chunkDocument(String text, int targetChars, DocumentDefaults defaults) {
-        ParsedDocument parsed = splitFrontmatter(text == null ? "" : text);
+        String sourceText = text == null ? "" : text;
+        ParsedDocument parsed;
+        try {
+            parsed = splitFrontmatter(sourceText);
+        } catch (YAMLException exception) {
+            // Source notes are read-only. Retain every byte of text for retrieval,
+            // but do not trust authority or status from an invalid YAML header.
+            LOG.warn("Indexing {} as plain text because its YAML frontmatter is invalid",
+                    defaults == null ? "<unknown document>" : defaults.relativePath());
+            parsed = new ParsedDocument(Map.of(), sourceText, 0);
+        }
         String body = parsed.body();
         String firstH1 = firstH1(body);
         DocumentMetadata metadata = documentMetadata(parsed.frontmatter(), defaults, firstH1, body);

@@ -26,3 +26,5 @@ This is a compact design selection map derived from `docs/design/README.md`.
 - 2026-05-31: Retrieval quality design updated for T0017 local reranker deployment decision and P0002 closeout.
 - 2026-06-16: Retrieval quality design updated for P0003 ScoreGate adaptive context selection, T0021 offline selector substrate, T0022 offline snapshot evaluator, and T0023 runtime no-ship decision.
 - 2026-06-16: Retrieval quality design updated for T0024 local cross-encoder sidecar proof and ScoreGate runtime snapshot path.
+
+- 2026-09-13: `msa-runtime-and-storage`에 원문을 보존하는 malformed frontmatter 복구 계약을 추가했다. 실행 근거는 T0028을 따른다.

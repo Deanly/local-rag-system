@@ -160,7 +160,7 @@ When this task is done:
 
 ## Completion Criteria
 
-1. `silverstone-deploy`/default runtime behavior remains unchanged unless opt-in flags are used.
+1. `personal-deploy`/default runtime behavior remains unchanged unless opt-in flags are used.
 2. Reranker failures do not fail search requests.
 3. Score maps distinguish `baseScore`, deterministic ranking score, cross-encoder `r_i`, ScoreGate bucket, fusion score, and decision reason.
 4. A real local/LAN score source is measured or a blocker report records why it could not be run.

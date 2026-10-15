@@ -14,11 +14,12 @@ The earlier Python BM25 scaffold has been removed from the active runtime surfac
 
 ## Current Status
 
-The functional baseline is implemented and smoke-tested. The current formal release is `1.2.0` for the P0003 ScoreGate adaptive context selection evaluation work:
+The functional baseline is implemented and smoke-tested. The current formal release is `1.2.1`, which keeps the P0003 retrieval baseline and updates local answer generation to native Ollama `qwen3.8:latest`:
 
 - official baseline version `1.0.0`
 - official P0002 release version `1.1.0`
 - official P0003 release version `1.2.0`
+- official Ollama qwen3.8 chat baseline version `1.2.1`
 - source registry validation and project-scoped source resolution
 - file watcher plus periodic scan fallback
 - Markdown/plain text chunk indexing
@@ -195,6 +196,17 @@ Set `LOCAL_RAG_CHAT_MODEL` in the local env file to enable `/api/answer`. The an
 
 Fallback embeddings are for development smoke only. Do not use fallback for production indexing because fallback vectors are deterministic placeholders, not semantic embeddings.
 
+### M4 three-zone RAG binding candidate
+
+The source-only candidate profile in `config/m4-rag-bindings.env.example` separates interactive query embeddings from
+bulk indexing. Use it only with `config/docker-compose.m4-rag-bindings.yml`, private token files and a separately approved
+M4 platform candidate. The query alias keeps the 4B model warm for at most 120 seconds; bulk requests set keep-alive to
+zero and are checkpointed so Voice activity can reject new bulk admission without deleting the existing index.
+
+The profile pins the physical provenance to `qwen3-embedding:4b` and validates 2560 dimensions before publication. Do
+not replace the `.invalid` endpoint or placeholder token paths in tracked files. Actual endpoint/token provisioning,
+schema mutation, scan/reindex and cutover are operational actions outside this source profile.
+
 ## Operations
 
 Development happens from a normal workspace checkout. For a single-user host deployment, the provided operation command runs under `~/Services/local-rag-system` and reads host-specific configuration from `~/Services/local-rag-system/config/local.env`.
@@ -203,7 +215,7 @@ Install the service command:
 
 ```bash
 ollama pull qwen3-embedding:4b
-ollama pull qwen3.5:4b
+ollama pull qwen3.8:latest
 ops/service/local-rag install-command
 ~/Services/bin/local-rag sync-local "$PWD"
 ~/Services/bin/local-rag init-config

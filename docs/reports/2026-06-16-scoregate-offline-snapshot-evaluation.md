@@ -15,7 +15,7 @@ related_design:
   - docs/design/retrieval-quality-improvement-design.md
 source_refs:
   - https://arxiv.org/abs/2606.14269
-  - /Users/dean/Workspace/silverstone-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md
+  - ~/Workspace/personal-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md
   - docs/reports/2026-05-25-retrieval-quality-baseline.md
   - docs/evaluation/scoregate-offline-cases.json
   - docs/bin/validate-scoregate-offline.sh

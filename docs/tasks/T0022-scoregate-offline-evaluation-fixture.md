@@ -15,7 +15,7 @@ related_design:
   - docs/design/retrieval-quality-improvement-design.md
 source_refs:
   - https://arxiv.org/abs/2606.14269
-  - /Users/dean/Workspace/silverstone-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md
+  - ~/Workspace/personal-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md
   - docs/reports/2026-05-25-retrieval-quality-baseline.md
   - docs/design/retrieval-quality-improvement-design.md
   - docs/projects/P0003-scoregate-adaptive-context-selection.md
@@ -109,7 +109,7 @@ Completion mode는 `functional`이다. 완료 상태는 offline ScoreGate fixtur
 ## References
 
 - arXiv: [ScoreGate: Adaptive Chunk Selection for Retrieval-Augmented Generation via Dual-Score Statistical Fusion](https://arxiv.org/abs/2606.14269)
-- `/Users/dean/Workspace/silverstone-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md`
+- `~/Workspace/personal-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md`
 - `docs/reports/2026-05-25-retrieval-quality-baseline.md`
 - `docs/design/retrieval-quality-improvement-design.md`
 - `docs/projects/P0003-scoregate-adaptive-context-selection.md`

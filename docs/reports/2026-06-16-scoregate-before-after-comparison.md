@@ -110,7 +110,7 @@ After metric definition:
 Current deployment:
 
 - commit: `9b99c5f2672556d1495002aec0d06bd072553ac0`
-- deployment authority: `silverstone-deploy`
+- deployment authority: `personal-deploy`
 - health: `UP`
 - index status at test time: `documents=2085`, `chunks=29861`, `indexed=2052`, `removed=33`
 

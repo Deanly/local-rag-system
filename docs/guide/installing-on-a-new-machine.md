@@ -4,7 +4,7 @@ title: installing-on-a-new-machine
 status: active
 owner:
 created: 2026-05-24
-updated: 2026-05-29
+updated: 2026-08-29
 related_project: docs/projects/P0001-local-rag-system.md
 related_task:
 related_design:
@@ -26,6 +26,7 @@ This guide is the repo-only bootstrap path for a new single-user machine.
 - Docker with Docker Compose.
 - Ollama reachable from Docker containers. This can be notebook-local, LAN-local, or both.
 - `qwen3-embedding:4b` installed in Ollama, or another embedding model configured in the local env file.
+- `qwen3.8:latest` installed for local answer generation, or another chat model explicitly configured in the local env file.
 - Node.js if Codex MCP integration will be installed.
 
 For a host-local Ollama, Docker services should use `http://host.docker.internal:11434`. Do not use `http://localhost:11434` inside Compose unless Ollama is running in the same container.
@@ -54,7 +55,7 @@ From any checkout:
 
 ```bash
 ollama pull qwen3-embedding:4b
-ollama pull qwen3.5:4b
+ollama pull qwen3.8:latest
 ops/service/local-rag install-command
 ~/Services/bin/local-rag sync-local "$PWD"
 ~/Services/bin/local-rag init-config

@@ -5,7 +5,7 @@ status: current
 domain: ubiquitous-language
 owner:
 created: 2026-05-24
-updated: 2026-05-24
+updated: 2026-09-04
 retrieval_class:
   - term-excerpt
 context:
@@ -18,6 +18,7 @@ referenced_by:
   - docs/design/control-plane.md
   - docs/design/local-rag-system-development-direction.md
   - docs/design/source-registry-and-project-ssot.md
+  - docs/tasks/T0026-m4-rag-query-bulk-zone-binding.md
 source_refs:
   - source:planning/local-rag-system-project-note
   - source:planning/local-rag-system-design-note
@@ -34,12 +35,13 @@ tags:
 - Domain: ubiquitous-language
 - Owner:
 - Created: 2026-05-24
-- Updated: 2026-05-24
+- Updated: 2026-09-04
 - Referenced By:
   - `docs/README.md`
   - `docs/design/control-plane.md`
   - `docs/design/local-rag-system-development-direction.md`
   - `docs/design/source-registry-and-project-ssot.md`
+  - `docs/tasks/T0026-m4-rag-query-bulk-zone-binding.md`
 
 ## Purpose
 
@@ -145,6 +147,27 @@ Java NIO `WatchService` 등으로 source folder 변경 이벤트를 받는 best-
 
 운영자가 먼저 준비해야 하는 외부 전제다. 예: source folder 경로, Ollama endpoint, embedding model 설치, Docker volume 경로.
 
+### `RAG query binding`
+
+`retrieval-service`의 짧고 bounded한 query embedding을 인증된 `rag-query` lane과 physical embedding model에
+연결하는 server-owned binding이다. client가 zone/lane을 header로 주장하지 않는다.
+
+### `RAG bulk binding`
+
+`indexer-service`의 checkpointed bulk embedding을 인증된 `rag-bulk` lane과 physical embedding model에
+연결하는 server-owned binding이다. Voice activity 중 새 admission을 받지 못할 수 있으며 durable state에서
+재개한다.
+
+### `embedding provenance`
+
+published vector를 만든 physical model, validated dimension, workload binding과 lane의 묶음이다. request model
+alias 자체를 physical model로 기록하지 않는다.
+
+### `bulk checkpoint`
+
+embedding/admission 실패 뒤 기존 published chunk를 보존하고 source document를 다음 scan에서 다시 처리할 수
+있게 하는 durable indexer state다. proxy queue나 in-memory request는 checkpoint가 아니다.
+
 ## Retrieval Terms
 
 ### `hybrid retrieval`
@@ -229,3 +252,4 @@ PDF/OCR/canvas/Excalidraw의 심화 추출이다. MVP 이후 task로 다룬다.
 
 - 2026-05-24: `local-rag-system` 전용 canonical term registry로 초기화.
 - 2026-05-24: source registry, project registration, project/source identifiers, SSOT source, compiled knowledge source, planning-meta, RAG skill 용어 추가.
+- 2026-09-04: RAG query/bulk binding, embedding provenance와 bulk checkpoint 용어 추가.

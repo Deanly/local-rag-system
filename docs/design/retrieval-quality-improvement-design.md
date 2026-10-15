@@ -29,7 +29,7 @@ referenced_by:
   - docs/tasks/T0024-local-cross-encoder-sidecar-proof.md
 source_refs:
   - https://arxiv.org/abs/2606.14269
-  - /Users/dean/Workspace/silverstone-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md
+  - ~/Workspace/personal-assistant-wiki/inbox/2026-06-15-agent-system-paper-scrap.md
   - docs/reports/2026-05-25-retrieval-quality-baseline.md
   - docs/reports/2026-05-31-local-reranker-evaluation-decision.md
   - docs/design/local-rag-system-development-direction.md

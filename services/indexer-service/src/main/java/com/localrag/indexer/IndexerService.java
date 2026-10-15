@@ -186,18 +186,29 @@ public class IndexerService {
                     )
             );
             UUID documentId = upsertDocument(source, relativePath, path, attrs, sha256, chunked.metadata());
-            deleteChunks(documentId);
             List<MarkdownChunker.ChunkCandidate> candidates = chunked.chunks();
-            List<List<Double>> vectors = embeddingClient.embedAll(candidates.stream()
-                    .map(MarkdownChunker.ChunkCandidate::content)
-                    .toList());
-            for (int i = 0; i < candidates.size(); i++) {
-                upsertChunk(source, documentId, relativePath, path, attrs, candidates.get(i), vectors.get(i));
-            }
+            replaceChunksAfterEmbeddingValidation(source, documentId, relativePath, path, attrs, candidates);
             jdbcTemplate.update("UPDATE document_state SET status = 'indexed', last_indexed_at = now(), updated_at = now() WHERE document_id = ?", documentId);
             return new IndexFileResult(true, candidates.size());
         } catch (IOException exception) {
             throw new IllegalArgumentException("failed to index file " + path, exception);
+        }
+    }
+
+    void replaceChunksAfterEmbeddingValidation(
+            SourceRoot source,
+            UUID documentId,
+            String relativePath,
+            Path path,
+            BasicFileAttributes attrs,
+            List<MarkdownChunker.ChunkCandidate> candidates
+    ) {
+        List<List<Double>> vectors = embeddingClient.embedAll(candidates.stream()
+                .map(MarkdownChunker.ChunkCandidate::content)
+                .toList());
+        deleteChunks(documentId);
+        for (int i = 0; i < candidates.size(); i++) {
+            upsertChunk(source, documentId, relativePath, path, attrs, candidates.get(i), vectors.get(i));
         }
     }
 
@@ -320,6 +331,10 @@ public class IndexerService {
         properties.put("links", metadata.links());
         properties.put("fileMtimeNs", fileMtimeNs(attrs));
         properties.put("indexedAt", Instant.now().toString());
+        properties.put("embeddingModel", embeddingClient.profile().provenanceModel());
+        properties.put("embeddingDimensions", vector.size());
+        properties.put("embeddingBindingId", embeddingClient.profile().bindingId());
+        properties.put("embeddingLane", embeddingClient.profile().lane());
         weaviateClient.upsert(weaviateId.toString(), vector, properties);
         jdbcTemplate.update("""
                         INSERT INTO chunk_state(chunk_id, document_id, source_id, chunk_index, heading_path, heading_depth,

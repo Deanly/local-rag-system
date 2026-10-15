@@ -287,6 +287,22 @@ class RetrievalServiceTests {
     }
 
     @Test
+    void answerFailsClosedBeforeRetrievalWhenGenerationIsDisabled() {
+        assertThatThrownBy(() -> retrievalService.answer(new SearchRequest(
+                "local-rag-system",
+                "What changed?",
+                5,
+                "hybrid",
+                null,
+                null,
+                null
+        )))
+                .isInstanceOf(AnswerGenerationDisabledException.class);
+
+        verifyNoInteractions(embeddingClient, ollamaChatClient, weaviateClient, jdbcTemplate);
+    }
+
+    @Test
     void sourceDistributionCountsFinalResultsBySourceId() {
         List<SearchResultItem> results = List.of(
                 resultFrom("local-rag-system.docs", "tasks/T0016-retrieval-audit-observability-expansion.md"),
